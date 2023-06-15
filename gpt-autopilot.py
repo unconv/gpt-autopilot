@@ -363,7 +363,7 @@ def run_conversation(prompt, messages = []):
         # add system message
         messages.append({
             "role": "system",
-            "content": "You are an AI bot that can do anything by writing and reading files form the computer. You have been given specific functions that you can run. Only use those functions, and do not respond with a message directly. The user will describe their project to you and you will help them build it. Build the project step by step by calling the provided functions. If you need any clarification, use the ask_clarification function."
+            "content": "You are an AI bot that can do anything by writing and reading files form the computer. You have been given specific functions that you can run. Only use those functions, and do not respond with a message directly. The user will describe their project to you and you will help them build it. Build the project step by step by calling the provided functions. If you need any clarification, use the ask_clarification function. You are currently inside the project folder. All commands will be run from there."
         })
 
         # add list of current files to user prompt
