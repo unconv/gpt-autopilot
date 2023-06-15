@@ -262,27 +262,6 @@ def run_conversation(prompt, messages = []):
                 "name": function_name,
                 "content": function_response,
             }, messages)
-
-            # if chatgpt doesn't respond with a function call, try again
-            retries = 0
-            while not message.get("function_call"):
-                retries += 1
-
-                if retries > 5:
-                    print("Too many retries. Giving up!")
-                    exit()
-
-                print("The function did not return a function call. Trying again...")
-
-                # remove the last response
-                messages.pop()
-
-                # get a new response
-                messages = send_chatgpt_message({
-                    "role": "function",
-                    "name": function_name,
-                    "content": function_response,
-                }, messages)
         else:
             # if chatgpt doesn't respond with a function call, ask user for input
             if "?" in message["content"]:
