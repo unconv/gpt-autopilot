@@ -1,0 +1,41 @@
+body {
+  font-family: Arial, sans-serif;
+}
+
+.container {
+  width: 60%;
+  margin: 0 auto;
+}
+
+.productForm {
+  margin-bottom: 2em;
+}
+
+.productForm label,
+.productForm input {
+  display: block;
+  margin: 5px 0;
+}
+
+.productForm input[type="submit"] {
+  margin-top: 1em;
+  padding: 10px;
+}
+
+#productTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#productTable th,
+#productTable td {
+  text-align: left;
+  padding: 10px;
+  border-bottom: 1px solid #aaa;
+}
+
+@media print {
+  .productForm {
+    display: none;
+  }
+}

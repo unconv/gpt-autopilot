@@ -1,0 +1,30 @@
+What would you like me to do?
+Answer: Create the Pong game in C with Raylib. Add a build.sh script for compiling it and create a README.md file for instructions
+FUNCTION: Writing to file code/pong.c...
+FUNCTION: Writing to file code/build.sh...
+FUNCTION: Writing to file code/README.md...
+## Project finished! ##
+Do you want to ask something else?
+Answer (y/n): y
+What do you want to ask?
+Answer: the game is only a white background. Please create the Pong game
+FUNCTION: Writing to file code/pong.c...
+## Project finished! ##
+Do you want to ask something else?
+Answer (y/n): y
+What do you want to ask?
+Answer: make the ball bounce from the sides, now it just flings out of the window
+FUNCTION: Writing to file code/pong.c...
+## Project finished! ##
+Do you want to ask something else?
+Answer (y/n): y    
+What do you want to ask?
+Answer: the ball bounces from the bottom now, but it disappears when it goes to the right. make it work as it's supposed to
+FUNCTION: Writing to file code/pong.c...
+## Project finished! ##
+Do you want to ask something else?
+Answer (y/n): y
+What do you want to ask?
+Answer: set a target fps so that the ball and paddles move at a constant speed. also add points on the screen
+FUNCTION: Writing to file code/pong.c...
+## Project finished! ##

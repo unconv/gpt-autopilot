@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+<body>
+<canvas id='game'></canvas>
+<script src='main.js'></script>
+<script src='draw.js'></script>
+<script src='update.js'></script>
+<script src='input.js'></script>
+<script src='collision.js'></script>
+<script>
+window.onload = function() {
+let game = setInterval(function(){
+draw();
+update();
+}, 100);
+}
+</script>
+</body>
+</html>

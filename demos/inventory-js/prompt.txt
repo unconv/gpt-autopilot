@@ -1,0 +1,52 @@
+What would you like me to do?
+Answer: I need an inventory system to track the stock amounts of my products and their total prices. Create a browser-based javascript application that has a form for adding a new product name, quantity and price to the inventory. List all the products in the inventory in a table. Calculate and show the total price of all the products. Add CSS styles so that the application looks professional and production-ready. Make the product addition form disappear when you print the page.
+FUNCTION: Files in code/ directory:
+[]
+## ChatGPT Responded ##
+```
+There are no files in the project yet. Let's start by creating the required HTML, JavaScript, and CSS files. We will create a HTML file for the structure of your application, a JavaScript file for the functionality and a CSS file for styles. Starting with the HTML file:
+
+1. It will contain a form with input fields for the product name, quantity, and price.
+2. It will have a table to display all added products with their quantity and price.
+3. An area will be provided to display the total price of all products.
+4. The form will be hidden when printing the page by using a CSS print media query.
+```
+
+FUNCTION: Writing to file code/index.html...
+## ChatGPT Responded ##
+```
+The `index.html` file is now created and contains the basic structure of your inventory system. Now, let's proceed to write the required JavaScript code. The JavaScript code will:
+
+1. Get the form and table elements from the DOM.
+2. Add an event listener to the form to prevent the default form submission behaviour and handle the product addition.
+3. Create a product object from the form data and append a new row to the table with this product information.
+4. Calculate the total price from all the products in the table and update the total price area.
+```
+
+FUNCTION: Writing to file code/app.js...
+## ChatGPT Responded ##
+```
+Now, the `app.js` file is ready. The functionality of the inventory system has been set up with the JavaScript file.
+
+The final step is to create a CSS file to style our HTML. The CSS will make the application visually appealing and ensure the product addition form is hidden during printing.
+```
+
+FUNCTION: Writing to file code/styles.css...
+## Project finished! ##
+Do you want to ask something else?
+Answer (y/n): y
+What do you want to ask?
+Answer: save the products to localstorage so that they persist over page reloads
+FUNCTION: Reading file code/app.js...
+## ChatGPT Responded ##
+```
+To persist the products over page reloads we can use the localStorage API in the browser. We need to update our JavaScript code as follows:
+
+1. When a product is added, we should save it to an array that is stored in localStorage.
+2. When the page is loaded, we should load the products from localStorage and display them in the table.
+
+Let's implement these steps.
+```
+
+FUNCTION: Writing to file code/app.js...
+## Project finished! ##

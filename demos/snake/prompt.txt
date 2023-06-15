@@ -1,0 +1,95 @@
+What would you like me to do?
+Answer: create a fully working snake game 800x600 with a black background and green snake,that eats red dots and grows longer as it eats. When the snake hits itself, add a game over screen. Separate the functionality in different files
+FUNCTION: Files in code/ directory:
+[]
+## ChatGPT Responded ##
+```
+The first step is to create the main file that will store the initial settings for the game. Let's have a JavaScript file called "main.js".
+
+In "main.js", we need to set up the game field (800x600), color of the field (black), the snake (green), and food properties (red dots).
+```
+
+FUNCTION: Writing to file code/main.js...
+## ChatGPT Responded ##
+```
+Second, let's write the "draw.js" file, it will handle the drawing of game objects on the canvas. It needs to be able to draw the snake, the food, and the game over screen when necessary.
+```
+
+FUNCTION: Writing to file code/draw.js...
+## ChatGPT Responded ##
+```
+Next, let's create the "update.js" file which will handle the updates in the game state. This includes the snake's movement, eating food, and checking for game over.
+```
+
+FUNCTION: Writing to file code/update.js...
+## ChatGPT Responded ##
+```
+Next, we need the "input.js" file which will handle the user's keyboard input for controlling the snake. In our Snake game we control the snake using arrow keys.
+```
+
+FUNCTION: Writing to file code/input.js...
+## ChatGPT Responded ##
+```
+Finally, we need a function that checks if the snake has collided with itself. Let's create another JavaScript file called "collision.js". The function will return true if the snake has hit its body.
+```
+
+FUNCTION: Writing to file code/collision.js...
+## ChatGPT Responded ##
+```
+Now, we should link all these files in our HTML file so that they can interact with each other.
+
+Let's create a file "index.html". It will include the 'canvas' element for our game and the import statements for these JavaScript files.
+```
+
+FUNCTION: Writing to file code/index.html...
+## Project finished! ##
+Do you want to ask something else?
+Answer (y/n): y
+What do you want to ask?
+Answer: Can you fix the following errors that appear in the Chrome Dec Tools: main.js:2 Uncaught TypeError: Cannot read properties of null (reading 'getContext') at main.js:2:24, input.js:3 Uncaught SyntaxError: Identifier 'direction' has already been declared (at input.js:3:1), index.html:10 Uncaught TypeError: game is not a function at onload (index.html:10:24)
+FUNCTION: Reading file code/main.js...
+FUNCTION: Reading file code/input.js...
+FUNCTION: Reading file code/index.html...
+## ChatGPT Responded ##
+```
+The first error occurred because we are trying to access the 'game' canvas before it has actually loaded on the page. We need to move the JavaScript file imports to the end of body instead of in head, or wrap our JavaScript in a 'DOMContentLoaded' event listener.
+
+The second error occurred because we are redeclaring 'direction' as a function after it has already been declared as a variable. We can just change the function name to something else (e.g., 'changeDirection').
+
+The third error occurred because there is no 'game' function in the JavaScript code which is called on body load. We must define the function 'game' which carries out draw and update functions we created in intervals, to refresh the game frames.
+
+Let's make these changes.
+```
+
+FUNCTION: Writing to file code/index.html...
+FUNCTION: Writing to file code/input.js...
+## Project finished! ##
+Do you want to ask something else?
+Answer (y/n): y
+What do you want to ask?
+Answer: Please make the snake appear from the opposite side of the screen when it goes off screen. Also add a game over screen and end the game when the snake hits its tail
+FUNCTION: Reading file code/update.js...
+## ChatGPT Responded ##
+```
+The 'update.js' file is where we need to add code for letting the snake appear from the opposite side when it goes off the screen. We can do this with a simple check for if the snake's X and Y values are off screen, and then wrap them around to the opposite side.
+
+We also need to add a game over screen when collision occurs, this can be handled in 'draw.js' file where we can draw a subtitle text over our game if a flag 'gameOver' is set to true. And in 'update.js', instead of clearing our game interval when the snake hits its tail, we just set the 'gameOver' flag to true.
+
+Let's write these features into the files.
+```
+
+FUNCTION: Writing to file code/update.js...
+FUNCTION: Writing to file code/draw.js...
+## Project finished! ##
+Do you want to ask something else?
+Answer (y/n): y
+What do you want to ask?
+Answer: Great! Now just make the snake stop moving when the game is over.
+FUNCTION: Reading file code/update.js...
+## ChatGPT Responded ##
+```
+To stop the snake from moving when the game is over, we need to add a conditional checking for the 'gameOver' state before updating the snake's position in update.js. Let's make this change.
+```
+
+FUNCTION: Writing to file code/update.js...
+## Project finished! ##
