@@ -1,0 +1,54 @@
+.product-table {
+   width: 100%;
+   border-collapse: collapse;
+}
+.product-table th, .product-table td {
+   border: 1px solid #ddd;
+   padding: 8px;
+}
+.product-table tr:nth-child(even){background-color: #f2f2f2;}
+.product-table thead {
+   padding-top: 12px;
+   padding-bottom: 12px;
+   text-align: left;
+   background-color: #4CAF50;
+   color: white;
+}
+
+.add-product-form {
+   display: flex;
+   flex-direction: column;
+   width: 60%;
+   margin: 0 auto;
+   margin-bottom: 20px;
+}
+
+.add-product-form input {
+   margin-bottom: 10px;
+   padding: 10px;
+}
+
+.add-product-form button {
+   padding: 10px 20px;
+   background-color: #4CAF50;
+   color: white;
+   border: none;
+   cursor: pointer;
+}
+
+.add-product-form button:hover {
+   background-color: #45a049;
+}
+
+@media print {
+   .add-product-form {
+      display: none;
+   }
+}
+
+.header {
+   text-align: center;
+   margin: 20px;
+   font-size: 2em;
+   font-weight: bold;
+}
