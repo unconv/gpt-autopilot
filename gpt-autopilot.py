@@ -4,6 +4,8 @@ import openai
 import json
 import time
 import os
+import subprocess
+import shutil
 
 # SETTINGS
 DEBUG = False
@@ -15,6 +17,15 @@ with open(f".api_key", "r") as f:
 # CREATE CODE DIRECTORY
 if not os.path.exists( "code/" ):
     os.mkdir( "code" )
+
+# HELPERS
+def yesno(prompt, answers):
+    answer = ""
+    while answer not in answers:
+        answer = input(f"{prompt} ({answers[0]}/{answers[1]}): ")
+        if answer not in answers:
+            print(f"Please type '{answers[0]}' or '{answers[1]}'")
+    return answer
 
 # FUNCTIONS FOR CHATGPT
 def write_file(filename, content):
@@ -62,6 +73,28 @@ def create_dir(directory):
         os.mkdir( "code/"+directory )
         return f"Directory {directory} created!"
 
+def move_file(source, destination):
+    print(f"FUNCTION: Move code/{source} to code/{destination}...")
+
+    # Create parent directories if they don't exist
+    parent_dir = os.path.dirname(f"code/{destination}")
+    os.makedirs(parent_dir, exist_ok=True)
+
+    shutil.move(f"code/{source}", f"code/{destination}")
+
+    return f"File {source} moved to {destination}"
+
+def copy_file(source, destination):
+    print(f"FUNCTION: Copy code/{source} to code/{destination}...")
+
+    # Create parent directories if they don't exist
+    parent_dir = os.path.dirname(f"code/{destination}")
+    os.makedirs(parent_dir, exist_ok=True)
+
+    shutil.copy(f"code/{source}", f"code/{destination}")
+
+    return f"File {source} copied to {destination}"
+
 def delete_file(filename):
     print(f"FUNCTION: Deleting file code/{filename}")
     if not os.path.exists(f"code/{filename}"):
@@ -85,6 +118,29 @@ def list_files():
 def ask_clarification(question):
     answer = input(f"## ChatGPT Asks a Question ##\n```{question}```\nAnswer: ")
     return answer
+
+def run_cmd(command, reason):
+    print("FUNCTION: Run a command")
+    print("## ChatGPT wants to run a command! ##")
+    print(f"Command: `{command}`")
+    print(f"Reason: `{reason}`")
+
+    answer = yesno(
+        "Do you want to run this command?",
+        ["YES", "NO"]
+    )
+
+    if answer == "YES":
+        result = subprocess.run("cd code/; "+command, shell=True, capture_output=True, text=True)
+        output = result.stdout + result.stderr
+
+        return_value = "Result from command (last 245 chars):\n" + output[-245:]
+
+        print(return_value)
+
+        return return_value
+    else:
+        return "I don't want you to run that command"
 
 def project_finished(finished):
     return "PROJECT_FINISHED"
@@ -126,7 +182,7 @@ def send_chatgpt_message(message, messages, function_call = "auto"):
         },
         {
             "name": "write_file",
-            "description": "Write content to a file with given name. Existing files will be overwritten",
+            "description": "Write content to a file with given name. Existing files will be overwritten. Parent directories will be created if they don't exist",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -161,6 +217,24 @@ def send_chatgpt_message(message, messages, function_call = "auto"):
             },
         },
         {
+            "name": "move_file",
+            "description": "Move a file from one place to another. Parent directories will be created if they don't exist",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "source": {
+                        "type": "string",
+                        "description": "The source file to move",
+                    },
+                    "destination": {
+                        "type": "string",
+                        "description": "The new filename / filepath",
+                    },
+                },
+                "required": ["source", "destination"],
+            },
+        },
+        {
             "name": "create_dir",
             "description": "Create a directory with given name",
             "parameters": {
@@ -172,6 +246,24 @@ def send_chatgpt_message(message, messages, function_call = "auto"):
                     },
                 },
                 "required": ["directory"],
+            },
+        },
+        {
+            "name": "copy_file",
+            "description": "Copy a file from one place to another. Parent directories will be created if they don't exist",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "source": {
+                        "type": "string",
+                        "description": "The source file to copy",
+                    },
+                    "destination": {
+                        "type": "string",
+                        "description": "The new filename / filepath",
+                    },
+                },
+                "required": ["source", "destination"],
             },
         },
         {
@@ -215,7 +307,25 @@ def send_chatgpt_message(message, messages, function_call = "auto"):
                 },
                 "required": ["finished"],
             },
-        }
+        },
+        {
+            "name": "run_cmd",
+            "description": "Run a terminal command. Returns the output.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "command": {
+                        "type": "string",
+                        "description": "The command to run",
+                    },
+                    "reason": {
+                        "type": "string",
+                        "description": "A reason for why the command should be run",
+                    },
+                },
+                "required": ["command", "reason"],
+            },
+        },
     ]
 
     try:
@@ -292,7 +402,7 @@ def run_conversation(prompt, messages = []):
             # if function returns PROJECT_FINISHED, exit
             if function_response == "PROJECT_FINISHED":
                 print("## Project finished! ##")
-                next_message = input("Do you want to ask something else?\nAnswer (y/n): ")
+                next_message = yesno("Do you want to ask something else?\nAnswer", ["y", "n"])
                 if next_message == "y":
                     prompt = input("What do you want to ask?\nAnswer: ")
                     return run_conversation(prompt, messages)
