@@ -54,6 +54,14 @@ def read_file(filename):
         content = f.read()
     return f"The contents of '{filename}':\n{content}"
 
+def create_dir(directory):
+    print(f"FUNCTION: Creating directory code/{directory}")
+    if os.path.exists( "code/"+directory+"/" ):
+        return "ERROR: Directory exists"
+    else:
+        os.mkdir( "code/"+directory )
+        return f"Directory {directory} created!"
+
 def delete_file(filename):
     print(f"FUNCTION: Deleting file code/{filename}")
     if not os.path.exists(f"code/{filename}"):
@@ -143,6 +151,20 @@ def send_chatgpt_message(message, messages, function_call = "auto"):
                     },
                 },
                 "required": ["filename", "content"],
+            },
+        },
+        {
+            "name": "create_dir",
+            "description": "Create a directory with given name",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "directory": {
+                        "type": "string",
+                        "description": "Name of the directory to create",
+                    },
+                },
+                "required": ["directory"],
             },
         },
         {
