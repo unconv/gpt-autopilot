@@ -25,6 +25,10 @@ def write_file(filename, content):
     if content[-1] != "\n":
         content = content + "\n"
 
+    # Create parent directories if they don't exist
+    parent_dir = os.path.dirname(f"code/{filename}")
+    os.makedirs(parent_dir, exist_ok=True)
+
     with open(f"code/{filename}", "w") as f:
         f.write(content)
     return f"File {filename} written successfully"
@@ -32,6 +36,11 @@ def write_file(filename, content):
 def append_file(filename, content):
     print(f"FUNCTION: Appending to file code/{filename}...")
     if DEBUG: print(f"\n {content}")
+
+    # Create parent directories if they don't exist
+    parent_dir = os.path.dirname(f"code/{filename}")
+    os.makedirs(parent_dir, exist_ok=True)
+
     with open(f"code/{filename}", "a") as f:
         f.write(content)
     return f"File {filename} appended successfully"
