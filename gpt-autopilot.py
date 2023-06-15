@@ -70,8 +70,15 @@ def delete_file(filename):
     os.remove(f"code/{filename}")
     return f"File {filename} successfully deleted"
 
-def list_files(list):
-    files = os.listdir("code/")
+def list_files():
+    files = []
+    for root, _, filenames in os.walk("code/"):
+        for filename in filenames:
+            file_path = os.path.join(root, filename)
+            files.append(file_path)
+    # Remove "code/" from the beginning of file paths
+    files = [file_path.replace("code/", "", 1) for file_path in files]
+
     print(f"FUNCTION: Files in code/ directory:\n{files}")
     return f"List of files in the project:\n{files}"
 
@@ -249,8 +256,8 @@ def run_conversation(prompt, messages = []):
             "content": "You are an AI bot that can do anything by writing and reading files form the computer. You have been given specific functions that you can run. Only use those functions, and do not respond with a message directly. The user will describe their project to you and you will help them build it. Build the project step by step by calling the provided functions. If you need any clarification, use the ask_clarification function."
         })
 
-    # add list of current files to user prompt
-    prompt += "\n\nCurrent project files:\n" + "\n".join(os.listdir("code/"))
+        # add list of current files to user prompt
+        prompt += "\n\n" + list_files()
 
     # add user prompt to chatgpt messages
     messages = send_chatgpt_message({"role": "user", "content": prompt}, messages)
