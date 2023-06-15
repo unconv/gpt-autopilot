@@ -20,6 +20,11 @@ if not os.path.exists( "code/" ):
 def write_file(filename, content):
     print(f"FUNCTION: Writing to file code/{filename}...")
     if DEBUG: print(f"\n {content}")
+
+    # force newline in the end
+    if content[-1] != "\n":
+        content = content + "\n"
+
     with open(f"code/{filename}", "w") as f:
         f.write(content)
     return f"File {filename} written successfully"
