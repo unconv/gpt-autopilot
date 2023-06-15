@@ -25,6 +25,10 @@ $ ./gpt-autopilot.py
 
 5\. The files will be written in the `code/` directory
 
+## Video
+
+Watch the video where I demonstrate how it works here: https://www.youtube.com/watch?v=cnqzTsrdExU
+
 ## Support
 
 If you like this code, consider [buying me a coffee](https://buymeacoffee.com/unconv) and/or subscribing to my [YouTube-channel](https://youtube.com/@unconv)
