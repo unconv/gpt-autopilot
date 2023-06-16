@@ -27,6 +27,10 @@ $ ./gpt-autopilot.py
 
 5\. The files will be written in the `code/` directory
 
+## System Message
+
+You can customize the system message by editing the `system_message` file. The system message will affect how the agent acts. For example, you can add a code style guide to it.
+
 ## Video
 
 Watch the video where I demonstrate how it works here: https://www.youtube.com/watch?v=cnqzTsrdExU
