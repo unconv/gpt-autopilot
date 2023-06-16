@@ -6,17 +6,10 @@ import time
 import os
 import subprocess
 import shutil
+import sys
 
 # SETTINGS
 DEBUG = False
-
-# GET API KEY
-with open(f".api_key", "r") as f:
-    openai.api_key = f.read()
-
-# CREATE CODE DIRECTORY
-if not os.path.exists( "code/" ):
-    os.mkdir( "code" )
 
 # HELPERS
 def yesno(prompt, answers):
@@ -27,7 +20,33 @@ def yesno(prompt, answers):
             print(f"Please type '{answers[0]}' or '{answers[1]}'")
     return answer
 
-# FUNCTIONS FOR CHATGPT
+# GET API KEY
+openai.api_key = os.getenv("OPENAI_API_KEY")
+if openai.api_key in [None, ""]:
+    try:
+        with open(".api_key", "r") as f:
+            openai.api_key = f.read().strip()
+    except:
+        print("Put your OpenAI API key into a .api_key file or OPENAI_API_KEY environment variable to skip this prompt.\n")
+        openai.api_key = input("Input OpenAI API key: ").strip()
+
+        if openai.api_key == "":
+            sys.exit(1)
+
+        save = yesno("Do you want to save this key to .api_key?", ["y", "n"])
+        if save == "y":
+            with open(".api_key", "w") as f:
+                f.write(openai.api_key)
+
+        print()
+
+
+# CREATE CODE DIRECTORY
+if not os.path.exists( "code/" ):
+    os.mkdir( "code" )
+
+# FUNCTIONS FOR CHATGPT -------------------------------------------------------
+
 def write_file(filename, content):
     print(f"FUNCTION: Writing to file code/{filename}...")
     if DEBUG: print(f"\n {content}")
