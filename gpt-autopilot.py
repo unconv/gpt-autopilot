@@ -6,6 +6,7 @@ import time
 import os
 import subprocess
 import shutil
+import traceback
 import sys
 
 # SETTINGS
