@@ -50,7 +50,7 @@ if not os.path.exists( "code/" ):
 
 def write_file(filename, content):
     print(f"FUNCTION: Writing to file code/{filename}...")
-    if DEBUG: print(f"\n {content}")
+    if DEBUG: print(f"\n```\n{content}\n```")
 
     # force newline in the end
     if content[-1] != "\n":
@@ -66,7 +66,7 @@ def write_file(filename, content):
 
 def append_file(filename, content):
     print(f"FUNCTION: Appending to file code/{filename}...")
-    if DEBUG: print(f"\n {content}")
+    if DEBUG: print(f"\n```\n{content}\n```")
 
     # Create parent directories if they don't exist
     parent_dir = os.path.dirname(f"code/{filename}")
