@@ -32,7 +32,7 @@ if openai.api_key in [None, ""]:
         print()
 
 # WARN IF THERE IS CODE ALREADY IN THE PROJECT
-if len(os.listdir("code")) != 0:
+if os.path.exists("code/") and len(os.listdir("code")) != 0:
     answer = yesno("WARNING! There is already some code in the `code/` folder. GPT-AutoPilot may base the project on these files and has write access to them and might modify or delete them.\n\n" + gpt_functions.list_files("", False) + "\n\nDo you want to continue?", ["YES", "NO", "DELETE"])
     if answer == "DELETE":
         shutil.rmtree("code/")
