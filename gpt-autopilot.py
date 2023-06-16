@@ -165,8 +165,12 @@ def run_cmd(command, reason):
 def project_finished(finished):
     return "PROJECT_FINISHED"
 
+# END FUNCTIONS FOR CHATGPT ---------------------------------------------------
+
 # CHATGPT API FUNCTION
-def send_chatgpt_message(message, messages, function_call = "auto"):
+def send_chatgpt_message(message, messages, function_call = "auto", retries = 0):
+    print("Sending ChatGPT message...")
+
     # add user message to message list
     messages.append(message)
 
@@ -356,11 +360,20 @@ def send_chatgpt_message(message, messages, function_call = "auto"):
             functions=functions,
             function_call=function_call,
         )
+    except openai.error.AuthenticationError:
+        print("AuthenticationError: Check your API-key")
+        sys.exit(1)
+    except openai.error.PermissionError:
+        raise
     except:
+        if retries >= 4:
+            raise
+
         # if request fails, wait 5 seconds and try again
         print("ERROR in OpenAI request... Trying again")
         time.sleep(5)
-        return send_chatgpt_message(message, messages, function_call)
+
+        return send_chatgpt_message(message, messages, function_call, retries + 1)
 
     # add response to message list
     messages.append(response["choices"][0]["message"])
