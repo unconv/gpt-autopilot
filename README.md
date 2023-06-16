@@ -6,10 +6,10 @@ GPT-AutoPilot uses an iterative process, so after it has accomplished the task, 
 
 ## How to use
 
-1\. Add your [OpenAI API key](https://platform.openai.com/account/api-keys) to a file called `.api_key`
+1\. Export your [OpenAI API key](https://platform.openai.com/account/api-keys) as `OPENAI_API_KEY` environment variable or save it to a file called `.api_key`
 
 ```console
-$ echo "YOUR_API_KEY" > .api_key
+$ export OPENAI_API_KEY=YOUR_API_KEY
 ```
 
 2\. Install the lastest version of the `openai` python package
