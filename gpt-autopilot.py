@@ -123,7 +123,7 @@ def delete_file(filename):
     os.remove(f"code/{filename}")
     return f"File {filename} successfully deleted"
 
-def list_files():
+def list_files(list = ""):
     files = []
     for root, _, filenames in os.walk("code/"):
         for filename in filenames:
