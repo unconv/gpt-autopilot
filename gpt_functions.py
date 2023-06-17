@@ -132,9 +132,11 @@ def ask_clarification(question):
     answer = input(f"## ChatGPT Asks a Question ##\n```{question}```\nAnswer: ")
     return answer
 
-def run_cmd(command, reason):
+def run_cmd(base_dir, command, reason):
     print("FUNCTION: Run a command")
     print("## ChatGPT wants to run a command! ##")
+
+    command = "cd code/" + base_dir.strip("/") + "; " + command
     print(f"Command: `{command}`")
     print(f"Reason: `{reason}`")
 
@@ -144,7 +146,7 @@ def run_cmd(command, reason):
     )
 
     if answer == "YES":
-        result = subprocess.run("cd code/; "+command, shell=True, capture_output=True, text=True)
+        result = subprocess.run(command, shell=True, capture_output=True, text=True)
         output = result.stdout + result.stderr
 
         return_value = "Result from command (last 245 chars):\n" + output[-245:]
@@ -323,6 +325,10 @@ definitions = [
         "parameters": {
             "type": "object",
             "properties": {
+                "base_dir": {
+                    "type": "string",
+                    "description": "The directory to change into before running command",
+                },
                 "command": {
                     "type": "string",
                     "description": "The command to run",
@@ -332,7 +338,7 @@ definitions = [
                     "description": "A reason for why the command should be run",
                 },
             },
-            "required": ["command", "reason"],
+            "required": ["base_dir", "command", "reason"],
         },
     },
 ]
