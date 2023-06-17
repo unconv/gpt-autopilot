@@ -56,9 +56,14 @@ def move_file(source, destination):
     parent_dir = os.path.dirname(f"code/{destination}")
     os.makedirs(parent_dir, exist_ok=True)
 
-    shutil.move(f"code/{source}", f"code/{destination}")
+    try:
+        shutil.move(f"code/{source}", f"code/{destination}")
+    except:
+        if os.path.isdir(f"code/{source}") and os.path.isdir(f"code/{destination}"):
+            return "ERROR: Destination folder already exists."
+        return "Unable to move file."
 
-    return f"File {source} moved to {destination}"
+    return f"Moved {source} to {destination}"
 
 def copy_file(source, destination):
     print(f"FUNCTION: Copy code/{source} to code/{destination}...")
@@ -67,16 +72,31 @@ def copy_file(source, destination):
     parent_dir = os.path.dirname(f"code/{destination}")
     os.makedirs(parent_dir, exist_ok=True)
 
-    shutil.copy(f"code/{source}", f"code/{destination}")
+    try:
+        shutil.copy(f"code/{source}", f"code/{destination}")
+    except:
+        if os.path.isdir(f"code/{source}") and os.path.isdir(f"code/{destination}"):
+            return "ERROR: Destination folder already exists."
+        return "Unable to copy file."
 
     return f"File {source} copied to {destination}"
 
 def delete_file(filename):
     print(f"FUNCTION: Deleting file code/{filename}")
-    if not os.path.exists(f"code/{filename}"):
+    path = f"code/{filename}"
+
+    if not os.path.exists(path):
         print(f"File {filename} does not exist")
         return f"ERROR: File {filename} does not exist"
-    os.remove(f"code/{filename}")
+
+    try:
+        if os.path.isdir(path):
+            shutil.rmtree(path)
+        else:
+            os.remove(path)
+    except:
+        return "ERROR: Unable to remove file."
+
     return f"File {filename} successfully deleted"
 
 def list_files(list = "", print_output = True):
