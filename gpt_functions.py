@@ -80,11 +80,28 @@ def delete_file(filename):
     return f"File {filename} successfully deleted"
 
 def list_files(list = "", print_output = True):
-    files = []
-    for root, _, filenames in os.walk("code/"):
+    files_by_depth = {}
+    directory = "code/"
+
+    for root, _, filenames in os.walk(directory):
+        depth = str(root[len(directory):].count(os.sep))
+
         for filename in filenames:
             file_path = os.path.join(root, filename)
-            files.append(file_path)
+            if depth not in files_by_depth:
+                files_by_depth[depth] = []
+            files_by_depth[depth].append(file_path)
+
+    files = []
+    counter = 0
+    max_files = 20
+    for level in files_by_depth.values():
+        for filename in level:
+            counter += 1
+            if counter > max_files:
+                break
+            files.append(filename)
+
     # Remove "code/" from the beginning of file paths
     files = [file_path.replace("code/", "", 1) for file_path in files]
 
