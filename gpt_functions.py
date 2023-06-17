@@ -2,11 +2,13 @@ import os
 import shutil
 import subprocess
 
-from helpers import yesno
+from helpers import yesno, safepath
 
 # Implementation of the functions given to ChatGPT
 
 def write_file(filename, content):
+    filename = safepath(filename)
+
     print(f"FUNCTION: Writing to file code/{filename}...")
 
     # force newline in the end
@@ -22,6 +24,8 @@ def write_file(filename, content):
     return f"File {filename} written successfully"
 
 def append_file(filename, content):
+    filename = safepath(filename)
+
     print(f"FUNCTION: Appending to file code/{filename}...")
 
     # Create parent directories if they don't exist
@@ -33,6 +37,8 @@ def append_file(filename, content):
     return f"File {filename} appended successfully"
 
 def read_file(filename):
+    filename = safepath(filename)
+
     print(f"FUNCTION: Reading file code/{filename}...")
     if not os.path.exists(f"code/{filename}"):
         print(f"File {filename} does not exist")
@@ -42,6 +48,8 @@ def read_file(filename):
     return f"The contents of '{filename}':\n{content}"
 
 def create_dir(directory):
+    directory = safepath(directory)
+
     print(f"FUNCTION: Creating directory code/{directory}")
     if os.path.exists( "code/"+directory+"/" ):
         return "ERROR: Directory exists"
@@ -50,6 +58,9 @@ def create_dir(directory):
         return f"Directory {directory} created!"
 
 def move_file(source, destination):
+    source = safepath(source)
+    destination = safepath(destination)
+
     print(f"FUNCTION: Move code/{source} to code/{destination}...")
 
     # Create parent directories if they don't exist
@@ -66,6 +77,9 @@ def move_file(source, destination):
     return f"Moved {source} to {destination}"
 
 def copy_file(source, destination):
+    source = safepath(source)
+    destination = safepath(destination)
+
     print(f"FUNCTION: Copy code/{source} to code/{destination}...")
 
     # Create parent directories if they don't exist
@@ -82,6 +96,8 @@ def copy_file(source, destination):
     return f"File {source} copied to {destination}"
 
 def delete_file(filename):
+    filename = safepath(filename)
+
     print(f"FUNCTION: Deleting file code/{filename}")
     path = f"code/{filename}"
 
@@ -133,6 +149,7 @@ def ask_clarification(question):
     return answer
 
 def run_cmd(base_dir, command, reason):
+    base_dir = safepath(base_dir)
     print("FUNCTION: Run a command")
     print("## ChatGPT wants to run a command! ##")
 
