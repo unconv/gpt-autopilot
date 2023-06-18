@@ -2,7 +2,7 @@
 import sys
 import os
 
-def yesno(prompt, answers):
+def yesno(prompt, answers = ["y", "n"]):
     answer = ""
     while answer not in answers:
         slash_list = '/'.join(answers)

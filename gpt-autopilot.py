@@ -170,5 +170,13 @@ def run_conversation(prompt, messages = []):
 # ASK FOR PROMPT
 prompt = input("What would you like me to do?\nAnswer: ")
 
+# MAKE PROMPT BETTER
+if yesno("Do you want GPT to make your prompt better?") == "y":
+    print("Making prompt better...")
+    better_prompt = betterprompter.make_better(prompt)
+    print("## Better prompt: ##\n" + better_prompt)
+    if yesno("Do you want to use this prompt?") == "y":
+        prompt = better_prompt
+
 # RUN CONVERSATION
 run_conversation(prompt)
