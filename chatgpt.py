@@ -9,7 +9,8 @@ def send_message(
     message,
     messages,
     function_call = "auto",
-    retries = 0
+    retries = 0,
+    print_message = True,
 ):
     print("Waiting for ChatGPT...")
 
@@ -46,7 +47,7 @@ def send_message(
     response_message = response["choices"][0]["message"]["content"]
 
     # if response includes content, print it out
-    if response_message != None:
+    if print_message and response_message != None:
         print("## ChatGPT Responded ##\n```\n")
         print(response_message)
         print("\n```\n")

@@ -6,22 +6,8 @@ from helpers import yesno, safepath
 
 # Implementation of the functions given to ChatGPT
 
-def write_file(filename, content):
-    filename = safepath(filename)
-
-    print(f"FUNCTION: Writing to file code/{filename}...")
-
-    # force newline in the end
-    if content[-1] != "\n":
-        content = content + "\n"
-
-    # Create parent directories if they don't exist
-    parent_dir = os.path.dirname(f"code/{filename}")
-    os.makedirs(parent_dir, exist_ok=True)
-
-    with open(f"code/{filename}", "w") as f:
-        f.write(content)
-    return f"File {filename} written successfully"
+def write_file(filename):
+    return f"Please respond in your next response with the full content of the file {filename}. Respond only with the contents of the file, no explanations. Create a fully working, complete file with no limitations on file size."
 
 def append_file(filename, content):
     filename = safepath(filename)
@@ -210,7 +196,7 @@ definitions = [
     },
     {
         "name": "write_file",
-        "description": "Write content to a file with given name. Existing files will be overwritten. Parent directories will be created if they don't exist",
+        "description": "Write content to a file with given name. Existing files will be overwritten. Parent directories will be created if they don't exist. Content of file will be asked in the next prompt.",
         "parameters": {
             "type": "object",
             "properties": {
@@ -218,12 +204,8 @@ definitions = [
                     "type": "string",
                     "description": "The filename to write to",
                 },
-                "content": {
-                    "type": "string",
-                    "description": "The content to write into the file",
-                },
             },
-            "required": ["filename", "content"],
+            "required": ["filename"],
         },
     },
     {

@@ -6,10 +6,12 @@ import os
 import traceback
 import sys
 import shutil
+import re
 
 import gpt_functions
-from helpers import yesno
+from helpers import yesno, safepath
 import chatgpt
+import betterprompter
 
 # GET API KEY
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -43,6 +45,26 @@ if os.path.exists("code/") and len(os.listdir("code")) != 0:
 if not os.path.exists("code/"):
     os.mkdir("code")
 
+def actually_write_file(filename, content):
+    filename = safepath(filename)
+
+    print(f"FUNCTION: Writing to file code/{filename}...")
+
+    parts = re.split("```.*?\n", content + "\n")
+    if len(parts) > 2:
+        content = parts[1]
+
+    # force newline in the end
+    if content[-1] != "\n":
+        content = content + "\n"
+
+    # Create parent directories if they don't exist
+    parent_dir = os.path.dirname(f"code/{filename}")
+    os.makedirs(parent_dir, exist_ok=True)
+
+    with open(f"code/{filename}", "w") as f:
+        f.write(content)
+
 # MAIN FUNCTION
 def run_conversation(prompt, messages = []):
     if messages == []:
@@ -63,6 +85,11 @@ def run_conversation(prompt, messages = []):
 
     # get chatgpt response
     message = messages[-1]
+
+    mode = None
+    filename = None
+    function_call = "auto"
+    print_message = True
 
     # loop until project is finished
     while True:
@@ -92,6 +119,12 @@ def run_conversation(prompt, messages = []):
                     print(f"NOTICE: GPT called function '{function_name}' that doesn't exist.")
                     function_response = f"Function '{function_name}' does not exist."
 
+            if function_name == "write_file":
+                mode = "WRITE_FILE"
+                filename = arguments["filename"]
+                function_call = "none"
+                print_message = False
+
             # if function returns PROJECT_FINISHED, exit
             if function_response == "PROJECT_FINISHED":
                 print("## Project finished! ##")
@@ -107,14 +140,23 @@ def run_conversation(prompt, messages = []):
                 "role": "function",
                 "name": function_name,
                 "content": function_response,
-            }, messages)
+            }, messages, function_call, 0, print_message)
         else:
-            # if chatgpt doesn't respond with a function call, ask user for input
-            if "?" in message["content"]:
-                user_message = input("ChatGPT didn't respond with a function. What do you want to say?\nAnswer: ")
+            if mode == "WRITE_FILE":
+                actually_write_file(filename, message["content"])
+                user_message = f"File {filename} written successfully"
+
+                mode = None
+                filename = None
+                function_call = "auto"
+                print_message = True
             else:
-                # if chatgpt doesn't ask a question, continue
-                user_message = "Ok, continue."
+                # if chatgpt doesn't respond with a function call, ask user for input
+                if "?" in message["content"]:
+                    user_message = input("ChatGPT didn't respond with a function. What do you want to say?\nAnswer: ")
+                else:
+                    # if chatgpt doesn't ask a question, continue
+                    user_message = "Ok, continue."
 
             # send user message to chatgpt
             messages = chatgpt.send_message({
