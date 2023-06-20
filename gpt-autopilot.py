@@ -62,7 +62,7 @@ def compact_commands(messages):
 def actually_write_file(filename, content):
     filename = safepath(filename)
 
-    print(f"FUNCTION: Writing to file code/{filename}...")
+    print(f"Wrote to file code/{filename}...")
 
     parts = re.split("```.*?\n", content + "\n")
     if len(parts) > 2:
