@@ -53,7 +53,7 @@ if os.path.exists("code/") and len(os.listdir("code")) != 0:
 if not os.path.exists("code/"):
     os.mkdir("code")
 
-def compact_commands(messages)
+def compact_commands(messages):
     for msg in messages:
         if msg["role"] == "function" and msg["name"] == "write_file":
             msg["content"] = "Respond with file content"
