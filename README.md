@@ -6,7 +6,7 @@ GPT-AutoPilot uses an iterative process, so after it has accomplished the task, 
 
 ## How to use
 
-1\. Export your [OpenAI API key](https://platform.openai.com/account/api-keys) as `OPENAI_API_KEY` environment variable or save it to a file called `.api_key`
+1\. Export your [OpenAI API key](https://platform.openai.com/account/api-keys) as `OPENAI_API_KEY` environment variable or put it in the `config.json` file (see `config.sample.json`)
 
 ```console
 $ export OPENAI_API_KEY=YOUR_API_KEY

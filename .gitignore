@@ -1,4 +1,5 @@
 __pycache__
 .api_key
+config.json
 old_demos/
 code/

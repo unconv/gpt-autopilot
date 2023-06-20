@@ -8,6 +8,7 @@ import gpt_functions
 def send_message(
     message,
     messages,
+    model = "gpt-4-0613",
     function_call = "auto",
     retries = 0,
     print_message = True,
@@ -20,7 +21,7 @@ def send_message(
     try:
         # send prompt to chatgpt
         response = openai.ChatCompletion.create(
-            model="gpt-4-0613",
+            model=model,
             messages=messages,
             functions=gpt_functions.definitions,
             function_call=function_call,
@@ -38,7 +39,7 @@ def send_message(
         print("ERROR in OpenAI request... Trying again")
         time.sleep(5)
 
-        return send_message(message, messages, function_call, retries + 1)
+        return send_message(message, messages, model, function_call, retries + 1)
 
     # add response to message list
     messages.append(response["choices"][0]["message"])

@@ -13,24 +13,32 @@ from helpers import yesno, safepath
 import chatgpt
 import betterprompter
 
+# GET CONFIG
+try:
+    with open("config.json") as f:
+        CONFIG = json.load(f)
+except:
+    CONFIG = {
+        "model": "gpt-4",
+    }
+
 # GET API KEY
 openai.api_key = os.getenv("OPENAI_API_KEY")
 if openai.api_key in [None, ""]:
-    try:
-        with open(".api_key", "r") as f:
-            openai.api_key = f.read().strip()
-    except:
-        print("Put your OpenAI API key into a .api_key file or OPENAI_API_KEY environment variable to skip this prompt.\n")
+    if "api_key" in CONFIG:
+        openai.api_key = CONFIG["api_key"]
+    else:
+        print("Put your OpenAI API key into the config.json file or OPENAI_API_KEY environment variable to skip this prompt.\n")
         openai.api_key = input("Input OpenAI API key: ").strip()
 
         if openai.api_key == "":
             sys.exit(1)
 
-        save = yesno("Do you want to save this key to .api_key?", ["y", "n"])
+        save = yesno("Do you want to save this key to config.json?", ["y", "n"])
         if save == "y":
-            with open(".api_key", "w") as f:
-                f.write(openai.api_key)
-
+            CONFIG["api_key"] = openai.api_key
+            with open("config.json", "w") as f:
+                f.write(json.dumps(CONFIG, indent=4))
         print()
 
 # WARN IF THERE IS CODE ALREADY IN THE PROJECT
@@ -66,7 +74,7 @@ def actually_write_file(filename, content):
         f.write(content)
 
 # MAIN FUNCTION
-def run_conversation(prompt, messages = []):
+def run_conversation(prompt, model = "gpt-3.5-turbo", messages = []):
     if messages == []:
         with open("system_message", "r") as f:
             system_message = f.read()
@@ -81,7 +89,7 @@ def run_conversation(prompt, messages = []):
         prompt += "\n\n" + gpt_functions.list_files()
 
     # add user prompt to chatgpt messages
-    messages = chatgpt.send_message({"role": "user", "content": prompt}, messages)
+    messages = chatgpt.send_message({"role": "user", "content": prompt}, messages, model)
 
     # get chatgpt response
     message = messages[-1]
@@ -140,7 +148,7 @@ def run_conversation(prompt, messages = []):
                 "role": "function",
                 "name": function_name,
                 "content": function_response,
-            }, messages, function_call, 0, print_message)
+            }, messages, model, function_call, 0, print_message)
         else:
             if mode == "WRITE_FILE":
                 actually_write_file(filename, message["content"])
@@ -162,7 +170,7 @@ def run_conversation(prompt, messages = []):
             messages = chatgpt.send_message({
                 "role": "user",
                 "content": user_message,
-            }, messages)
+            }, messages, model)
 
         # save last response for the while loop
         message = messages[-1]
@@ -179,4 +187,4 @@ if yesno("Do you want GPT to make your prompt better?") == "y":
         prompt = better_prompt
 
 # RUN CONVERSATION
-run_conversation(prompt)
+run_conversation(prompt, model)

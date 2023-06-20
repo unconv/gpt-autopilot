@@ -1,6 +1,6 @@
 import openai
 
-def make_better(prompt):
+def make_better(prompt, model):
     if len(prompt.split(" ")) < 80:
         words = "an 80 word"
     else:
@@ -18,7 +18,7 @@ def make_better(prompt):
     ]
 
     response = openai.ChatCompletion.create(
-        model="gpt-4-0613",
+        model=model,
         messages=messages,
     )
 
