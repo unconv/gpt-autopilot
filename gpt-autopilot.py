@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import openai
 import json
 import os
 import traceback
@@ -10,6 +9,10 @@ import shutil
 import gpt_functions
 from helpers import yesno
 import chatgpt
+
+import requests
+from requests import Session
+from bs4 import BeautifulSoup
 
 # GET API KEY
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -130,3 +133,4 @@ prompt = input("What would you like me to do?\nAnswer: ")
 
 # RUN CONVERSATION
 run_conversation(prompt)
+
