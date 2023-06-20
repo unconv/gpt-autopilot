@@ -76,8 +76,13 @@ def actually_write_file(filename, content):
     parent_dir = os.path.dirname(f"code/{filename}")
     os.makedirs(parent_dir, exist_ok=True)
 
+    if os.path.isdir(f"code/{filename}"):
+        return "ERROR: There is already a directory with this name"
+
     with open(f"code/{filename}", "w") as f:
         f.write(content)
+
+    return f"File {filename} written successfully"
 
 # MAIN FUNCTION
 def run_conversation(prompt, model = "gpt-3.5-turbo-0613", messages = []):
