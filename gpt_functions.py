@@ -128,7 +128,7 @@ def list_files(list = "", print_output = True):
     files = [file_path.replace("code/", "", 1) for file_path in files]
 
     if print_output: print(f"FUNCTION: Files in code/ directory:\n{files}")
-    return f"List of files in the project:\n{files}"
+    return f"The following files are currently in the project directory:\n{files}"
 
 def ask_clarification(question):
     answer = input(f"## ChatGPT Asks a Question ##\n```{question}```\nAnswer: ")
