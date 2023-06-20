@@ -53,6 +53,12 @@ if os.path.exists("code/") and len(os.listdir("code")) != 0:
 if not os.path.exists("code/"):
     os.mkdir("code")
 
+def compact_commands(messages)
+    for msg in messages:
+        if msg["role"] == "function" and msg["name"] == "write_file":
+            msg["content"] = "Respond with file content"
+    return messages
+
 def actually_write_file(filename, content):
     filename = safepath(filename)
 
@@ -151,13 +157,14 @@ def run_conversation(prompt, model = "gpt-3.5-turbo-0613", messages = []):
             }, messages, model, function_call, 0, print_message)
         else:
             if mode == "WRITE_FILE":
-                actually_write_file(filename, message["content"])
-                user_message = f"File {filename} written successfully"
+                user_message = actually_write_file(filename, message["content"])
 
                 mode = None
                 filename = None
                 function_call = "auto"
                 print_message = True
+
+                messages = compact_commands(messages)
             else:
                 # if chatgpt doesn't respond with a function call, ask user for input
                 if "?" in message["content"]:
