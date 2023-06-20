@@ -31,7 +31,7 @@ def send_message(
     except openai.error.PermissionError:
         raise
     except:
-        if retries >= 0:
+        if retries >= 5:
             raise
 
         # if request fails, wait 5 seconds and try again
