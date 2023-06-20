@@ -8,7 +8,7 @@ import gpt_functions
 def send_message(
     message,
     messages,
-    model = "gpt-4-0613",
+    model = "gpt-3.5-turbo-0613",
     function_call = "auto",
     retries = 0,
     print_message = True,

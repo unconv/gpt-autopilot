@@ -1,6 +1,6 @@
 # GPT-AutoPilot
 
-A GPT-4 powered Python script that can create multi-file applications in any programming language (or any plaintext-based content for that matter). Just tell it what you want to build, and it will build it and ask you clarifying questions along the way.
+A ChatGPT API powered Python script that can create multi-file applications in any programming language (or any plaintext-based content for that matter). Just tell it what you want to build, and it will build it and ask you clarifying questions along the way.
 
 GPT-AutoPilot uses an iterative process, so after it has accomplished the task, it will ask you if you need some modifications. You can also run the script with an existing project in the `code/` folder and it will make modifications to it based on your prompt. **Note that the AI has the ability to delete and modify files, so have a backup**
 
