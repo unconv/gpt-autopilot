@@ -25,7 +25,9 @@ $ ./gpt-autopilot.py
 
 4\. For example, tell it to "create a JavaScript inventory application for the browser with a form that can add products with a name, quantity and price. Save the products to localstorage and list them in a table in the application. Calculate the total price of the products in the inventory. Add CSS styles to make the application look professional. Add a Inventory System header and hide the product add form when the page is printed."
 
-5\. The files will be written in the `code/` directory
+The files will be written in the `code/` directory
+
+The default model is `gpt-4-0613` and it works best, but you can still use the `gpt-3.5-turbo-0613` model. Just note that it is not as capable. To change, add `"model": "gpt-3.6-turbo-0613"` to the `config.json` file.
 
 ## System Message
 

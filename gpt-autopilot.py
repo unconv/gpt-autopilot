@@ -19,7 +19,7 @@ try:
         CONFIG = json.load(f)
 except:
     CONFIG = {
-        "model": "gpt-3.5-turbo-0613",
+        "model": "gpt-4-0613",
     }
 
 # GET API KEY
@@ -85,7 +85,7 @@ def actually_write_file(filename, content):
     return f"File {filename} written successfully"
 
 # MAIN FUNCTION
-def run_conversation(prompt, model = "gpt-3.5-turbo-0613", messages = []):
+def run_conversation(prompt, model = "gpt-4-0613", messages = []):
     if messages == []:
         with open("system_message", "r") as f:
             system_message = f.read()
