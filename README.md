@@ -27,7 +27,7 @@ $ ./gpt-autopilot.py
 
 The files will be written in the `code/` directory
 
-The default model is `gpt-4-0613` and it works best, but you can still use the `gpt-3.5-turbo-0613` model. Just note that it is not as capable. To change, add `"model": "gpt-3.6-turbo-0613"` to the `config.json` file.
+The default model is `gpt-4-0613` and it works best, but you can still use the `gpt-3.5-turbo-0613` model. Just note that it is not as capable. To change, add `"model": "gpt-3.5-turbo-0613"` to the `config.json` file.
 
 ## System Message
 
