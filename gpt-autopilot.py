@@ -139,7 +139,7 @@ def run_conversation(prompt, model = "gpt-3.5-turbo-0613", messages = []):
                 next_message = yesno("Do you want to ask something else?\nAnswer", ["y", "n"])
                 if next_message == "y":
                     prompt = input("What do you want to ask?\nAnswer: ")
-                    return run_conversation(prompt, messages)
+                    return run_conversation(prompt, model, messages)
                 else:
                     exit()
 
