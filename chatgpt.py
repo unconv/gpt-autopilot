@@ -29,6 +29,23 @@ def send_message(
     except openai.error.AuthenticationError:
         print("AuthenticationError: Check your API-key")
         sys.exit(1)
+    except openai.InvalidRequestError as e:
+        if "maximum context length" in str(e):
+            print("## NOTICE: Context limit reached, dropping old messages... ##")
+
+            # redact first unredacted assistant message
+            redacted = False
+            for msg in messages:
+                if msg["role"] == "assistant" and msg["content"] not in [None, "<message redacted>"]:
+                    msg["content"] = "<message redacted>"
+                    redacted = True
+                    break
+
+            # show error if no message could be redacted
+            if redacted == False:
+                raise
+
+        return send_message(message, messages, model, function_call)
     except openai.error.PermissionError:
         raise
     except:
