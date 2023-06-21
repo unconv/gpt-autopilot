@@ -17,7 +17,7 @@ def safepath(path):
     file = os.path.abspath(os.path.join(base, path))
 
     if os.path.commonpath([base, file]) != base:
-        print("ERROR: Tried to access file outside of code/ folder!")
+        print(f"ERROR: Tried to access file '{file}' outside of code/ folder!")
         sys.exit(1)
 
     return path
