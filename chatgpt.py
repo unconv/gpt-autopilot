@@ -69,6 +69,9 @@ def send_message(
         print("ERROR in OpenAI request... Trying again")
         time.sleep(5)
 
+        # remove last message
+        messages.pop()
+
         return send_message(
             message=message,
             messages=messages,
