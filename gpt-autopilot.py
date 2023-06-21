@@ -53,6 +53,10 @@ if os.path.exists("code/") and len(os.listdir("code")) != 0:
 if not os.path.exists("code/"):
     os.mkdir("code")
 
+# CREATE HISTORY DIRECTORY
+if not os.path.exists("history/"):
+    os.mkdir("history")
+
 def compact_commands(messages):
     for msg in messages:
         if msg["role"] == "function" and msg["name"] == "write_file":
@@ -85,7 +89,10 @@ def actually_write_file(filename, content):
     return f"File {filename} written successfully"
 
 # MAIN FUNCTION
-def run_conversation(prompt, model = "gpt-4-0613", messages = []):
+def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None):
+    if conv_id is None:
+        conv_id = str(sum(1 for entry in os.scandir("history/"))).zfill(4)
+
     if messages == []:
         with open("system_message", "r") as f:
             system_message = f.read()
@@ -100,7 +107,15 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = []):
         prompt += "\n\n" + gpt_functions.list_files()
 
     # add user prompt to chatgpt messages
-    messages = chatgpt.send_message({"role": "user", "content": prompt}, messages, model)
+    messages = chatgpt.send_message(
+        message={
+            "role": "user",
+            "content": prompt
+        },
+        messages=messages,
+        model=model,
+        conv_id=conv_id,
+    )
 
     # get chatgpt response
     message = messages[-1]
@@ -150,16 +165,28 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = []):
                 next_message = yesno("Do you want to ask something else?\nAnswer", ["y", "n"])
                 if next_message == "y":
                     prompt = input("What do you want to ask?\nAnswer: ")
-                    return run_conversation(prompt, model, messages)
+                    return run_conversation(
+                        prompt=prompt,
+                        model=model,
+                        messages=messages,
+                        conv_id=conv_id,
+                    )
                 else:
                     exit()
 
             # send function result to chatgpt
-            messages = chatgpt.send_message({
-                "role": "function",
-                "name": function_name,
-                "content": function_response,
-            }, messages, model, function_call, 0, print_message)
+            messages = chatgpt.send_message(
+                message={
+                    "role": "function",
+                    "name": function_name,
+                    "content": function_response,
+                },
+                messages=messages,
+                model=model,
+                function_call=function_call,
+                print_message=print_message,
+                conv_id=conv_id,
+            )
         else:
             if mode == "WRITE_FILE":
                 user_message = actually_write_file(filename, message["content"])
@@ -179,10 +206,15 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = []):
                     user_message = "Ok, continue."
 
             # send user message to chatgpt
-            messages = chatgpt.send_message({
-                "role": "user",
-                "content": user_message,
-            }, messages, model)
+            messages = chatgpt.send_message(
+                message={
+                    "role": "user",
+                    "content": user_message,
+                },
+                messages=messages,
+                model=model,
+                conv_id=conv_id,
+            )
 
         # save last response for the while loop
         message = messages[-1]
@@ -204,6 +236,19 @@ def make_prompt_better(prompt):
         prompt = better_prompt
     return prompt
 
+# LOAD MESSAGE HISTORY
+if len(sys.argv) > 1:
+    history_file = sys.argv[1]
+    try:
+        with open(f"history/{history_file}.json", "r") as f:
+            messages = json.load(f)
+        print(f"Loaded message history from {history_file}.json")
+    except:
+        print(f"ERROR: History file {history_file}.json not found")
+        sys.exit(1)
+else:
+    messages = []
+
 # ASK FOR PROMPT
 prompt = input("What would you like me to do?\nAnswer: ")
 
@@ -212,4 +257,8 @@ if yesno("Do you want GPT to make your prompt better?") == "y":
     prompt = make_prompt_better(prompt)
 
 # RUN CONVERSATION
-run_conversation(prompt, CONFIG["model"])
+run_conversation(
+    prompt=prompt,
+    model=CONFIG["model"],
+    messages=messages,
+)

@@ -1,5 +1,6 @@
 import openai
 import time
+import json
 
 import gpt_functions
 
@@ -12,11 +13,17 @@ def send_message(
     function_call = "auto",
     retries = 0,
     print_message = True,
+    conv_id = None,
 ):
     print("Waiting for ChatGPT...")
 
     # add user message to message list
     messages.append(message)
+
+    # save message history
+    if conv_id is not None:
+        with open(f"history/{conv_id}.json", "w") as f:
+            f.write(json.dumps(messages, indent=4))
 
     try:
         # send prompt to chatgpt
@@ -45,7 +52,13 @@ def send_message(
             if redacted == False:
                 raise
 
-        return send_message(message, messages, model, function_call)
+        return send_message(
+            message=message,
+            messages=messages,
+            model=model,
+            function_call=function_call,
+            conv_id=conv_id,
+        )
     except openai.error.PermissionError:
         raise
     except:
@@ -56,7 +69,14 @@ def send_message(
         print("ERROR in OpenAI request... Trying again")
         time.sleep(5)
 
-        return send_message(message, messages, model, function_call, retries + 1)
+        return send_message(
+            message=message,
+            messages=messages,
+            model=model,
+            function_call=function_call,
+            retries=retries+1,
+            conv_id=conv_id,
+        )
 
     # add response to message list
     messages.append(response["choices"][0]["message"])
