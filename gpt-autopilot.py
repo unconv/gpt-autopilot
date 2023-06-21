@@ -187,16 +187,29 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = []):
         # save last response for the while loop
         message = messages[-1]
 
+def make_prompt_better(prompt):
+    print("Making prompt better...")
+
+    try:
+        better_prompt = betterprompter.make_better(prompt, CONFIG["model"])
+    except:
+        if yesno("There was an error in the request. Try again?"):
+            return make_prompt_better(prompt)
+        else:
+            return prompt
+
+    print("## Better prompt: ##\n" + better_prompt)
+
+    if yesno("Do you want to use this prompt?") == "y":
+        prompt = better_prompt
+    return prompt
+
 # ASK FOR PROMPT
 prompt = input("What would you like me to do?\nAnswer: ")
 
 # MAKE PROMPT BETTER
 if yesno("Do you want GPT to make your prompt better?") == "y":
-    print("Making prompt better...")
-    better_prompt = betterprompter.make_better(prompt, CONFIG["model"])
-    print("## Better prompt: ##\n" + better_prompt)
-    if yesno("Do you want to use this prompt?") == "y":
-        prompt = better_prompt
+    prompt = make_prompt_better(prompt)
 
 # RUN CONVERSATION
 run_conversation(prompt, CONFIG["model"])
