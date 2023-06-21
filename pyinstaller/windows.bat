@@ -14,7 +14,7 @@ REM get distro identifier
 for /f "usebackq tokens=2 delims==" %%G in (`wmic os get Caption /value ^| findstr /r "^Caption="`) do (
     set "distro=%%G"
     setlocal enabledelayedexpansion
-    set "distro=!distro: =-!"
+    set "distro=%distro: =-%"
     endlocal
 )
 
