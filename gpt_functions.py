@@ -1,4 +1,5 @@
 import os
+import re
 import shutil
 import subprocess
 
@@ -9,6 +10,24 @@ from helpers import yesno, safepath
 def write_file(filename):
     print(f"FUNCTION: Writing to file code/{filename}...")
     return f"Please respond in your next response with the full content of the file {filename}. Respond only with the contents of the file, no explanations. Create a fully working, complete file with no limitations on file size."
+
+def replace_text(find, replace, filename):
+    filename = safepath(filename)
+
+    if ( len(find) + len(replace) ) > 37:
+        print(f"FUNCTION: Replacing text in code/{filename}...")
+    else:
+        print(f"FUNCTION: Replacing '{find}' with '{replace}' in code/{filename}...")
+
+    with open(f"code/{filename}", "r") as f:
+        file_content = f.read()
+
+    with open(f"code/{filename}", "w") as f:
+        f.write(
+            re.sub(find, replace, file_content)
+        )
+
+    return "Text replaced successfully"
 
 def append_file(filename, content):
     filename = safepath(filename)
@@ -207,6 +226,28 @@ definitions = [
                 },
             },
             "required": ["filename"],
+        },
+    },
+    {
+        "name": "replace_text",
+        "description": "Replace text in given file with regular expression",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "find": {
+                    "type": "string",
+                    "description": "The regular expression to look for",
+                },
+                "replace": {
+                    "type": "string",
+                    "description": "The text to replace the occurences with",
+                },
+                "filename": {
+                    "type": "string",
+                    "description": "The name of file to modify",
+                },
+            },
+            "required": ["find", "replace", "filename"],
         },
     },
     {
