@@ -59,6 +59,7 @@ def send_message(
             model=model,
             function_call=function_call,
             conv_id=conv_id,
+            print_message=print_message,
         )
     except openai.error.PermissionError:
         raise
@@ -80,6 +81,7 @@ def send_message(
             function_call=function_call,
             retries=retries+1,
             conv_id=conv_id,
+            print_message=print_message,
         )
 
     # add response to message list

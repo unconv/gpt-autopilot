@@ -214,6 +214,7 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
                 messages=messages,
                 model=model,
                 conv_id=conv_id,
+                print_message=print_message,
             )
 
         # save last response for the while loop
