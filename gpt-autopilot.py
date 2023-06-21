@@ -172,7 +172,7 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
                         conv_id=conv_id,
                     )
                 else:
-                    exit()
+                    sys.exit(0)
 
             # send function result to chatgpt
             messages = chatgpt.send_message(
