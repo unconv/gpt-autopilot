@@ -5,6 +5,16 @@ import sys
 
 import gpt_functions
 
+def redact_messages(messages):
+    for msg in messages:
+        if msg["role"] == "assistant" and msg["content"] not in [None, "<message redacted>"]:
+            msg["content"] = "<message redacted>"
+            break
+        if msg["role"] == "function" and msg["name"] == "read_file" and msg["content"] not in [None, "<file contents redacted>"]:
+            msg["content"] = "<file contents redacted>"
+            break
+    return messages
+
 # ChatGPT API Function
 
 def send_message(
@@ -41,17 +51,17 @@ def send_message(
         if "maximum context length" in str(e):
             print("## NOTICE: Context limit reached, dropping old messages... ##")
 
+            # remove last message
+            messages.pop()
+
             # redact first unredacted assistant message
-            redacted = False
-            for msg in messages:
-                if msg["role"] == "assistant" and msg["content"] not in [None, "<message redacted>"]:
-                    msg["content"] = "<message redacted>"
-                    redacted = True
-                    break
+            redacted_messages = redact_messages(messages)
 
             # show error if no message could be redacted
-            if redacted == False:
+            if redacted_messages == messages:
                 raise
+
+            messages = redacted_messages
         else:
             raise
 
