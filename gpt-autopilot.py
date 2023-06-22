@@ -82,6 +82,14 @@ def actually_write_file(filename, content):
 
     return f"File {filename} written successfully"
 
+def ask_model_switch():
+    if yesno("ERROR: You don't seem to have access to the GPT-4 API. Would you like to change to GPT-3.5?") == "y":
+        CONFIG["model"] = "gpt-3.5-turbo-0613"
+        save_config(CONFIG)
+        return CONFIG["model"]
+    else:
+        sys.exit(1)
+
 # MAIN FUNCTION
 def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None):
     if conv_id is None:
@@ -101,15 +109,21 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
         prompt += "\n\n" + gpt_functions.list_files()
 
     # add user prompt to chatgpt messages
-    messages = chatgpt.send_message(
-        message={
-            "role": "user",
-            "content": prompt
-        },
-        messages=messages,
-        model=model,
-        conv_id=conv_id,
-    )
+    try:
+        messages = chatgpt.send_message(
+            message={
+                "role": "user",
+                "content": prompt
+            },
+            messages=messages,
+            model=model,
+            conv_id=conv_id,
+        )
+    except Exception as e:
+        if "The model: `gpt-4-0613` does not exist" in str(e):
+            model = ask_model_switch()
+        else:
+            raise
 
     # get chatgpt response
     message = messages[-1]
@@ -219,16 +233,22 @@ def make_prompt_better(prompt):
 
     try:
         better_prompt = betterprompter.make_better(prompt, CONFIG["model"])
-    except:
-        if yesno("There was an error in the request. Try again?"):
+    except Exception as e:
+        better_prompt = prompt
+        if "The model: `gpt-4-0613` does not exist" in str(e):
+            ask_model_switch()
+            return make_prompt_better(prompt)
+        elif yesno("Unable to make prompt better. Try again?") == "y":
             return make_prompt_better(prompt)
         else:
             return prompt
 
-    print("## Better prompt: ##\n" + better_prompt)
+    if prompt != better_prompt:
+        print("## Better prompt: ##\n" + better_prompt)
 
-    if yesno("Do you want to use this prompt?") == "y":
-        prompt = better_prompt
+        if yesno("Do you want to use this prompt?") == "y":
+            prompt = better_prompt
+
     return prompt
 
 # LOAD MESSAGE HISTORY
