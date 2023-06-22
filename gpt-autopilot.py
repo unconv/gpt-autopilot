@@ -46,6 +46,7 @@ if os.path.isdir("code") and len(os.listdir("code")) != 0:
     answer = yesno("WARNING! There is already some code in the `code/` folder. GPT-AutoPilot may base the project on these files and has write access to them and might modify or delete them.\n\n" + gpt_functions.list_files("", False) + "\n\nDo you want to continue?", ["YES", "NO", "DELETE"])
     if answer == "DELETE":
         shutil.rmtree("code")
+        os.mkdir("code")
     elif answer != "YES":
         sys.exit(0)
 
