@@ -2,18 +2,20 @@ import openai
 import time
 import json
 import sys
+import copy
 
 import gpt_functions
 
 def redact_messages(messages):
-    for msg in messages:
+    messages_redact = copy.deepcopy(messages)
+    for msg in messages_redact:
         if msg["role"] == "assistant" and msg["content"] not in [None, "<message redacted>"]:
             msg["content"] = "<message redacted>"
             break
         if msg["role"] == "function" and msg["name"] == "read_file" and msg["content"] not in [None, "<file contents redacted>"]:
             msg["content"] = "<file contents redacted>"
             break
-    return messages
+    return messages_redact
 
 # ChatGPT API Function
 
