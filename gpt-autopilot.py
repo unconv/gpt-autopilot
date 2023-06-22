@@ -12,15 +12,9 @@ import gpt_functions
 from helpers import yesno, safepath
 import chatgpt
 import betterprompter
+from config import get_config, save_config
 
-# GET CONFIG
-try:
-    with open("config.json") as f:
-        CONFIG = json.load(f)
-except:
-    CONFIG = {
-        "model": "gpt-4-0613",
-    }
+CONFIG = get_config()
 
 # GET API KEY
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -37,8 +31,7 @@ if openai.api_key in [None, ""]:
         save = yesno("Do you want to save this key to config.json?", ["y", "n"])
         if save == "y":
             CONFIG["api_key"] = openai.api_key
-            with open("config.json", "w") as f:
-                f.write(json.dumps(CONFIG, indent=4))
+            save_config(CONFIG)
         print()
 
 # WARN IF THERE IS CODE ALREADY IN THE PROJECT
