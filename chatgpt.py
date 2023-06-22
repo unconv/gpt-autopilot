@@ -52,6 +52,8 @@ def send_message(
             # show error if no message could be redacted
             if redacted == False:
                 raise
+        else:
+            raise
 
         return send_message(
             message=message,
