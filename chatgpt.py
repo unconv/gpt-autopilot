@@ -2,6 +2,7 @@ import openai
 import time
 import json
 import sys
+import os
 
 import gpt_functions
 
@@ -23,7 +24,8 @@ def send_message(
 
     # save message history
     if conv_id is not None:
-        with open(f"history/{conv_id}.json", "w") as f:
+        history_file = os.path.join("history", f"{conv_id}.json")
+        with open(history_file, "w") as f:
             f.write(json.dumps(messages, indent=4))
 
     try:

@@ -2,7 +2,7 @@
 
 A ChatGPT API powered Python script that can create multi-file applications in any programming language (or any plaintext-based content for that matter). Just tell it what you want to build, and it will build it and ask you clarifying questions along the way.
 
-GPT-AutoPilot uses an iterative process, so after it has accomplished the task, it will ask you if you need some modifications. You can also run the script with an existing project in the `code/` folder and it will make modifications to it based on your prompt. **Note that the AI has the ability to delete and modify files, so have a backup**
+GPT-AutoPilot uses an iterative process, so after it has accomplished the task, it will ask you if you need some modifications. You can also run the script with an existing project in the `code` folder and it will make modifications to it based on your prompt. **Note that the AI has the ability to delete and modify files, so have a backup**
 
 ## How to use
 
@@ -25,7 +25,7 @@ $ ./gpt-autopilot.py [CONVERSATION_ID]
 
 4\. For example, tell it to "create a JavaScript inventory application for the browser with a form that can add products with a name, quantity and price. Save the products to localstorage and list them in a table in the application. Calculate the total price of the products in the inventory. Add CSS styles to make the application look professional. Add a Inventory System header and hide the product add form when the page is printed."
 
-The files will be written in the `code/` directory
+The files will be written in the `code` directory
 
 The default model is `gpt-4-0613` and it works best, but you can still use the `gpt-3.5-turbo-0613` model. Just note that it is not as capable. To change, add `"model": "gpt-3.5-turbo-0613"` to the `config.json` file.
 

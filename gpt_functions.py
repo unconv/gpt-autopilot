@@ -3,26 +3,26 @@ import re
 import shutil
 import subprocess
 
-from helpers import yesno, safepath
+from helpers import yesno, safepath, codedir
 
 # Implementation of the functions given to ChatGPT
 
 def write_file(filename):
-    print(f"FUNCTION: Writing to file code/{filename}...")
+    print(f"FUNCTION: Writing to file {codedir(filename)}...")
     return f"Please respond in your next response with the full content of the file {filename}. Respond only with the contents of the file, no explanations. Create a fully working, complete file with no limitations on file size."
 
 def replace_text(find, replace, filename):
     filename = safepath(filename)
 
     if ( len(find) + len(replace) ) > 37:
-        print(f"FUNCTION: Replacing text in code/{filename}...")
+        print(f"FUNCTION: Replacing text in {codedir(filename)}...")
     else:
-        print(f"FUNCTION: Replacing '{find}' with '{replace}' in code/{filename}...")
+        print(f"FUNCTION: Replacing '{find}' with '{replace}' in {codedir(filename)}...")
 
-    with open(f"code/{filename}", "r") as f:
+    with open(codedir(filename), "r") as f:
         file_content = f.read()
 
-    with open(f"code/{filename}", "w") as f:
+    with open(codedir(filename), "w") as f:
         f.write(
             re.sub(find, replace, file_content)
         )
@@ -32,51 +32,51 @@ def replace_text(find, replace, filename):
 def append_file(filename, content):
     filename = safepath(filename)
 
-    print(f"FUNCTION: Appending to file code/{filename}...")
+    print(f"FUNCTION: Appending to file {codedir(filename)}...")
 
     # Create parent directories if they don't exist
-    parent_dir = os.path.dirname(f"code/{filename}")
+    parent_dir = os.path.dirname(codedir(filename))
     os.makedirs(parent_dir, exist_ok=True)
 
-    with open(f"code/{filename}", "a") as f:
+    with open(codedir(filename), "a") as f:
         f.write(content)
     return f"File {filename} appended successfully"
 
 def read_file(filename):
     filename = safepath(filename)
 
-    print(f"FUNCTION: Reading file code/{filename}...")
-    if not os.path.exists(f"code/{filename}"):
+    print(f"FUNCTION: Reading file {codedir(filename)}...")
+    if not os.path.exists(codedir(filename)):
         print(f"File {filename} does not exist")
         return f"File {filename} does not exist"
-    with open(f"code/{filename}", "r") as f:
+    with open(codedir(filename), "r") as f:
         content = f.read()
     return f"The contents of '{filename}':\n{content}"
 
 def create_dir(directory):
     directory = safepath(directory)
 
-    print(f"FUNCTION: Creating directory code/{directory}")
-    if os.path.exists( "code/"+directory+"/" ):
+    print(f"FUNCTION: Creating directory {codedir(directory)}")
+    if os.path.isdir(codedir("directory")):
         return "ERROR: Directory exists"
     else:
-        os.mkdir( "code/"+directory )
+        os.mkdir(codedir("directory"))
         return f"Directory {directory} created!"
 
 def move_file(source, destination):
     source = safepath(source)
     destination = safepath(destination)
 
-    print(f"FUNCTION: Move code/{source} to code/{destination}...")
+    print(f"FUNCTION: Move {codedir(source)} to {codedir(destination)}...")
 
     # Create parent directories if they don't exist
-    parent_dir = os.path.dirname(f"code/{destination}")
+    parent_dir = os.path.dirname(codedir(destination))
     os.makedirs(parent_dir, exist_ok=True)
 
     try:
-        shutil.move(f"code/{source}", f"code/{destination}")
+        shutil.move(codedir(source), codedir(destination))
     except:
-        if os.path.isdir(f"code/{source}") and os.path.isdir(f"code/{destination}"):
+        if os.path.isdir(codedir(source)) and os.path.isdir(codedir(destination)):
             return "ERROR: Destination folder already exists."
         return "Unable to move file."
 
@@ -86,16 +86,16 @@ def copy_file(source, destination):
     source = safepath(source)
     destination = safepath(destination)
 
-    print(f"FUNCTION: Copy code/{source} to code/{destination}...")
+    print(f"FUNCTION: Copy {codedir(source)} to {codedir(destination)}...")
 
     # Create parent directories if they don't exist
-    parent_dir = os.path.dirname(f"code/{destination}")
+    parent_dir = os.path.dirname(codedir(destination))
     os.makedirs(parent_dir, exist_ok=True)
 
     try:
-        shutil.copy(f"code/{source}", f"code/{destination}")
+        shutil.copy(codedir(source), codedir(destination))
     except:
-        if os.path.isdir(f"code/{source}") and os.path.isdir(f"code/{destination}"):
+        if os.path.isdir(codedir(source)) and os.path.isdir(codedir(destination)):
             return "ERROR: Destination folder already exists."
         return "Unable to copy file."
 
@@ -103,9 +103,9 @@ def copy_file(source, destination):
 
 def delete_file(filename):
     filename = safepath(filename)
+    path = codedir(filename)
 
-    print(f"FUNCTION: Deleting file code/{filename}")
-    path = f"code/{filename}"
+    print(f"FUNCTION: Deleting file {path}")
 
     if not os.path.exists(path):
         print(f"File {filename} does not exist")
@@ -123,7 +123,7 @@ def delete_file(filename):
 
 def list_files(list = "", print_output = True):
     files_by_depth = {}
-    directory = "code/"
+    directory = "code"
 
     for root, _, filenames in os.walk(directory):
         depth = str(root[len(directory):].count(os.sep))
@@ -144,10 +144,10 @@ def list_files(list = "", print_output = True):
                 break
             files.append(filename)
 
-    # Remove "code/" from the beginning of file paths
-    files = [file_path.replace("code/", "", 1) for file_path in files]
+    # Remove code folder from the beginning of file paths
+    files = [file_path.replace("code/", "", 1).replace("code\\", "", 1) for file_path in files]
 
-    if print_output: print(f"FUNCTION: Files in code/ directory:\n{files}")
+    if print_output: print(f"FUNCTION: Files in code directory:\n{files}")
     return f"The following files are currently in the project directory:\n{files}"
 
 def ask_clarification(question):
@@ -156,10 +156,11 @@ def ask_clarification(question):
 
 def run_cmd(base_dir, command, reason):
     base_dir = safepath(base_dir)
+    base_dir = base_dir.strip("/").strip("\\")
     print("FUNCTION: Run a command")
     print("## ChatGPT wants to run a command! ##")
 
-    command = "cd code/" + base_dir.strip("/") + "; " + command
+    command = "cd code" + base_dir + "; " + command
     print(f"Command: `{command}`")
     print(f"Reason: `{reason}`")
 

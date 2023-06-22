@@ -9,7 +9,7 @@ import shutil
 import re
 
 import gpt_functions
-from helpers import yesno, safepath
+from helpers import yesno, safepath, codedir
 import chatgpt
 import betterprompter
 
@@ -43,7 +43,7 @@ if openai.api_key in [None, ""]:
 
 # WARN IF THERE IS CODE ALREADY IN THE PROJECT
 if os.path.isdir("code") and len(os.listdir("code")) != 0:
-    answer = yesno("WARNING! There is already some code in the `code/` folder. GPT-AutoPilot may base the project on these files and has write access to them and might modify or delete them.\n\n" + gpt_functions.list_files("", False) + "\n\nDo you want to continue?", ["YES", "NO", "DELETE"])
+    answer = yesno("WARNING! There is already some code in the `code` folder. GPT-AutoPilot may base the project on these files and has write access to them and might modify or delete them.\n\n" + gpt_functions.list_files("", False) + "\n\nDo you want to continue?", ["YES", "NO", "DELETE"])
     if answer == "DELETE":
         shutil.rmtree("code")
         os.mkdir("code")
@@ -67,7 +67,7 @@ def compact_commands(messages):
 def actually_write_file(filename, content):
     filename = safepath(filename)
 
-    print(f"Wrote to file code/{filename}...")
+    print(f"Wrote to file {codedir(filename)}...")
 
     parts = re.split("```.*?\n", content + "\n")
     if len(parts) > 2:
@@ -77,14 +77,16 @@ def actually_write_file(filename, content):
     if content[-1] != "\n":
         content = content + "\n"
 
+    fullpath = codedir(filename)
+
     # Create parent directories if they don't exist
-    parent_dir = os.path.dirname(f"code/{filename}")
+    parent_dir = os.path.dirname(fullpath)
     os.makedirs(parent_dir, exist_ok=True)
 
-    if os.path.isdir(f"code/{filename}"):
+    if os.path.isdir(fullpath):
         return "ERROR: There is already a directory with this name"
 
-    with open(f"code/{filename}", "w") as f:
+    with open(fullpath, "w") as f:
         f.write(content)
 
     return f"File {filename} written successfully"
@@ -240,9 +242,9 @@ def make_prompt_better(prompt):
 
 # LOAD MESSAGE HISTORY
 if len(sys.argv) > 1:
-    history_file = sys.argv[1]
+    history_file = os.path.join("history", f"{sys.argv[1]}.json")
     try:
-        with open(f"history/{history_file}.json", "r") as f:
+        with open(history_file, "r") as f:
             messages = json.load(f)
         print(f"Loaded message history from {history_file}.json")
     except:
