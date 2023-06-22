@@ -145,13 +145,37 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
                 # try to parse arguments
                 arguments = json.loads(arguments_plain)
 
-            # if parsing fails, tell chatgpt to format arguments properly
+            # if parsing fails, try to fix format
             except:
-                print("ERROR PARSING ARGUMENTS:\n---\n")
-                print(arguments_plain)
-                print("\n---\n")
+                try:
+                    # gpt-3.5 sometimes uses backticks
+                    # instead of double quotes in JSON value
+                    print("ERROR: Invalid JSON arguments. Fixing...")
+                    arguments_fixed = arguments_plain.replace("`", '"')
+                    arguments = json.loads(arguments_fixed)
+                except:
+                    try:
+                        # gpt-3.5 sometimes omits single quotes
+                        # from around keys
+                        print("ERROR: Invalid JSON arguments. Fixing again...")
+                        arguments_fixed = re.sub(r'(\b\w+\b)(?=\s*:)', r'"\1"')
+                        arguments = json.loads(arguments_fixed)
+                    except:
+                        try:
+                            # gpt-3.5 sometimes uses single quotes
+                            # around keys, instead of double quotes
+                            print("ERROR: Invalid JSON arguments. Fixing third time...")
+                            arguments_fixed = re.sub(r"'(\b\w+\b)'(?=\s*:)", r'"\1"')
+                            arguments = json.loads(arguments_fixed)
+                        except:
+                            print("ERROR PARSING ARGUMENTS:\n---\n")
+                            print(arguments_plain)
+                            print("\n---\n")
 
-                function_response = "Error parsing arguments. Make sure to use properly formatted JSON, with double quotes"
+                            if function_name == "replace_text":
+                                function_response = "ERROR! Please try to replace a shorter text or try another method"
+                            else:
+                                function_response = "Error parsing arguments. Make sure to use properly formatted JSON, with double quotes. If this error persist, change tactics"
 
             if arguments is not None:
                 # call the function given by chatgpt
