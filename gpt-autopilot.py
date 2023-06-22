@@ -42,19 +42,20 @@ if openai.api_key in [None, ""]:
         print()
 
 # WARN IF THERE IS CODE ALREADY IN THE PROJECT
-if os.path.exists("code/") and len(os.listdir("code")) != 0:
+if os.path.isdir("code") and len(os.listdir("code")) != 0:
     answer = yesno("WARNING! There is already some code in the `code/` folder. GPT-AutoPilot may base the project on these files and has write access to them and might modify or delete them.\n\n" + gpt_functions.list_files("", False) + "\n\nDo you want to continue?", ["YES", "NO", "DELETE"])
     if answer == "DELETE":
-        shutil.rmtree("code/")
+        shutil.rmtree("code")
+        os.mkdir("code")
     elif answer != "YES":
         sys.exit(0)
 
 # CREATE CODE DIRECTORY
-if not os.path.exists("code/"):
+if not os.path.isdir("code"):
     os.mkdir("code")
 
 # CREATE HISTORY DIRECTORY
-if not os.path.exists("history/"):
+if not os.path.isdir("history"):
     os.mkdir("history")
 
 def compact_commands(messages):
@@ -91,7 +92,7 @@ def actually_write_file(filename, content):
 # MAIN FUNCTION
 def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None):
     if conv_id is None:
-        conv_id = str(sum(1 for entry in os.scandir("history/"))).zfill(4)
+        conv_id = str(sum(1 for entry in os.scandir("history"))).zfill(4)
 
     if messages == []:
         with open("system_message", "r") as f:
@@ -214,6 +215,7 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
                 messages=messages,
                 model=model,
                 conv_id=conv_id,
+                print_message=print_message,
             )
 
         # save last response for the while loop
