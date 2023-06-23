@@ -190,16 +190,19 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
             if arguments is not None:
                 # call the function given by chatgpt
                 if hasattr(gpt_functions, function_name):
-                    function_response = getattr(gpt_functions, function_name)(**arguments)
+                    try:
+                        function_response = getattr(gpt_functions, function_name)(**arguments)
+                    except TypeError:
+                        function_response = "ERROR: Invalid function parameters"
                 else:
                     print(f"NOTICE: GPT called function '{function_name}' that doesn't exist.")
                     function_response = f"Function '{function_name}' does not exist."
 
-            if function_name == "write_file":
-                mode = "WRITE_FILE"
-                filename = arguments["filename"]
-                function_call = "none"
-                print_message = False
+                if function_name == "write_file":
+                    mode = "WRITE_FILE"
+                    filename = arguments["filename"]
+                    function_call = "none"
+                    print_message = False
 
             # if function returns PROJECT_FINISHED, exit
             if function_response == "PROJECT_FINISHED":
@@ -241,8 +244,10 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
 
                 messages = compact_commands(messages)
             else:
+                if len(message["content"]) > 600:
+                    user_message = "ERROR: Please use function calls"
                 # if chatgpt doesn't respond with a function call, ask user for input
-                if "?" in message["content"]:
+                elif "?" in message["content"]:
                     user_message = input("ChatGPT didn't respond with a function. What do you want to say?\nAnswer: ")
                 else:
                     # if chatgpt doesn't ask a question, continue
