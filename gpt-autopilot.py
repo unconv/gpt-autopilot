@@ -59,7 +59,7 @@ def actually_write_file(filename, content):
     content = content.strip().strip("`")
 
     # force newline in the end
-    if content[-1] != "\n":
+    if content != "" and content[-1] != "\n":
         content = content + "\n"
 
     # Create parent directories if they don't exist
