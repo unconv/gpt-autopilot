@@ -325,7 +325,7 @@ def parse_arguments(argv):
             arguments["not-better"] = False
         # confirm if user wants to use bettered prompt
         elif arg_name == "--ask-better":
-            arguments["ask-better"] = False
+            arguments["ask-better"] = True
         # make a new better prompt for every version
         elif arg_name == "--better-versions":
             arguments["better-versions"] = True
@@ -333,13 +333,14 @@ def parse_arguments(argv):
         # delete code folder contents before starting
         elif arg_name == "--delete":
             reset_code_folder()
+        elif arg_name in ["--version", "-v"]:
+            print(f"GPT-AutoPilot v{VERSION} by Unconventional Coding")
+            sys.exit(69)
         # make multiple versions of project
         elif arg_name == "--versions":
             if "ask-better" in arguments:
                 print(f"ERROR: --ask-better flag is not compatible with --versions flag")
                 sys.exit(1)
-            if "better" not in arguments:
-                arguments["not-better"] = True
             if sys.argv == []:
                 print(f"ERROR: Missing argument for '{arg_name}'")
                 sys.exit(1)
