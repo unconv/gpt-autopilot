@@ -291,9 +291,26 @@ def make_prompt_better(prompt):
 
     return prompt
 
+conv_id = None
+
+# LOAD COMMAND LINE ARGUMENTS
+program_name = sys.argv.pop(0)
+while sys.argv != []:
+    arg_name = sys.argv.pop(0)
+
+    # conversation id
+    if arg_name == "--conv":
+        if sys.argv == []:
+            print(f"ERROR: Missing argument for '{arg_name}'")
+            sys.exit(1)
+        conv_id = sys.argv.pop()
+    else:
+        print(f"ERROR: Invalid option '{arg_name}'")
+        sys.exit(1)
+
 # LOAD MESSAGE HISTORY
-if len(sys.argv) > 1:
-    history_file = sys.argv[1]
+if conv_id is not None:
+    history_file = conv_id
     try:
         with open(f"history/{history_file}.json", "r") as f:
             messages = json.load(f)
