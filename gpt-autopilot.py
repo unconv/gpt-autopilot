@@ -274,17 +274,22 @@ def parse_arguments(argv):
                 print(f"ERROR: Missing argument for '{arg_name}'")
                 sys.exit(1)
             arguments["conv"] = sys.argv.pop(0)
+        # initial prompt
         elif arg_name == "--prompt":
             if sys.argv == []:
                 print(f"ERROR: Missing argument for '{arg_name}'")
                 sys.exit(1)
             arguments["prompt"] = sys.argv.pop(0)
+        # make prompt better with GPT
         elif arg_name == "--better":
             arguments["better"] = True
+        # don't make prompt better with GPT
         elif arg_name == "--not-better":
             arguments["not-better"] = False
+        # confirm if user wants to use bettered prompt
         elif arg_name == "--ask-better":
             arguments["ask-better"] = False
+        # delete code folder contents before starting
         elif arg_name == "--delete":
             reset_code_folder()
         else:
