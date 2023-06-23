@@ -7,6 +7,9 @@ import traceback
 import sys
 import shutil
 import re
+import time
+import random
+import copy
 
 import gpt_functions
 from helpers import yesno, safepath
@@ -66,7 +69,7 @@ def ask_model_switch():
         sys.exit(1)
 
 # MAIN FUNCTION
-def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None, temp = 1.0):
+def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None, recursive = True, temp = 1.0):
     if conv_id is None:
         conv_id = str(sum(1 for entry in os.scandir("history"))).zfill(4)
 
@@ -173,6 +176,10 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
             # if function returns PROJECT_FINISHED, exit
             if function_response == "PROJECT_FINISHED":
                 print("## Project finished! ##")
+
+                if recursive == False:
+                    return
+
                 next_message = yesno("Do you want to ask something else?\nAnswer", ["y", "n"])
                 if next_message == "y":
                     prompt = input("What do you want to ask?\nAnswer: ")
@@ -181,6 +188,7 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
                         model=model,
                         messages=messages,
                         conv_id=conv_id,
+                        recursive=recursive,
                     )
                 else:
                     sys.exit(0)
@@ -291,6 +299,9 @@ def parse_arguments(argv):
             arguments["temp"] = float(sys.argv.pop(0))
         # make prompt better with GPT
         elif arg_name == "--better":
+            if "versions" in arguments:
+                print("ERROR: --version must come after --better")
+                sys.exit(1)
             arguments["better"] = True
         # don't make prompt better with GPT
         elif arg_name == "--not-better":
@@ -298,12 +309,31 @@ def parse_arguments(argv):
         # confirm if user wants to use bettered prompt
         elif arg_name == "--ask-better":
             arguments["ask-better"] = False
+        # make a new better prompt for every version
+        elif arg_name == "--better-versions":
+            arguments["better-versions"] = True
+            arguments["better"] = True
         # delete code folder contents before starting
         elif arg_name == "--delete":
             reset_code_folder()
+        # make multiple versions of project
+        elif arg_name == "--versions":
+            if "ask-better" in arguments:
+                print(f"ERROR: --ask-better flag is not compatible with --versions flag")
+                sys.exit(1)
+            if "better" not in arguments:
+                arguments["not-better"] = True
+            if sys.argv == []:
+                print(f"ERROR: Missing argument for '{arg_name}'")
+                sys.exit(1)
+            arguments["versions"] = int(sys.argv.pop(0))
         else:
             print(f"ERROR: Invalid option '{arg_name}'")
             sys.exit(1)
+
+    if "not-better" in arguments and "better" in arguments:
+        print("ERROR: --not-better is not compatible with --better")
+        sys.exit(1)
 
     return arguments
 
@@ -360,6 +390,15 @@ def get_temp(arguments):
         return arguments["temp"]
     return 1.0
 
+def maybe_make_prompt_better(prompt, args, version_loop = False):
+    if version_loop == True and "better-versions" not in args:
+        return prompt
+    if "not-better" not in args:
+        if "better" in args or yesno("Do you want GPT to make your prompt better?") == "y":
+            ask = "better" not in args or "ask-better" in args
+            prompt = make_prompt_better(prompt, ask)
+    return prompt
+
 # LOAD COMMAND LINE ARGUMENTS
 args = parse_arguments(sys.argv)
 
@@ -375,21 +414,70 @@ warn_existing_code()
 # CREATE DATA DIRECTORIES
 create_directories()
 
+# GET TEMPERATURE
+temp = get_temp(args)
+temp_orig = temp
+
 # ASK FOR PROMPT
 if "prompt" in args:
     prompt = args["prompt"]
 else:
     prompt = input("What would you like me to do?\nAnswer: ")
 
-# MAKE PROMPT BETTER
-if "not-better" not in args:
-    if "better" in args or yesno("Do you want GPT to make your prompt better?") == "y":
-        ask = "better" not in args or "ask-better" in args
-        prompt = make_prompt_better(prompt, ask)
+timestamp = int(time.time())
 
-# RUN CONVERSATION
-run_conversation(
-    prompt=prompt,
-    model=CONFIG["model"],
-    messages=messages,
-)
+if "versions" in args:
+    versions = args["versions"]
+    print(f"Creating {versions} versions...")
+else:
+    versions = 1
+
+if versions > 1:
+    if not os.path.isdir("versions"):
+        os.mkdir("versions")
+    shutil.copytree("code", f"versions/code_{timestamp}_orig")
+    recursive = False
+else:
+    recursive = True
+
+version_folders = []
+orig_messages = copy.deepcopy(messages)
+
+for version in range(1, versions+1):
+    # reset message history for every version
+    messages = copy.deepcopy(orig_messages)
+
+    if versions > 1:
+        print(f"\n## VERSION {version} (temp: {temp}) ##")
+
+    # MAKE PROMPT BETTER
+    version_loop = version > 1
+    prompt = maybe_make_prompt_better(prompt, args, version_loop)
+
+    if version != 1:
+        # randomize temperature for every version
+        temp = round( temp_orig + random.uniform(0, 0.3), 2 )
+
+        # always start with original version
+        shutil.copytree(f"versions/code_{timestamp}_orig", "code")
+
+    # RUN CONVERSATION
+    run_conversation(
+        prompt=prompt,
+        model=CONFIG["model"],
+        messages=messages,
+        recursive=recursive,
+        temp=temp,
+    )
+
+    if versions > 1:
+        version_folder = f"versions/code_{timestamp}_v{version}"
+        shutil.copytree("code", version_folder)
+        shutil.rmtree("code")
+        version_folders.append(version_folder)
+
+if versions > 1:
+    print("\n## ALL VERSIONS FINISHED ##")
+    print("You can find all versions here:")
+    for number, verfolder in enumerate(version_folders):
+        print(f"- Version {number+1}: {verfolder}")
