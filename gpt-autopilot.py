@@ -280,7 +280,10 @@ def make_prompt_better(prompt, ask=True):
         print("## Better prompt: ##\n" + better_prompt)
 
         if ask == False or yesno("Do you want to use this prompt?") == "y":
+            print("Using better prompt")
             prompt = better_prompt
+        else:
+            print("Using original prompt")
 
     return prompt
 
