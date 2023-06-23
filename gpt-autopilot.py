@@ -54,16 +54,25 @@ if not os.path.isdir("history"):
 def compact_commands(messages):
     for msg in messages:
         if msg["role"] == "function" and msg["name"] == "write_file":
-            msg["content"] = "Respond with file content"
+            msg["content"] = "Respond with file content. End with END_OF_OUTPUT"
     return messages
 
 def actually_write_file(filename, content):
     filename = safepath(filename)
 
-    print(f"Wrote to file code/{filename}...")
+    # detect partial file content response
+    if "END_OF_OUTPUT" not in content:
+        print(f"ERROR: Partial write response for code/{filename}...")
+        return "ERROR: No END_OF_OUTPUT detected"
 
-    parts = re.split("```.*?\n", content + "\n")
-    if len(parts) > 2:
+    # remove end of output marker
+    content = re.sub(r"END_OF_OUTPUT([\s]+)?\.?([\s]+)?$", "\n", content)
+
+    parts = re.split("```[\w]+?\n", content + "\n")
+    if len(parts) > 1:
+        if parts[0] != "":
+            print("ERROR: Unexpected text before code block")
+            return "ERROR: Unexpected text before code block"
         content = parts[1]
 
     # force newline in the end
@@ -80,6 +89,7 @@ def actually_write_file(filename, content):
     with open(f"code/{filename}", "w") as f:
         f.write(content)
 
+    print(f"Wrote to file code/{filename}...")
     return f"File {filename} written successfully"
 
 def ask_model_switch():
@@ -223,10 +233,11 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
             if mode == "WRITE_FILE":
                 user_message = actually_write_file(filename, message["content"])
 
-                mode = None
-                filename = None
-                function_call = "auto"
-                print_message = True
+                if "ERROR" not in user_message:
+                    mode = None
+                    filename = None
+                    function_call = "auto"
+                    print_message = True
 
                 messages = compact_commands(messages)
             else:

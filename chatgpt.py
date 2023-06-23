@@ -33,6 +33,12 @@ def send_message(
     # add user message to message list
     messages.append(message)
 
+    # redact old messages when encountering partial output
+    if "No END_OF_OUTPUT" in message["content"]:
+        print("## NOTICE: Partial output detected, dropping messages... ##")
+        messages[-2]["content"] = "<file content redacted>"
+        messages = redact_messages(messages)
+
     # save message history
     if conv_id is not None:
         with open(f"history/{conv_id}.json", "w") as f:

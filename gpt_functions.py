@@ -9,7 +9,7 @@ from helpers import yesno, safepath
 
 def write_file(filename):
     print(f"FUNCTION: Writing to file code/{filename}...")
-    return f"Please respond in your next response with the full content of the file {filename}. Respond only with the contents of the file, no explanations. Create a fully working, complete file with no limitations on file size."
+    return f"Please respond in your next response with the full content of the file {filename}. Respond only with the contents of the file, no explanations. Create a fully working, complete file with no limitations on file size. End with END_OF_OUTPUT on single line"
 
 def replace_text(find, replace, filename):
     filename = safepath(filename)
