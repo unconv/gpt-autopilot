@@ -37,8 +37,38 @@ def remove_hallucinations(messages):
                 continue
     return messages
 
+def unwrap_comments(content, tags):
+    for tag in tags:
+        # Remove HTML-style comments
+        content = re.sub(r"<!--([\s]+)?"+tag+r"([\s]+)?-->", tag, content, flags=re.DOTALL)
+
+        # Remove C-style comments
+        content = re.sub(r"/\*([\s]+)?"+tag+r"([\s]+)?\*/", tag, content, flags=re.DOTALL)
+
+        # Remove PHP-style comments
+        content = re.sub(r"//([\s]+)?"+tag+r"([\s]+)?$", tag, content, flags=re.MULTILINE)
+
+        # Remove Python-style comments
+        content = re.sub(r"#([\s]+)?"+tag+r"$", tag, content, flags=re.MULTILINE)
+    return content
+
+def strip_markdown(content):
+    content = content.strip()
+    if content[0:3] == "```":
+        content = re.sub(r"^\s*```[^\n]+\n", "", content)
+        content = re.sub(r"\n```\s*$", "", content)
+    return content
+
 def actually_write_file(filename, content):
     filename = safepath(filename)
+
+    # Sometimes ChatGPT makes the start and
+    # end tags comments, so we have to remove
+    # comment syntax around these
+    content = unwrap_comments(content, [
+        "START_OF_FILE_CONTENT",
+        "END_OF_FILE_CONTENT",
+    ])
 
     # detect partial file content response
     if "END_OF_FILE_CONTENT" not in content:
@@ -54,7 +84,8 @@ def actually_write_file(filename, content):
     content = parts[1]
     parts = content.split("END_OF_FILE_CONTENT")
     content = parts[0]
-    content = content.strip()
+
+    content = strip_markdown(content)
 
     # force newline in the end
     if content != "" and content[-1] != "\n":
