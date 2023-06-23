@@ -16,41 +16,6 @@ from config import get_config, save_config
 
 CONFIG = get_config()
 
-# GET API KEY
-openai.api_key = os.getenv("OPENAI_API_KEY")
-if openai.api_key in [None, ""]:
-    if "api_key" in CONFIG:
-        openai.api_key = CONFIG["api_key"]
-    else:
-        print("Put your OpenAI API key into the config.json file or OPENAI_API_KEY environment variable to skip this prompt.\n")
-        openai.api_key = input("Input OpenAI API key: ").strip()
-
-        if openai.api_key == "":
-            sys.exit(1)
-
-        save = yesno("Do you want to save this key to config.json?", ["y", "n"])
-        if save == "y":
-            CONFIG["api_key"] = openai.api_key
-            save_config(CONFIG)
-        print()
-
-# WARN IF THERE IS CODE ALREADY IN THE PROJECT
-if os.path.isdir("code") and len(os.listdir("code")) != 0:
-    answer = yesno("WARNING! There is already some code in the `code/` folder. GPT-AutoPilot may base the project on these files and has write access to them and might modify or delete them.\n\n" + gpt_functions.list_files("", False) + "\n\nDo you want to continue?", ["YES", "NO", "DELETE"])
-    if answer == "DELETE":
-        shutil.rmtree("code")
-        os.mkdir("code")
-    elif answer != "YES":
-        sys.exit(0)
-
-# CREATE CODE DIRECTORY
-if not os.path.isdir("code"):
-    os.mkdir("code")
-
-# CREATE HISTORY DIRECTORY
-if not os.path.isdir("history"):
-    os.mkdir("history")
-
 def compact_commands(messages):
     for msg in messages:
         if msg["role"] == "function" and msg["name"] == "write_file":
@@ -291,38 +256,100 @@ def make_prompt_better(prompt):
 
     return prompt
 
-conv_id = None
+def parse_arguments(argv):
+    arguments = {
+        "program_name": sys.argv.pop(0)
+    }
+
+    while sys.argv != []:
+        arg_name = sys.argv.pop(0)
+
+        # conversation id
+        if arg_name == "--conv":
+            if sys.argv == []:
+                print(f"ERROR: Missing argument for '{arg_name}'")
+                sys.exit(1)
+            arguments["conv"] = sys.argv.pop()
+        elif arg_name == "--prompt":
+            if sys.argv == []:
+                print(f"ERROR: Missing argument for '{arg_name}'")
+                sys.exit(1)
+            arguments["prompt"] = sys.argv.pop()
+        else:
+            print(f"ERROR: Invalid option '{arg_name}'")
+            sys.exit(1)
+
+    return arguments
+
+def load_message_history(arguments):
+    if "conv" in arguments:
+        history_file = arguments["conv"]
+        try:
+            with open(f"history/{history_file}.json", "r") as f:
+                messages = json.load(f)
+            print(f"Loaded message history from {history_file}.json")
+        except:
+            print(f"ERROR: History file {history_file}.json not found")
+            sys.exit(1)
+    else:
+        messages = []
+
+    return messages
+
+def get_api_key():
+    api_key = os.getenv("OPENAI_API_KEY")
+    if api_key in [None, ""]:
+        if "api_key" in CONFIG:
+            api_key = CONFIG["api_key"]
+        else:
+            print("Put your OpenAI API key into the config.json file or OPENAI_API_KEY environment variable to skip this prompt.\n")
+            api_key = input("Input OpenAI API key: ").strip()
+
+            if api_key == "":
+                sys.exit(1)
+
+            save = yesno("Do you want to save this key to config.json?", ["y", "n"])
+            if save == "y":
+                CONFIG["api_key"] = api_key
+                save_config(CONFIG)
+            print()
+    return api_key
+
+def warn_existing_code():
+    if os.path.isdir("code") and len(os.listdir("code")) != 0:
+        answer = yesno("WARNING! There is already some code in the `code/` folder. GPT-AutoPilot may base the project on these files and has write access to them and might modify or delete them.\n\n" + gpt_functions.list_files("", False) + "\n\nDo you want to continue?", ["YES", "NO", "DELETE"])
+        if answer == "DELETE":
+            shutil.rmtree("code")
+            os.mkdir("code")
+        elif answer != "YES":
+            sys.exit(0)
+
+def create_directories():
+    dirs = ["code", "history"]
+    for directory in dirs:
+        if not os.path.isdir(directory):
+            os.mkdir(directory)
 
 # LOAD COMMAND LINE ARGUMENTS
-program_name = sys.argv.pop(0)
-while sys.argv != []:
-    arg_name = sys.argv.pop(0)
-
-    # conversation id
-    if arg_name == "--conv":
-        if sys.argv == []:
-            print(f"ERROR: Missing argument for '{arg_name}'")
-            sys.exit(1)
-        conv_id = sys.argv.pop()
-    else:
-        print(f"ERROR: Invalid option '{arg_name}'")
-        sys.exit(1)
+args = parse_arguments(sys.argv)
 
 # LOAD MESSAGE HISTORY
-if conv_id is not None:
-    history_file = conv_id
-    try:
-        with open(f"history/{history_file}.json", "r") as f:
-            messages = json.load(f)
-        print(f"Loaded message history from {history_file}.json")
-    except:
-        print(f"ERROR: History file {history_file}.json not found")
-        sys.exit(1)
-else:
-    messages = []
+messages = load_message_history(args)
+
+# GET API KEY
+openai.api_key = get_api_key()
+
+# WARN IF THERE IS CODE ALREADY IN THE PROJECT
+warn_existing_code()
+
+# CREATE DATA DIRECTORIES
+create_directories()
 
 # ASK FOR PROMPT
-prompt = input("What would you like me to do?\nAnswer: ")
+if "prompt" in args:
+    prompt = args["prompt"]
+else:
+    prompt = input("What would you like me to do?\nAnswer: ")
 
 # MAKE PROMPT BETTER
 if yesno("Do you want GPT to make your prompt better?") == "y":
