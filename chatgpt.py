@@ -44,6 +44,19 @@ def send_message(
         with open(f"history/{conv_id}.json", "w") as f:
             f.write(json.dumps(messages, indent=4))
 
+    # gpt-3.5 is not responsible enough for these functions
+    gpt3_disallow = [
+        "create_dir",
+        "move_file",
+        "copy_file",
+        "replace_text",
+    ]
+
+    if "gpt-4" not in model:
+        for definition in gpt_functions.definitions:
+            if definition["name"] in gpt3_disallow:
+                gpt_functions.definitions.remove(definition)
+
     try:
         # send prompt to chatgpt
         response = openai.ChatCompletion.create(
