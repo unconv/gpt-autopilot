@@ -25,6 +25,18 @@ def compact_commands(messages):
             msg["content"] = "Respond with file content. End with END_OF_OUTPUT"
     return messages
 
+def remove_hallucinations(messages):
+    for msg in messages:
+        if msg["role"] == "function" and msg["name"] == "write_file":
+            try:
+                args = json.loads(msg["function_call"]["arguments"])
+                if "content" in args:
+                    args.pop("content")
+                    msg["function_call"]["arguments"] = json.dumps(args)
+            except:
+                continue
+    return messages
+
 def actually_write_file(filename, content):
     filename = safepath(filename)
 
@@ -172,6 +184,8 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
                     filename = arguments["filename"]
                     function_call = "none"
                     print_message = False
+
+            messages = remove_hallucinations(messages)
 
             # if function returns PROJECT_FINISHED, exit
             if function_response == "PROJECT_FINISHED":
