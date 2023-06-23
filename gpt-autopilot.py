@@ -45,15 +45,18 @@ def actually_write_file(filename, content):
         print(f"ERROR: Partial write response for code/{filename}...")
         return "ERROR: No END_OF_OUTPUT detected"
 
-    # remove end of output marker
-    content = re.sub(r"END_OF_OUTPUT([\s]+)?\.?([\s]+)?$", "\n", content)
-
     parts = re.split("```[\w]+?\n", content + "\n")
     if len(parts) > 1:
         if parts[0] != "":
             print("ERROR: Unexpected text before code block")
             return "ERROR: Unexpected text before code block"
         content = parts[1]
+
+    parts = content.split("END_OF_OUTPUT")
+    content = parts[0]
+
+    # trim whitespace and ticks
+    content = content.strip().strip("`")
 
     # force newline in the end
     if content[-1] != "\n":
