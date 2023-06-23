@@ -66,7 +66,7 @@ def ask_model_switch():
         sys.exit(1)
 
 # MAIN FUNCTION
-def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None):
+def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None, temp = 1.0):
     if conv_id is None:
         conv_id = str(sum(1 for entry in os.scandir("history"))).zfill(4)
 
@@ -93,6 +93,7 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
             messages=messages,
             model=model,
             conv_id=conv_id,
+            temp=temp,
         )
     except Exception as e:
         if "The model: `gpt-4-0613` does not exist" in str(e):
@@ -196,6 +197,7 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
                 function_call=function_call,
                 print_message=print_message,
                 conv_id=conv_id,
+                temp=temp,
             )
         else:
             if mode == "WRITE_FILE":
@@ -228,6 +230,7 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
                 model=model,
                 conv_id=conv_id,
                 print_message=print_message,
+                temp=temp,
             )
 
         # save last response for the while loop
@@ -280,6 +283,12 @@ def parse_arguments(argv):
                 print(f"ERROR: Missing argument for '{arg_name}'")
                 sys.exit(1)
             arguments["prompt"] = sys.argv.pop(0)
+        # temperature
+        elif arg_name == "--temp":
+            if sys.argv == []:
+                print(f"ERROR: Missing argument for '{arg_name}'")
+                sys.exit(1)
+            arguments["temp"] = float(sys.argv.pop(0))
         # make prompt better with GPT
         elif arg_name == "--better":
             arguments["better"] = True
@@ -345,6 +354,11 @@ def create_directories():
     for directory in dirs:
         if not os.path.isdir(directory):
             os.mkdir(directory)
+
+def get_temp(arguments):
+    if "temp" in arguments:
+        return arguments["temp"]
+    return 1.0
 
 # LOAD COMMAND LINE ARGUMENTS
 args = parse_arguments(sys.argv)

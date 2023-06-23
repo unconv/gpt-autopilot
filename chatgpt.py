@@ -27,6 +27,7 @@ def send_message(
     retries = 0,
     print_message = True,
     conv_id = None,
+    temp = 1.0,
 ):
     print("Waiting for ChatGPT...")
 
@@ -64,6 +65,7 @@ def send_message(
             messages=messages,
             functions=gpt_functions.definitions,
             function_call=function_call,
+            temperature=temp,
         )
     except openai.error.AuthenticationError:
         print("AuthenticationError: Check your API-key")
@@ -93,6 +95,7 @@ def send_message(
             function_call=function_call,
             conv_id=conv_id,
             print_message=print_message,
+            temp=temp,
         )
     except openai.error.PermissionError:
         raise
@@ -115,6 +118,7 @@ def send_message(
             retries=retries+1,
             conv_id=conv_id,
             print_message=print_message,
+            temp=temp,
         )
 
     # add response to message list
