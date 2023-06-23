@@ -35,7 +35,7 @@ def send_message(
     messages.append(message)
 
     # redact old messages when encountering partial output
-    if "No END_OF_OUTPUT" in message["content"]:
+    if "No END_OF_FILE_CONTENT" in message["content"]:
         print("## NOTICE: Partial output detected, dropping messages... ##")
         messages[-2]["content"] = "<file content redacted>"
         messages = redact_messages(messages)

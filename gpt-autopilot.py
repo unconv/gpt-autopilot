@@ -22,7 +22,7 @@ CONFIG = get_config()
 def compact_commands(messages):
     for msg in messages:
         if msg["role"] == "function" and msg["name"] == "write_file":
-            msg["content"] = "Respond with file content. End with END_OF_OUTPUT"
+            msg["content"] = "Respond with file content. End with END_OF_FILE_CONTENT"
     return messages
 
 def remove_hallucinations(messages):
@@ -41,22 +41,20 @@ def actually_write_file(filename, content):
     filename = safepath(filename)
 
     # detect partial file content response
-    if "END_OF_OUTPUT" not in content:
+    if "END_OF_FILE_CONTENT" not in content:
         print(f"ERROR: Partial write response for code/{filename}...")
-        return "ERROR: No END_OF_OUTPUT detected"
+        return "ERROR: No END_OF_FILE_CONTENT detected"
 
-    parts = re.split("```[\w]+?\n", content + "\n")
-    if len(parts) > 1:
-        if parts[0] != "":
-            print("ERROR: Unexpected text before code block")
-            return "ERROR: Unexpected text before code block"
-        content = parts[1]
+    # detect wrongly formatted response
+    if "START_OF_FILE_CONTENT" not in content:
+        print(f"ERROR: Invalid content format for code/{filename}...")
+        return "ERROR: No START_OF_FILE_CONTENT detected"
 
-    parts = content.split("END_OF_OUTPUT")
+    parts = content.split("START_OF_FILE_CONTENT")
+    content = parts[1]
+    parts = content.split("END_OF_FILE_CONTENT")
     content = parts[0]
-
-    # trim whitespace and ticks
-    content = content.strip().strip("`")
+    content = content.strip()
 
     # force newline in the end
     if content != "" and content[-1] != "\n":
