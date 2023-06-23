@@ -2,8 +2,20 @@ import openai
 import time
 import json
 import sys
+import copy
 
 import gpt_functions
+
+def redact_messages(messages):
+    messages_redact = copy.deepcopy(messages)
+    for msg in messages_redact:
+        if msg["role"] == "assistant" and msg["content"] not in [None, "<message redacted>"]:
+            msg["content"] = "<message redacted>"
+            break
+        if msg["role"] == "function" and msg["name"] == "read_file" and msg["content"] not in [None, "<file contents redacted>"]:
+            msg["content"] = "<file contents redacted>"
+            break
+    return messages_redact
 
 # ChatGPT API Function
 
@@ -15,16 +27,36 @@ def send_message(
     retries = 0,
     print_message = True,
     conv_id = None,
+    temp = 1.0,
 ):
     print("Waiting for ChatGPT...")
 
     # add user message to message list
     messages.append(message)
 
+    # redact old messages when encountering partial output
+    if "No END_OF_FILE_CONTENT" in message["content"]:
+        print("## NOTICE: Partial output detected, dropping messages... ##")
+        messages[-2]["content"] = "<file content redacted>"
+        messages = redact_messages(messages)
+
     # save message history
     if conv_id is not None:
         with open(f"history/{conv_id}.json", "w") as f:
             f.write(json.dumps(messages, indent=4))
+
+    # gpt-3.5 is not responsible enough for these functions
+    gpt3_disallow = [
+        "create_dir",
+        "move_file",
+        "copy_file",
+        "replace_text",
+    ]
+
+    if "gpt-4" not in model:
+        for definition in gpt_functions.definitions:
+            if definition["name"] in gpt3_disallow:
+                gpt_functions.definitions.remove(definition)
 
     try:
         # send prompt to chatgpt
@@ -33,6 +65,7 @@ def send_message(
             messages=messages,
             functions=gpt_functions.definitions,
             function_call=function_call,
+            temperature=temp,
         )
     except openai.error.AuthenticationError:
         print("AuthenticationError: Check your API-key")
@@ -41,17 +74,19 @@ def send_message(
         if "maximum context length" in str(e):
             print("## NOTICE: Context limit reached, dropping old messages... ##")
 
+            # remove last message
+            messages.pop()
+
             # redact first unredacted assistant message
-            redacted = False
-            for msg in messages:
-                if msg["role"] == "assistant" and msg["content"] not in [None, "<message redacted>"]:
-                    msg["content"] = "<message redacted>"
-                    redacted = True
-                    break
+            redacted_messages = redact_messages(messages)
 
             # show error if no message could be redacted
-            if redacted == False:
+            if redacted_messages == messages:
                 raise
+
+            messages = redacted_messages
+        else:
+            raise
 
         return send_message(
             message=message,
@@ -60,6 +95,7 @@ def send_message(
             function_call=function_call,
             conv_id=conv_id,
             print_message=print_message,
+            temp=temp,
         )
     except openai.error.PermissionError:
         raise
@@ -82,6 +118,7 @@ def send_message(
             retries=retries+1,
             conv_id=conv_id,
             print_message=print_message,
+            temp=temp,
         )
 
     # add response to message list
