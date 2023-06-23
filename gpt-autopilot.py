@@ -233,7 +233,7 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
         # save last response for the while loop
         message = messages[-1]
 
-def make_prompt_better(prompt):
+def make_prompt_better(prompt, ask=True):
     print("Making prompt better...")
 
     try:
@@ -242,19 +242,23 @@ def make_prompt_better(prompt):
         better_prompt = prompt
         if "The model: `gpt-4-0613` does not exist" in str(e):
             ask_model_switch()
-            return make_prompt_better(prompt)
+            return make_prompt_better(prompt, ask)
         elif yesno("Unable to make prompt better. Try again?") == "y":
-            return make_prompt_better(prompt)
+            return make_prompt_better(prompt, ask)
         else:
             return prompt
 
     if prompt != better_prompt:
         print("## Better prompt: ##\n" + better_prompt)
 
-        if yesno("Do you want to use this prompt?") == "y":
+        if ask == False or yesno("Do you want to use this prompt?") == "y":
             prompt = better_prompt
 
     return prompt
+
+def reset_code_folder():
+    shutil.rmtree("code")
+    os.mkdir("code")
 
 def parse_arguments(argv):
     arguments = {
@@ -269,12 +273,20 @@ def parse_arguments(argv):
             if sys.argv == []:
                 print(f"ERROR: Missing argument for '{arg_name}'")
                 sys.exit(1)
-            arguments["conv"] = sys.argv.pop()
+            arguments["conv"] = sys.argv.pop(0)
         elif arg_name == "--prompt":
             if sys.argv == []:
                 print(f"ERROR: Missing argument for '{arg_name}'")
                 sys.exit(1)
-            arguments["prompt"] = sys.argv.pop()
+            arguments["prompt"] = sys.argv.pop(0)
+        elif arg_name == "--better":
+            arguments["better"] = True
+        elif arg_name == "--not-better":
+            arguments["not-better"] = False
+        elif arg_name == "--ask-better":
+            arguments["ask-better"] = False
+        elif arg_name == "--delete":
+            reset_code_folder()
         else:
             print(f"ERROR: Invalid option '{arg_name}'")
             sys.exit(1)
@@ -319,8 +331,7 @@ def warn_existing_code():
     if os.path.isdir("code") and len(os.listdir("code")) != 0:
         answer = yesno("WARNING! There is already some code in the `code/` folder. GPT-AutoPilot may base the project on these files and has write access to them and might modify or delete them.\n\n" + gpt_functions.list_files("", False) + "\n\nDo you want to continue?", ["YES", "NO", "DELETE"])
         if answer == "DELETE":
-            shutil.rmtree("code")
-            os.mkdir("code")
+            reset_code_folder()
         elif answer != "YES":
             sys.exit(0)
 
@@ -352,8 +363,10 @@ else:
     prompt = input("What would you like me to do?\nAnswer: ")
 
 # MAKE PROMPT BETTER
-if yesno("Do you want GPT to make your prompt better?") == "y":
-    prompt = make_prompt_better(prompt)
+if "not-better" not in args:
+    if "better" in args or yesno("Do you want GPT to make your prompt better?") == "y":
+        ask = "better" not in args or "ask-better" in args
+        prompt = make_prompt_better(prompt, ask)
 
 # RUN CONVERSATION
 run_conversation(
