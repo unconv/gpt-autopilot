@@ -418,6 +418,78 @@ def maybe_make_prompt_better(prompt, args, version_loop = False):
             prompt = make_prompt_better(prompt, ask)
     return prompt
 
+def run_versions(prompt, args, messages, temp):
+    timestamp = int(time.time())
+
+    if "versions" in args:
+        versions = args["versions"]
+        print(f"Creating {versions} versions...")
+    else:
+        versions = 1
+
+    if versions > 1:
+        if not os.path.isdir("versions"):
+            os.mkdir("versions")
+        shutil.copytree("code", f"versions/code_{timestamp}_orig")
+        recursive = False
+    else:
+        recursive = True
+
+    version_folders = []
+    orig_messages = copy.deepcopy(messages)
+
+    for version in range(1, versions+1):
+        # reset message history for every version
+        messages = copy.deepcopy(orig_messages)
+
+        if versions > 1:
+            print(f"\n## VERSION {version} (temp: {temp}) ##")
+
+        # MAKE PROMPT BETTER
+        version_loop = version > 1
+        prompt = maybe_make_prompt_better(prompt, args, version_loop)
+
+        if version != 1:
+            # randomize temperature for every version
+            temp = round( temp_orig + random.uniform(-0.1, 0.1), 2 )
+
+            # always start with original version
+            shutil.copytree(f"versions/code_{timestamp}_orig", "code")
+
+        # RUN CONVERSATION
+        run_conversation(
+            prompt=prompt,
+            model=CONFIG["model"],
+            messages=messages,
+            recursive=recursive,
+            temp=temp,
+        )
+
+        if versions > 1:
+            version_folder = f"versions/code_{timestamp}_v{version}"
+            shutil.copytree("code", version_folder)
+            shutil.rmtree("code")
+            version_folders.append(version_folder)
+
+    if versions > 1:
+        print("\n## ALL VERSIONS FINISHED ##")
+        print("You can find all versions here:")
+        for number, verfolder in enumerate(version_folders):
+            print(f"- Version {number+1}: {verfolder}")
+
+        next_up = 0
+        while int(next_up) not in range(1, versions+1):
+            next_up = input(f"\nIf you want to continue, please input version number to continue from (1-{versions}) (or 'exit' to quit): ")
+
+            if str(next_up) in ["exit", "quit", "e", "q"]:
+                sys.exit(0)
+
+        # move selected version to code folder and start over
+        shutil.copytree(version_folders[int(next_up)-1], "code")
+
+        prompt = input("What would you like to do next?\nAnswer: ")
+        run_versions(prompt, args, messages, temp)
+
 # LOAD COMMAND LINE ARGUMENTS
 args = parse_arguments(sys.argv)
 
@@ -443,60 +515,4 @@ if "prompt" in args:
 else:
     prompt = input("What would you like me to do?\nAnswer: ")
 
-timestamp = int(time.time())
-
-if "versions" in args:
-    versions = args["versions"]
-    print(f"Creating {versions} versions...")
-else:
-    versions = 1
-
-if versions > 1:
-    if not os.path.isdir("versions"):
-        os.mkdir("versions")
-    shutil.copytree("code", f"versions/code_{timestamp}_orig")
-    recursive = False
-else:
-    recursive = True
-
-version_folders = []
-orig_messages = copy.deepcopy(messages)
-
-for version in range(1, versions+1):
-    # reset message history for every version
-    messages = copy.deepcopy(orig_messages)
-
-    if versions > 1:
-        print(f"\n## VERSION {version} (temp: {temp}) ##")
-
-    # MAKE PROMPT BETTER
-    version_loop = version > 1
-    prompt = maybe_make_prompt_better(prompt, args, version_loop)
-
-    if version != 1:
-        # randomize temperature for every version
-        temp = round( temp_orig + random.uniform(0, 0.3), 2 )
-
-        # always start with original version
-        shutil.copytree(f"versions/code_{timestamp}_orig", "code")
-
-    # RUN CONVERSATION
-    run_conversation(
-        prompt=prompt,
-        model=CONFIG["model"],
-        messages=messages,
-        recursive=recursive,
-        temp=temp,
-    )
-
-    if versions > 1:
-        version_folder = f"versions/code_{timestamp}_v{version}"
-        shutil.copytree("code", version_folder)
-        shutil.rmtree("code")
-        version_folders.append(version_folder)
-
-if versions > 1:
-    print("\n## ALL VERSIONS FINISHED ##")
-    print("You can find all versions here:")
-    for number, verfolder in enumerate(version_folders):
-        print(f"- Version {number+1}: {verfolder}")
+run_versions(prompt, args, messages, temp)
