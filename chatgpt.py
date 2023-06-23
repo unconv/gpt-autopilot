@@ -2,6 +2,7 @@ import openai
 import time
 import json
 import sys
+import os
 import copy
 
 import gpt_functions
@@ -42,7 +43,8 @@ def send_message(
 
     # save message history
     if conv_id is not None:
-        with open(f"history/{conv_id}.json", "w") as f:
+        history_file = os.path.join("history", f"{conv_id}.json")
+        with open(history_file, "w") as f:
             f.write(json.dumps(messages, indent=4))
 
     # gpt-3.5 is not responsible enough for these functions
@@ -66,6 +68,7 @@ def send_message(
             functions=gpt_functions.definitions,
             function_call=function_call,
             temperature=temp,
+            request_timeout=30,
         )
     except openai.error.AuthenticationError:
         print("AuthenticationError: Check your API-key")

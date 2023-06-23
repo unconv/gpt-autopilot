@@ -2,6 +2,9 @@
 import sys
 import os
 
+def codedir(filename):
+    return os.path.join("code", filename)
+
 def yesno(prompt, answers = ["y", "n"]):
     answer = ""
     while answer not in answers:
@@ -17,7 +20,7 @@ def safepath(path):
     file = os.path.abspath(os.path.join(base, path))
 
     if os.path.commonpath([base, file]) != base:
-        print(f"ERROR: Tried to access file '{file}' outside of code/ folder!")
+        print(f"ERROR: Tried to access file '{file}' outside of code folder!")
         sys.exit(1)
 
     return path

@@ -2,17 +2,21 @@
 
 A ChatGPT API powered Python script that can create multi-file applications in any programming language (or any plaintext-based content for that matter). Just tell it what you want to build, and it will build it and ask you clarifying questions along the way.
 
-GPT-AutoPilot uses an iterative process, so after it has accomplished the task, it will ask you if you need some modifications. You can also run the script with an existing project in the `code/` folder and it will make modifications to it based on your prompt. **Note that the AI has the ability to delete and modify files, so have a backup**
+GPT-AutoPilot uses an iterative process, so after it has accomplished the task, it will ask you if you need some modifications. You can also run the script with an existing project in the `code` folder and it will make modifications to it based on your prompt. **Note that the AI has the ability to delete and modify files, so have a backup**
 
-## How to use
+# Usage
 
-1\. Export your [OpenAI API key](https://platform.openai.com/account/api-keys) as `OPENAI_API_KEY` environment variable or put it in the `config.json` file (see `config.sample.json`)
+GPT-AutoPilot works on both Linux and Windows (and probably macOS) and it has standalone packages, that don't need the Python interpreter.
+
+## Linux
+
+1\. Export your [OpenAI API key](https://platform.openai.com/account/api-keys) as `OPENAI_API_KEY` environment variable or put it in the `config.json` file (see `config.sample.json`). You can also run the program directly, and it will ask you for your API key.
 
 ```console
 $ export OPENAI_API_KEY=YOUR_API_KEY
 ```
 
-2\. Install the lastest version of the `openai` python package
+2\. Install the **latest** version of the `openai` python package
 ```console
 $ pip install --upgrade openai
 ```
@@ -25,9 +29,40 @@ $ ./gpt-autopilot.py
 
 4\. For example, tell it to "create a JavaScript inventory application for the browser with a form that can add products with a name, quantity and price. Save the products to localstorage and list them in a table in the application. Calculate the total price of the products in the inventory. Add CSS styles to make the application look professional. Add a Inventory System header and hide the product add form when the page is printed."
 
-The files will be written in the `code/` directory
+## Windows: Standalone Package
 
-The default model is `gpt-4-0613` and it works best, but you can still use the `gpt-3.5-turbo-16k-0613` or `gpt-3.5-turbo-0613` model. Just note that it is not as capable. To change, add `"model": "gpt-3.5-turbo-16k-0613"` to the `config.json` file. Make sure to use the 0613 model since only that supports function calling.
+On Windows, you can download the standalone package, unzip it and run `gpt-autopilot.exe`. It will ask you for your API key.
+
+## Windows: Manual Installation
+
+You can also [download](https://github.com/unconv/gpt-autopilot/archive/refs/heads/master.zip) or clone the repository and install it manually. You need [Python](https://www.python.org/) to be installed on your machine.
+
+After you have downloaded and unzipped, or cloned the repository, go into the `gpt-autopilot` folder and do the following:
+
+1\. Save your [OpenAI API key](https://platform.openai.com/account/api-keys) in the `OPENAI_API_KEY` environment variable or put it in the `config.json` file (see `config.sample.json`). You can also run the program directly, and it will ask you for your API key.
+
+```console
+> set OPENAI_API_KEY=YOUR_API_KEY
+```
+
+2\. Install the **latest** version of the `openai` python package
+```console
+> pip install --upgrade openai
+```
+
+3\. Run the script. It will ask you for a prompt.
+
+```console
+> python gpt-autopilot.py
+```
+
+## Where does the output go?
+
+The files will be written to the `code` directory, relative to the path you ran the program from. If you use the `--versions` flag, the files will be written to the `versions` directory.
+
+## Does it work with GPT-3.5?
+
+The default model is `gpt-4-0613` and it works best, but you can still use the `gpt-3.5-turbo-16k-0613` or `gpt-3.5-turbo-0613` model. Just note that they are not as capable as GPT-4. To change, add `"model": "gpt-3.5-turbo-16k-0613"` to the `config.json` file. Make sure to use the 0613 model since only that supports function calling.
 
 ## Multi-version branching
 

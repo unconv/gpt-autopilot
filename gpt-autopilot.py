@@ -12,12 +12,12 @@ import random
 import copy
 
 import gpt_functions
-from helpers import yesno, safepath
+from helpers import yesno, safepath, codedir
 import chatgpt
 import betterprompter
 from config import get_config, save_config
 
-VERSION = "0.1.0"
+VERSION = "0.1.1"
 CONFIG = get_config()
 
 def compact_commands(messages):
@@ -92,14 +92,16 @@ def actually_write_file(filename, content):
     if content != "" and content[-1] != "\n":
         content = content + "\n"
 
+    fullpath = codedir(filename)
+
     # Create parent directories if they don't exist
-    parent_dir = os.path.dirname(f"code/{filename}")
+    parent_dir = os.path.dirname(fullpath)
     os.makedirs(parent_dir, exist_ok=True)
 
-    if os.path.isdir(f"code/{filename}"):
+    if os.path.isdir(fullpath):
         return "ERROR: There is already a directory with this name"
 
-    with open(f"code/{filename}", "w") as f:
+    with open(fullpath, "w") as f:
         f.write(content)
 
     print(f"Wrote to file code/{filename}...")
