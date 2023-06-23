@@ -1,6 +1,6 @@
 import openai
 
-def make_better(prompt, model):
+def make_better(prompt, model, temp = 1.0):
     if len(prompt.split(" ")) < 80:
         words = "an 80 word"
     else:
@@ -20,6 +20,7 @@ def make_better(prompt, model):
     response = openai.ChatCompletion.create(
         model=model,
         messages=messages,
+        temperature=temp,
     )
 
     return response["choices"][0]["message"]["content"]

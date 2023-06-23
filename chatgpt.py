@@ -28,6 +28,7 @@ def send_message(
     retries = 0,
     print_message = True,
     conv_id = None,
+    temp = 1.0,
 ):
     print("Waiting for ChatGPT...")
 
@@ -35,7 +36,7 @@ def send_message(
     messages.append(message)
 
     # redact old messages when encountering partial output
-    if "No END_OF_OUTPUT" in message["content"]:
+    if "No END_OF_FILE_CONTENT" in message["content"]:
         print("## NOTICE: Partial output detected, dropping messages... ##")
         messages[-2]["content"] = "<file content redacted>"
         messages = redact_messages(messages)
@@ -66,6 +67,7 @@ def send_message(
             messages=messages,
             functions=gpt_functions.definitions,
             function_call=function_call,
+            temperature=temp,
         )
     except openai.error.AuthenticationError:
         print("AuthenticationError: Check your API-key")
@@ -95,6 +97,7 @@ def send_message(
             function_call=function_call,
             conv_id=conv_id,
             print_message=print_message,
+            temp=temp,
         )
     except openai.error.PermissionError:
         raise
@@ -117,6 +120,7 @@ def send_message(
             retries=retries+1,
             conv_id=conv_id,
             print_message=print_message,
+            temp=temp,
         )
 
     # add response to message list

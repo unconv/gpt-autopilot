@@ -7,9 +7,9 @@ from helpers import yesno, safepath, codedir
 
 # Implementation of the functions given to ChatGPT
 
-def write_file(filename):
+def write_file(filename, content = ""):
     print(f"FUNCTION: Writing to file code/{filename}...")
-    return f"Please respond in your next response with the full content of the file {filename}. Respond only with the contents of the file, no explanations. Create a fully working, complete file with no limitations on file size. End with END_OF_OUTPUT on single line"
+    return f"Please respond in your next response with the full content of the file {filename}. Respond only with the contents of the file, no explanations. Create a fully working, complete file with no limitations on file size. Put file content between lines START_OF_FILE_CONTENT and END_OF_FILE_CONTENT"
 
 def replace_text(find, replace, filename):
     filename = safepath(filename)
