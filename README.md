@@ -27,7 +27,7 @@ $ ./gpt-autopilot.py [--conv CONVERSATION_ID]
 
 The files will be written in the `code/` directory
 
-The default model is `gpt-4-0613` and it works best, but you can still use the `gpt-3.5-turbo-0613` model. Just note that it is not as capable. To change, add `"model": "gpt-3.5-turbo-0613"` to the `config.json` file.
+The default model is `gpt-4-0613` and it works best, but you can still use the `gpt-3.5-turbo-16k-0613` or `gpt-3.5-turbo-0613` model. Just note that it is not as capable. To change, add `"model": "gpt-3.5-turbo-16k-0613"` to the `config.json` file. Make sure to use the 0613 model since only that supports function calling.
 
 ## System Message
 
