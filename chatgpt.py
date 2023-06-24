@@ -109,6 +109,10 @@ def send_message(
         )
     except openai.error.PermissionError:
         raise
+    except TypeError:
+        raise
+    except NameError:
+        raise
     except:
         if retries >= 4:
             raise
