@@ -24,8 +24,8 @@ def replace_text(find, replace, filename, count = -1):
     with open(codedir(filename), "w") as f:
         new_text = file_content.replace(find, replace, count)
         if new_text == file_content:
-            print("ERROR: Did not find text to replace")
-            return "ERROR: Did not find text to repalce"
+            print("ERROR:    Did not find text to replace")
+            return "ERROR: Did not find text to replace"
         f.write(new_text)
 
     return "Text replaced successfully"
@@ -48,7 +48,7 @@ def read_file(filename):
 
     print(f"FUNCTION: Reading file {codedir(filename)}...")
     if not os.path.exists(codedir(filename)):
-        print(f"File {filename} does not exist")
+        print(f"ERROR:    File {filename} does not exist")
         return f"File {filename} does not exist"
     with open(codedir(filename), "r") as f:
         content = f.read()
@@ -109,7 +109,7 @@ def delete_file(filename):
     print(f"FUNCTION: Deleting file {path}")
 
     if not os.path.exists(path):
-        print(f"File {filename} does not exist")
+        print(f"ERROR:    File {filename} does not exist")
         return f"ERROR: File {filename} does not exist"
 
     try:
@@ -148,28 +148,35 @@ def list_files(list = "", print_output = True):
     # Remove code folder from the beginning of file paths
     files = [file_path.replace("code/", "", 1).replace("code\\", "", 1) for file_path in files]
 
-    if print_output: print(f"FUNCTION: Files in code directory:\n{files}")
+    if print_output: print(f"FUNCTION: Listing in code directory")
     return f"The following files are currently in the project directory:\n{files}"
 
 def ask_clarification(question):
-    answer = input(f"## ChatGPT Asks a Question ##\n```{question}```\nAnswer: ")
+    if "\n" in question:
+        answer = input(f"\nGPT:\n{question}\n\nYou:\n")
+    else:
+        answer = input(f"\nGPT: {question}\nYou: ")
+    print()
     return answer
 
 def run_cmd(base_dir, command, reason):
     base_dir = safepath(base_dir)
     base_dir = base_dir.strip("/").strip("\\")
-    print("FUNCTION: Run a command")
-    print("## ChatGPT wants to run a command! ##")
+    print("GPT: I want to run the following command:")
 
     the_dir = os.path.join("code", base_dir)
     command = "cd " + the_dir + "; " + command
-    print(f"Command: `{command}`")
-    print(f"Reason: `{reason}`")
+    print("------------------------------")
+    print(f"{command}")
+    print("------------------------------")
+    print(reason)
+    print()
 
     answer = yesno(
         "Do you want to run this command?",
         ["YES", "NO"]
     )
+    print()
 
     if answer == "YES":
         result = subprocess.run(command, shell=True, capture_output=True, text=True)

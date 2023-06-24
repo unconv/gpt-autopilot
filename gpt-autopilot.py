@@ -74,12 +74,12 @@ def actually_write_file(filename, content):
 
     # detect partial file content response
     if "END_OF_FILE_CONTENT" not in content:
-        print(f"ERROR: Partial write response for code/{filename}...")
+        print(f"ERROR:    Partial write response for code/{filename}...")
         return "ERROR: No END_OF_FILE_CONTENT detected"
 
     # detect wrongly formatted response
     if "START_OF_FILE_CONTENT" not in content:
-        print(f"ERROR: Invalid content format for code/{filename}...")
+        print(f"ERROR:    Invalid content format for code/{filename}...")
         return "ERROR: No START_OF_FILE_CONTENT detected"
 
     parts = content.split("START_OF_FILE_CONTENT")
@@ -105,7 +105,7 @@ def actually_write_file(filename, content):
     with open(fullpath, "w") as f:
         f.write(content)
 
-    print(f"Wrote to file code/{filename}...")
+    print(f"DONE:     Wrote to file code/{filename}...")
     return f"File {filename} written successfully"
 
 def print_task_finished(model):
@@ -192,27 +192,28 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
                 try:
                     # gpt-3.5 sometimes uses backticks
                     # instead of double quotes in JSON value
-                    print("ERROR: Invalid JSON arguments. Fixing...")
+                    print("ERROR:    Invalid JSON arguments. Fixing...")
                     arguments_fixed = arguments_plain.replace("`", '"')
                     arguments = json.loads(arguments_fixed)
                 except:
                     try:
                         # gpt-3.5 sometimes omits single quotes
                         # from around keys
-                        print("ERROR: Invalid JSON arguments. Fixing again...")
+                        print("ERROR:    Invalid JSON arguments. Fixing again...")
                         arguments_fixed = re.sub(r'(\b\w+\b)(?=\s*:)', r'"\1"')
                         arguments = json.loads(arguments_fixed)
                     except:
                         try:
                             # gpt-3.5 sometimes uses single quotes
                             # around keys, instead of double quotes
-                            print("ERROR: Invalid JSON arguments. Fixing third time...")
+                            print("ERROR:    Invalid JSON arguments. Fixing third time...")
                             arguments_fixed = re.sub(r"'(\b\w+\b)'(?=\s*:)", r'"\1"')
                             arguments = json.loads(arguments_fixed)
                         except:
-                            print("ERROR PARSING ARGUMENTS:\n---\n")
-                            print(arguments_plain)
-                            print("\n---\n")
+                            print("ERROR:    Failed to parse function arguments")
+                            #print("ERROR PARSING ARGUMENTS:\n---\n")
+                            #print(arguments_plain)
+                            #print("\n---\n")
 
                             if function_name == "replace_text":
                                 function_response = "ERROR! Please try to replace a shorter text or try another method"
@@ -227,7 +228,7 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
                     except TypeError:
                         function_response = "ERROR: Invalid function parameters"
                 else:
-                    print(f"NOTICE: GPT called function '{function_name}' that doesn't exist.")
+                    print(f"NOTICE:   GPT called function '{function_name}' that doesn't exist.")
                     function_response = f"Function '{function_name}' does not exist."
 
                 if function_name == "write_file":
@@ -245,9 +246,11 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
                 if recursive == False:
                     return
 
-                next_message = yesno("Do you want to ask something else?\nAnswer", ["y", "n"])
+                next_message = yesno("GPT: Do you want to ask something else?\nYou:", ["y", "n"])
+                print()
                 if next_message == "y":
-                    prompt = input("What do you want to ask?\nAnswer: ")
+                    prompt = input("GPT: What do you want to ask?\nYou: ")
+                    print()
                     return run_conversation(
                         prompt=prompt,
                         model=model,
@@ -256,6 +259,7 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
                         recursive=recursive,
                     )
                 else:
+                    print("Exiting")
                     sys.exit(0)
 
             # send function result to chatgpt
@@ -284,11 +288,12 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
 
                 messages = compact_commands(messages)
             else:
-                if len(message["content"]) > 600:
+                if len(message["content"]) > 400:
                     user_message = "ERROR: Please use function calls"
                 # if chatgpt doesn't respond with a function call, ask user for input
                 elif "?" in message["content"]:
-                    user_message = input("ChatGPT didn't respond with a function. What do you want to say?\nAnswer: ")
+                    user_message = input("You:\n")
+                    print()
                 else:
                     # if chatgpt doesn't ask a question, continue
                     user_message = "Ok, continue."
@@ -310,7 +315,7 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
         message = messages[-1]
 
 def make_prompt_better(prompt, ask=True):
-    print("Making prompt better...")
+    print("\nMaking prompt better...")
 
     try:
         better_prompt = betterprompter.make_better(prompt, CONFIG["model"])
@@ -321,17 +326,21 @@ def make_prompt_better(prompt, ask=True):
             return make_prompt_better(prompt, ask)
         elif yesno("Unable to make prompt better. Try again?") == "y":
             return make_prompt_better(prompt, ask)
+            print()
         else:
+            print()
             return prompt
 
     if prompt != better_prompt:
+        print()
         print("## Better prompt: ##\n" + better_prompt)
+        print()
 
         if ask == False or yesno("Do you want to use this prompt?") == "y":
-            print("Using better prompt")
+            print("Using better prompt...")
             prompt = better_prompt
         else:
-            print("Using original prompt")
+            print("Using original prompt...")
 
     return prompt
 
@@ -412,9 +421,9 @@ def load_message_history(arguments):
         try:
             with open(f"history/{history_file}.json", "r") as f:
                 messages = json.load(f)
-            print(f"Loaded message history from {history_file}.json")
+            print(f"INFO:     Loaded message history from {history_file}.json")
         except:
-            print(f"ERROR: History file {history_file}.json not found")
+            print(f"ERROR:    History file {history_file}.json not found")
             sys.exit(1)
     else:
         messages = []
@@ -442,11 +451,22 @@ def get_api_key():
 
 def warn_existing_code():
     if os.path.isdir("code") and len(os.listdir("code")) != 0:
-        answer = yesno("WARNING! There is already some code in the `code/` folder. GPT-AutoPilot may base the project on these files and has write access to them and might modify or delete them.\n\n" + gpt_functions.list_files("", False) + "\n\nDo you want to continue?", ["YES", "NO", "DELETE"])
+        answer = yesno(
+            "#####################################################\n"+
+            "# WARNING!                                          #\n"+
+            "# There is already some code in the `code/` folder. #\n"+
+            "# GPT-AutoPilot may base the project on these files #\n"+
+            "# and and might modify or delete them.              #\n"+
+            "#####################################################"+
+            "\n\n"+
+            gpt_functions.list_files("", False)+
+            "\n\n"+
+            "Do you want to continue?", ["YES", "NO", "DELETE"])
         if answer == "DELETE":
             reset_code_folder()
         elif answer != "YES":
             sys.exit(0)
+        print()
 
 def create_directories():
     dirs = ["code", "history", "versions"]
@@ -463,9 +483,10 @@ def maybe_make_prompt_better(prompt, args, version_loop = False):
     if version_loop == True and "better-versions" not in args:
         return prompt
     if "not-better" not in args:
-        if "better" in args or yesno("Do you want GPT to make your prompt better?") == "y":
+        if "better" in args or yesno("GPT: Do you want me to make your prompt better?\nYou") == "y":
             ask = "better" not in args or "ask-better" in args
             prompt = make_prompt_better(prompt, ask)
+        print()
     return prompt
 
 def run_versions(prompt, args, version_messages, temp, prev_version = 1):
@@ -473,7 +494,7 @@ def run_versions(prompt, args, version_messages, temp, prev_version = 1):
 
     if "versions" in args:
         versions = args["versions"]
-        print(f"Creating {versions} versions...")
+        print(f"INFO:     Creating {versions} versions...")
     else:
         versions = 1
 
@@ -529,7 +550,7 @@ def run_versions(prompt, args, version_messages, temp, prev_version = 1):
         version_messages[version] = copy.deepcopy(messages)
 
     if versions > 1:
-        print("\n## ALL VERSIONS FINISHED ##")
+        print("\n# ALL VERSIONS FINISHED ##")
         print("You can find all versions here:")
         for number, verfolder in enumerate(version_folders):
             print(f"- Version {number+1}: {verfolder}")
@@ -546,7 +567,8 @@ def run_versions(prompt, args, version_messages, temp, prev_version = 1):
         # move selected version to code folder and start over
         shutil.copytree(version_folders[next_version-1], "code")
 
-        prompt = input("What would you like to do next?\nAnswer: ")
+        prompt = input("GPT: What would you like to do next?\nYou: ")
+        print()
         run_versions(prompt, args, version_messages, temp, next_version)
 
 # LOAD COMMAND LINE ARGUMENTS
@@ -574,6 +596,7 @@ temp_orig = temp
 if "prompt" in args:
     prompt = args["prompt"]
 else:
-    prompt = input("What would you like me to do?\nAnswer: ")
+    prompt = input("GPT: What would you like me to do?\nYou: ")
+    print()
 
 run_versions(prompt, args, version_messages, temp)

@@ -13,7 +13,7 @@ def yesno(prompt, answers = ["y", "n"]):
         answer = input(f"{prompt} ({slash_list}): ")
         if answer not in answers:
             or_list = "' or '".join(answers)
-            print(f"Please type '{or_list}'")
+            print(f"ERROR:    Please type '{or_list}'")
     return answer
 
 def safepath(path):
@@ -24,7 +24,7 @@ def safepath(path):
     file = os.path.abspath(os.path.join(base, path))
 
     if os.path.commonpath([base, file]) != base:
-        print(f"ERROR: Tried to access file '{file}' outside of code folder!")
+        print(f"ERROR:    Tried to access file '{file}' outside of code folder!")
         sys.exit(1)
 
     return path
