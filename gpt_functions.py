@@ -1,5 +1,4 @@
 import os
-import re
 import shutil
 import subprocess
 
@@ -11,7 +10,7 @@ def write_file(filename, content = ""):
     print(f"FUNCTION: Writing to file code/{filename}...")
     return f"Please respond in your next response with the full content of the file {filename}. Respond only with the contents of the file, no explanations. Create a fully working, complete file with no limitations on file size. Put file content between lines START_OF_FILE_CONTENT and END_OF_FILE_CONTENT"
 
-def replace_text(find, replace, filename):
+def replace_text(find, replace, filename, count = -1):
     filename = safepath(filename)
 
     if ( len(find) + len(replace) ) > 37:
@@ -24,7 +23,7 @@ def replace_text(find, replace, filename):
 
     with open(codedir(filename), "w") as f:
         f.write(
-            re.sub(find, replace, file_content)
+            file_content.replace(find, replace, count)
         )
 
     return "Text replaced successfully"
@@ -231,13 +230,13 @@ definitions = [
     },
     {
         "name": "replace_text",
-        "description": "Replace text in given file with regular expression",
+        "description": "Replace text in given file",
         "parameters": {
             "type": "object",
             "properties": {
                 "find": {
                     "type": "string",
-                    "description": "The regular expression to look for",
+                    "description": "The text to look for",
                 },
                 "replace": {
                     "type": "string",
@@ -246,6 +245,10 @@ definitions = [
                 "filename": {
                     "type": "string",
                     "description": "The name of file to modify",
+                },
+                "count": {
+                    "type": "number",
+                    "description": "The number of occurences to replace (default = all occurences)",
                 },
             },
             "required": ["find", "replace", "filename"],
