@@ -452,7 +452,7 @@ def maybe_make_prompt_better(prompt, args, version_loop = False):
             prompt = make_prompt_better(prompt, ask)
     return prompt
 
-def run_versions(prompt, args, messages, temp):
+def run_versions(prompt, args, version_messages, temp, prev_version = 1):
     timestamp = int(time.time())
 
     if "versions" in args:
@@ -470,7 +470,7 @@ def run_versions(prompt, args, messages, temp):
         recursive = True
 
     version_folders = []
-    orig_messages = copy.deepcopy(messages)
+    orig_messages = version_messages[prev_version]
 
     for version in range(1, versions+1):
         # reset message history for every version
@@ -505,6 +505,9 @@ def run_versions(prompt, args, messages, temp):
             shutil.rmtree("code")
             version_folders.append(version_folder)
 
+        # save message history of each version
+        version_messages[version] = copy.deepcopy(messages)
+
     if versions > 1:
         print("\n## ALL VERSIONS FINISHED ##")
         print("You can find all versions here:")
@@ -518,17 +521,21 @@ def run_versions(prompt, args, messages, temp):
             if str(next_up) in ["exit", "quit", "e", "q"]:
                 sys.exit(0)
 
+        next_version = int(next_up)
+
         # move selected version to code folder and start over
-        shutil.copytree(version_folders[int(next_up)-1], "code")
+        shutil.copytree(version_folders[next_version-1], "code")
 
         prompt = input("What would you like to do next?\nAnswer: ")
-        run_versions(prompt, args, messages, temp)
+        run_versions(prompt, args, version_messages, temp, next_version)
 
 # LOAD COMMAND LINE ARGUMENTS
 args = parse_arguments(sys.argv)
 
 # LOAD MESSAGE HISTORY
-messages = load_message_history(args)
+version_messages = {
+    1: load_message_history(args)
+}
 
 # GET API KEY
 openai.api_key = get_api_key()
@@ -549,4 +556,4 @@ if "prompt" in args:
 else:
     prompt = input("What would you like me to do?\nAnswer: ")
 
-run_versions(prompt, args, messages, temp)
+run_versions(prompt, args, version_messages, temp)
