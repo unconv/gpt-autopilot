@@ -5,6 +5,7 @@ import sys
 import os
 import copy
 
+import tokens
 import gpt_functions
 
 def redact_messages(messages):
@@ -30,14 +31,14 @@ def send_message(
     conv_id = None,
     temp = 1.0,
 ):
-    print("Waiting for ChatGPT...")
+    print("Waiting for ChatGPT... ", end="")
 
     # add user message to message list
     messages.append(message)
 
     # redact old messages when encountering partial output
     if "No END_OF_FILE_CONTENT" in message["content"]:
-        print("## NOTICE: Partial output detected, dropping messages... ##")
+        print("\n## NOTICE: Partial output detected, dropping messages... ##")
         messages[-2]["content"] = "<file content redacted>"
         messages = redact_messages(messages)
 
@@ -70,12 +71,18 @@ def send_message(
             temperature=temp,
             request_timeout=60,
         )
+
+        tokens.add(response)
+        request_tokens = response["usage"]["total_tokens"]
+        total_tokens = int(tokens.token_usage["total"])
+        token_cost = round(tokens.get_token_cost(model), 2)
+        print(f"OK! (+{request_tokens} tokens, total {total_tokens} / {token_cost} USD)")
     except openai.error.AuthenticationError:
-        print("AuthenticationError: Check your API-key")
+        print("\nAuthenticationError: Check your API-key")
         sys.exit(1)
     except openai.InvalidRequestError as e:
         if "maximum context length" in str(e):
-            print("## NOTICE: Context limit reached, dropping old messages... ##")
+            print("\n## NOTICE: Context limit reached, dropping old messages... ##")
 
             # remove last message
             messages.pop()
@@ -107,7 +114,7 @@ def send_message(
             raise
 
         # if request fails, wait 5 seconds and try again
-        print("ERROR in OpenAI request... Trying again")
+        print("\nERROR in OpenAI request... Trying again")
         time.sleep(5)
 
         # remove last message
@@ -132,7 +139,7 @@ def send_message(
 
     # if response includes content, print it out
     if print_message and response_message != None:
-        print("## ChatGPT Responded ##\n```\n")
+        print("\n## ChatGPT Responded ##\n```\n")
         print(response_message)
         print("\n```\n")
 

@@ -16,6 +16,7 @@ from helpers import yesno, safepath, codedir, numberfile
 import chatgpt
 import betterprompter
 from config import get_config, save_config
+import tokens
 
 VERSION = "0.1.3-dev"
 CONFIG = get_config()
@@ -106,6 +107,21 @@ def actually_write_file(filename, content):
 
     print(f"Wrote to file code/{filename}...")
     return f"File {filename} written successfully"
+
+def print_task_finished(model):
+    tokens_total = int(tokens.token_usage["total"])
+    totaltokens = str(tokens_total).rjust(13, " ")
+
+    price_total = round(tokens.get_token_cost(model), 2)
+    total_price = (str(price_total)+" USD").rjust(13, " ")
+
+    print()
+    print(f"###############################")
+    print(f"# Task is finished!           #")
+    print(f"# Total tokens: {totaltokens} #")
+    print(f"# Total price:  {total_price} #")
+    print(f"###############################")
+    print()
 
 def ask_model_switch():
     if yesno("ERROR: You don't seem to have access to the GPT-4 API. Would you like to change to GPT-3.5?") == "y":
@@ -224,7 +240,7 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
 
             # if function returns PROJECT_FINISHED, exit
             if function_response == "PROJECT_FINISHED":
-                print("## Project finished! ##")
+                print_task_finished(model)
 
                 if recursive == False:
                     return

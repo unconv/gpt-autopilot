@@ -1,5 +1,7 @@
 import openai
 
+import tokens
+
 def make_better(prompt, model, temp = 1.0):
     if len(prompt.split(" ")) < 80:
         words = "an 80 word"
@@ -23,5 +25,7 @@ def make_better(prompt, model, temp = 1.0):
         temperature=temp,
         request_timeout=60,
     )
+
+    tokens.add(response)
 
     return response["choices"][0]["message"]["content"]
