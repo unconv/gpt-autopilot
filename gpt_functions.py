@@ -58,10 +58,10 @@ def create_dir(directory):
     directory = safepath(directory)
 
     print(f"FUNCTION: Creating directory {codedir(directory)}")
-    if os.path.isdir(codedir("directory")):
+    if os.path.isdir(codedir(directory)):
         return "ERROR: Directory exists"
     else:
-        os.mkdir(codedir("directory"))
+        os.mkdir(codedir(directory))
         return f"Directory {directory} created!"
 
 def move_file(source, destination):
