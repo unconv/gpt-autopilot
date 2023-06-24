@@ -22,9 +22,11 @@ def replace_text(find, replace, filename, count = -1):
         file_content = f.read()
 
     with open(codedir(filename), "w") as f:
-        f.write(
-            file_content.replace(find, replace, count)
-        )
+        new_text = file_content.replace(find, replace, count)
+        if new_text == file_content:
+            print("ERROR: Did not find text to replace")
+            return "ERROR: Did not find text to repalce"
+        f.write(new_text)
 
     return "Text replaced successfully"
 
