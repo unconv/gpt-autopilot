@@ -21,7 +21,7 @@ def make_better(prompt, model, temp = 1.0):
         model=model,
         messages=messages,
         temperature=temp,
-        request_timeout=30,
+        request_timeout=60,
     )
 
     return response["choices"][0]["message"]["content"]

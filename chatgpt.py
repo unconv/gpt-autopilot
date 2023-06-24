@@ -68,7 +68,7 @@ def send_message(
             functions=gpt_functions.definitions,
             function_call=function_call,
             temperature=temp,
-            request_timeout=30,
+            request_timeout=60,
         )
     except openai.error.AuthenticationError:
         print("AuthenticationError: Check your API-key")
