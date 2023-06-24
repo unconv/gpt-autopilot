@@ -12,7 +12,7 @@ import random
 import copy
 
 import gpt_functions
-from helpers import yesno, safepath, codedir
+from helpers import yesno, safepath, codedir, numberfile
 import chatgpt
 import betterprompter
 from config import get_config, save_config
@@ -118,7 +118,7 @@ def ask_model_switch():
 # MAIN FUNCTION
 def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None, recursive = True, temp = 1.0):
     if conv_id is None:
-        conv_id = str(sum(1 for entry in os.scandir("history"))).zfill(4)
+        conv_id = numberfile("history")
 
     if messages == []:
         with open("system_message", "r") as f:
@@ -433,7 +433,7 @@ def warn_existing_code():
             sys.exit(0)
 
 def create_directories():
-    dirs = ["code", "history"]
+    dirs = ["code", "history", "versions"]
     for directory in dirs:
         if not os.path.isdir(directory):
             os.mkdir(directory)
@@ -453,7 +453,7 @@ def maybe_make_prompt_better(prompt, args, version_loop = False):
     return prompt
 
 def run_versions(prompt, args, version_messages, temp, prev_version = 1):
-    timestamp = int(time.time())
+    version_id = numberfile("versions", folder=True)
 
     if "versions" in args:
         versions = args["versions"]
@@ -461,10 +461,14 @@ def run_versions(prompt, args, version_messages, temp, prev_version = 1):
     else:
         versions = 1
 
+    version_dir = os.path.join("versions", str(version_id))
+    ver_orig_dir = os.path.join(version_dir, "orig")
+
     if versions > 1:
-        if not os.path.isdir("versions"):
-            os.mkdir("versions")
-        shutil.copytree("code", f"versions/code_{timestamp}_orig")
+        if not os.path.isdir(version_dir):
+            os.mkdir(version_dir)
+
+        shutil.copytree("code", ver_orig_dir)
         recursive = False
     else:
         recursive = True
@@ -488,7 +492,7 @@ def run_versions(prompt, args, version_messages, temp, prev_version = 1):
             temp = round( temp_orig + random.uniform(-0.1, 0.1), 2 )
 
             # always start with original version
-            shutil.copytree(f"versions/code_{timestamp}_orig", "code")
+            shutil.copytree(ver_orig_dir, "code")
 
         # RUN CONVERSATION
         run_conversation(
@@ -500,7 +504,7 @@ def run_versions(prompt, args, version_messages, temp, prev_version = 1):
         )
 
         if versions > 1:
-            version_folder = f"versions/code_{timestamp}_v{version}"
+            version_folder = os.path.join(version_dir, f"v{version}")
             shutil.copytree("code", version_folder)
             shutil.rmtree("code")
             version_folders.append(version_folder)
