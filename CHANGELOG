@@ -5,11 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] 2023-06-24
+## [0.1.2] 2023-06-24
 
 ### Fixed
 
 - Issue #6: Iterating over a selected version didn't preserve its message history
+- Issue #7: The `replace_text` function given to GPT didn't work with code
+
+### Changed
+
+- The `replace_text` function no longer uses regex because GPT can not properly format regex that includes code
 
 ## [0.1.1] 2023-06-23
 

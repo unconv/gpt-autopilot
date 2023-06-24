@@ -17,7 +17,7 @@ import chatgpt
 import betterprompter
 from config import get_config, save_config
 
-VERSION = "0.1.1"
+VERSION = "0.1.2"
 CONFIG = get_config()
 
 def compact_commands(messages):
