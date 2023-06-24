@@ -161,7 +161,8 @@ def run_cmd(base_dir, command, reason):
     print("FUNCTION: Run a command")
     print("## ChatGPT wants to run a command! ##")
 
-    command = "cd code" + base_dir + "; " + command
+    the_dir = os.path.join("code", base_dir)
+    command = "cd " + the_dir + "; " + command
     print(f"Command: `{command}`")
     print(f"Reason: `{reason}`")
 

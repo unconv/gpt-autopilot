@@ -16,6 +16,9 @@ def yesno(prompt, answers = ["y", "n"]):
     return answer
 
 def safepath(path):
+    if path == ".":
+        path = ""
+
     base = os.path.abspath("code")
     file = os.path.abspath(os.path.join(base, path))
 
