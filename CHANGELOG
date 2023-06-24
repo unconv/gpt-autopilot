@@ -7,12 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Token count and price calculation
+
 ### Fixed
 
 - The `cd code/<base_dir>;` command before running a terminal command was missing the `/` and therefore didn't work.
 - Conversation history filenames in `history` folder are now incremented properly, even if some conversations are deleted
 - Give error to GPT if it tries to replace text in a file that doesn't have the given text
 - Create directory did not work because `directory` was passed to `codedir()` as a string instead of a variable
+- Raise TypeErrors and NameErrors when calling OpenAI API
 
 ### Changed
 
