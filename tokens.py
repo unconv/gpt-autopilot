@@ -1,3 +1,6 @@
+import json
+import os
+
 token_usage = {
     "input": 0.0,
     "output": 0.0,
@@ -26,14 +29,47 @@ def get_token_price(model, direction):
     else:
         return token_price_output
 
-def add(response):
+def add(response, model):
     global token_usage
-    token_usage["input"] += response["usage"]["prompt_tokens"]
-    token_usage["output"] += response["usage"]["completion_tokens"]
-    token_usage["total"] += response["usage"]["total_tokens"]
 
-def get_token_cost(model):
+    # get token counts
+    prompt_tokens = response["usage"]["prompt_tokens"]
+    completion_tokens = response["usage"]["completion_tokens"]
+    total_tokens = response["usage"]["total_tokens"]
+
+    # increment session token usage
+    token_usage["input"] += prompt_tokens
+    token_usage["output"] += completion_tokens
+    token_usage["total"] += total_tokens
+
+    # load total token usage
+    if os.path.exists("token_usage.json"):
+        with open("token_usage.json") as f:
+            total_token_usage = json.load(f)
+    else:
+        total_token_usage = {
+            "input": 0.0,
+            "output": 0.0,
+            "total": 0.0,
+            "price": 0.0,
+        }
+
+    # increment total token usage
+    total_token_usage["input"] += prompt_tokens
+    total_token_usage["output"] += completion_tokens
+    total_token_usage["total"] += total_tokens
+    total_token_usage["price"] += get_token_cost(model, prompt_tokens, completion_tokens)
+
+    # save total token usage
+    with open("token_usage.json", "w") as f:
+        f.write(json.dumps(total_token_usage, indent=4))
+
+def get_token_cost(model, input_tokens=None, output_tokens=None):
     global token_usage
+
+    if input_tokens is None:
+        input_tokens = token_usage["input"]
+        output_tokens = token_usage["output"]
 
     input_price = get_token_price(
         model=model,
@@ -45,4 +81,4 @@ def get_token_cost(model):
         direction="output",
     )
 
-    return token_usage["input"] * input_price + token_usage["output"] * output_price
+    return input_tokens * input_price + output_tokens * output_price

@@ -26,6 +26,6 @@ def make_better(prompt, model, temp = 1.0):
         request_timeout=60,
     )
 
-    tokens.add(response)
+    tokens.add(response, model)
 
     return response["choices"][0]["message"]["content"]

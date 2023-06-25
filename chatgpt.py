@@ -73,7 +73,7 @@ def send_message(
             request_timeout=60,
         )
 
-        tokens.add(response)
+        tokens.add(response, model)
         request_tokens = response["usage"]["total_tokens"]
         total_tokens = int(tokens.token_usage["total"])
         token_cost = round(tokens.get_token_cost(model), 2)
