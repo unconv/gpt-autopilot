@@ -149,7 +149,7 @@ def list_files(list = "", print_output = True):
     # Remove code folder from the beginning of file paths
     files = [file_path.replace("code/", "", 1).replace("code\\", "", 1) for file_path in files]
 
-    if print_output: print(f"FUNCTION: Listing in code directory")
+    if print_output: print(f"FUNCTION: Listing files in code directory")
     return f"The following files are currently in the project directory:\n{files}"
 
 def ask_clarification(question):
