@@ -581,6 +581,14 @@ def run_versions(prompt, args, version_messages, temp, prev_version = 1):
         print()
         run_versions(prompt, args, version_messages, temp, next_version)
 
+def print_model_info():
+    print("#######################################")
+    print("# USING MODEL: " + CONFIG["model"].rjust(22, " ") + " #")
+    if "gpt-4" not in CONFIG["model"]:
+        print("# NOTICE:        GPT-4 is recommended #")
+    print("#######################################")
+    print()
+
 # LOAD COMMAND LINE ARGUMENTS
 args = parse_arguments(sys.argv)
 
@@ -601,6 +609,9 @@ create_directories()
 # GET TEMPERATURE
 temp = get_temp(args)
 temp_orig = temp
+
+# PRINT MODEL
+print_model_info()
 
 # ASK FOR PROMPT
 if "prompt" in args:
