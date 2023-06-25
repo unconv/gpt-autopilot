@@ -18,7 +18,7 @@ import betterprompter
 from config import get_config, save_config
 import tokens
 
-VERSION = "0.1.3-dev"
+VERSION = "0.1.3"
 CONFIG = get_config()
 
 def compact_commands(messages):
