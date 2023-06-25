@@ -179,6 +179,15 @@ def run_cmd(base_dir, command, reason, asynch=False):
     print(reason)
     print()
 
+    if asynch == True:
+        print("#################################################")
+        print("# WARNING: This command will run asynchronously #")
+        print("# and it will not be automatically killed after #")
+        print("# GPT-AutoPilot is closed. You must close the   #")
+        print("# program manually afterwards!                  #")
+        print("#################################################")
+        print()
+
     answer = yesno(
         "Do you want to run this command?",
         ["YES", "NO"]
