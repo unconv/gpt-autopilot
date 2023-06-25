@@ -169,6 +169,7 @@ def run_cmd(base_dir, command, reason, asynch=False):
     else:
         asynchly = ""
 
+    print()
     print(f"GPT: I want to run the following command{asynchly}:")
 
     the_dir = os.path.join("code", base_dir)
@@ -227,9 +228,13 @@ def run_cmd(base_dir, command, reason, asynch=False):
         if len(output) > 400:
             return_value += "\nResult from command (last 245 chars):\n" + output[-245:]
 
+        if output.strip() == "":
+            return_value += "<no output from command>"
+
         return_value = return_value.strip()
 
         print(return_value)
+        print()
 
         return return_value
     else:
