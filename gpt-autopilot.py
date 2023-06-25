@@ -117,7 +117,7 @@ def print_task_finished(model):
 
     task_tokens = tokens_total - tokens.prev_tokens_total
     task_tokens = str(task_tokens).rjust(13, " ")
-    task__price = price_total - tokens.prev_price_total
+    task__price = round(price_total - tokens.prev_price_total, 2)
     task__price = (str(task__price)+" USD").rjust(13, " ")
 
     print()
