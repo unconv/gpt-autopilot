@@ -84,9 +84,11 @@ All versions and version iterations are stored in separate folders in the `versi
 
 You can customize the system message by editing the `system_message` file. The system message will affect how the agent acts. For example, you can add a code style guide to it.
 
-## Video
+## Demo
 
-Watch the video where I demonstrate how it works here: https://www.youtube.com/watch?v=cnqzTsrdExU
+https://github.com/unconv/gpt-autopilot/assets/120440395/30c18e73-9d49-4c62-9bc2-5d50d0eefa76
+
+See better quality video on [YouTube](https://www.youtube.com/watch?v=xyUqQ5b_7DE)
 
 ## Support
 
