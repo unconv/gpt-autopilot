@@ -1,4 +1,5 @@
 import os
+import time
 import shutil
 import subprocess
 
@@ -159,10 +160,16 @@ def ask_clarification(question):
     print()
     return answer
 
-def run_cmd(base_dir, command, reason):
+def run_cmd(base_dir, command, reason, asynch=False):
     base_dir = safepath(base_dir)
     base_dir = base_dir.strip("/").strip("\\")
-    print("GPT: I want to run the following command:")
+
+    if asynch == True:
+        asynchly = " asynchronously"
+    else:
+        asynchly = ""
+
+    print(f"GPT: I want to run the following command{asynchly}:")
 
     the_dir = os.path.join("code", base_dir)
     command = "cd " + the_dir + "; " + command
@@ -179,16 +186,45 @@ def run_cmd(base_dir, command, reason):
     print()
 
     if answer == "YES":
-        result = subprocess.run(command, shell=True, capture_output=True, text=True)
-        output = result.stdout + result.stderr
+        if asynch:
+            # Run command asynchronously in the background
+            process = subprocess.Popen(
+                command + " > command_output.txt 2>&1",
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
 
-        return_value = "Result from command (last 245 chars):\n" + output[-245:]
+            # Wait for 4 seconds
+            time.sleep(4)
+
+            # read possible output
+            output_file = os.path.join(the_dir, "command_output.txt")
+            with open(output_file) as f:
+                output = f.read()
+            os.remove(output_file)
+        else:
+            # Run command synchronously and capture stdout and stderr
+            process = subprocess.run(command, shell=True, capture_output=True, text=True)
+
+            # Access the output and error messages
+            stdout = process.stdout
+            stderr = process.stderr
+
+            output = stdout + "\n" + stderr
+
+        return_value = "Result from command (first 400 chars):\n" + output[:400]
+
+        if len(output) > 400:
+            return_value += "\nResult from command (last 245 chars):\n" + output[-245:]
+
+        return_value = return_value.strip()
 
         print(return_value)
 
         return return_value
     else:
-        return "I don't want you to run that command"
+        return "I don't want to run that command"
 
 def project_finished(finished):
     return "PROJECT_FINISHED"
@@ -391,6 +427,10 @@ definitions = [
                 "reason": {
                     "type": "string",
                     "description": "A reason for why the command should be run",
+                },
+                "asynch": {
+                    "type": "boolean",
+                    "description": "Whether to run the program asynchronously (in the background)",
                 },
             },
             "required": ["base_dir", "command", "reason"],
