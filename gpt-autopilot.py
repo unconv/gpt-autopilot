@@ -301,7 +301,16 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
                 if len(message["content"]) > 400:
                     user_message = "ERROR: Please use function calls"
                 # if chatgpt doesn't respond with a function call, ask user for input
-                elif "?" in message["content"]:
+                if "?" in message["content"] or \
+                   "Let me know" in message["content"] or \
+                   "Please provide" in message["content"] or \
+                   "Could you" in message["content"] or \
+                   "Can you" in message["content"] or \
+                   "Do you know" in message["content"] or \
+                   "Tell me" in message["content"] or \
+                   "Explain" in message["content"] or \
+                   "What is" in message["content"] or \
+                   "How does" in message["content"]:
                     user_message = input("You:\n")
                     print()
                 else:
