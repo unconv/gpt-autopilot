@@ -5,6 +5,8 @@ import sys
 import os
 import copy
 
+from helpers import yesno
+import tokens
 import gpt_functions
 
 def redact_messages(messages):
@@ -30,14 +32,14 @@ def send_message(
     conv_id = None,
     temp = 1.0,
 ):
-    print("Waiting for ChatGPT...")
+    print("GPT-API:  Waiting... ", end="", flush=True)
 
     # add user message to message list
     messages.append(message)
 
     # redact old messages when encountering partial output
     if "No END_OF_FILE_CONTENT" in message["content"]:
-        print("## NOTICE: Partial output detected, dropping messages... ##")
+        print("\nNOTICE:   Partial output detected, redacting messages...")
         messages[-2]["content"] = "<file content redacted>"
         messages = redact_messages(messages)
 
@@ -68,14 +70,20 @@ def send_message(
             functions=gpt_functions.definitions,
             function_call=function_call,
             temperature=temp,
-            request_timeout=30,
+            request_timeout=60,
         )
+
+        tokens.add(response, model)
+        request_tokens = response["usage"]["total_tokens"]
+        total_tokens = int(tokens.token_usage["total"])
+        token_cost = round(tokens.get_token_cost(model), 2)
+        print(f"OK! (+{request_tokens} tokens, total {total_tokens} / {token_cost} USD)")
     except openai.error.AuthenticationError:
-        print("AuthenticationError: Check your API-key")
+        print("\nAuthenticationError: Check your API-key")
         sys.exit(1)
     except openai.InvalidRequestError as e:
         if "maximum context length" in str(e):
-            print("## NOTICE: Context limit reached, dropping old messages... ##")
+            print("\nNOTICE:   Context limit reached, redacting old messages...")
 
             # remove last message
             messages.pop()
@@ -102,12 +110,20 @@ def send_message(
         )
     except openai.error.PermissionError:
         raise
-    except:
+    except TypeError:
+        raise
+    except NameError:
+        raise
+    except Exception as e:
         if retries >= 4:
             raise
 
+        if "You exceeded your current quota" in str(e):
+            if yesno("You have exceeded your OpenAI API quota. Would you like to try again?") == "n":
+                sys.exit(1)
+
         # if request fails, wait 5 seconds and try again
-        print("ERROR in OpenAI request... Trying again")
+        print("\nERROR:    OpenAI request failed... Trying again")
         time.sleep(5)
 
         # remove last message
@@ -132,7 +148,7 @@ def send_message(
 
     # if response includes content, print it out
     if print_message and response_message != None:
-        print("## ChatGPT Responded ##\n```\n")
+        print("\n## ChatGPT Responded ##\n```\n")
         print(response_message)
         print("\n```\n")
 

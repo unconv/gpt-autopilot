@@ -1,4 +1,5 @@
 import os
+import time
 import shutil
 import subprocess
 
@@ -22,9 +23,11 @@ def replace_text(find, replace, filename, count = -1):
         file_content = f.read()
 
     with open(codedir(filename), "w") as f:
-        f.write(
-            file_content.replace(find, replace, count)
-        )
+        new_text = file_content.replace(find, replace, count)
+        if new_text == file_content:
+            print("ERROR:    Did not find text to replace")
+            return "ERROR: Did not find text to replace"
+        f.write(new_text)
 
     return "Text replaced successfully"
 
@@ -46,7 +49,7 @@ def read_file(filename):
 
     print(f"FUNCTION: Reading file {codedir(filename)}...")
     if not os.path.exists(codedir(filename)):
-        print(f"File {filename} does not exist")
+        print(f"ERROR:    File {filename} does not exist")
         return f"File {filename} does not exist"
     with open(codedir(filename), "r") as f:
         content = f.read()
@@ -56,10 +59,10 @@ def create_dir(directory):
     directory = safepath(directory)
 
     print(f"FUNCTION: Creating directory {codedir(directory)}")
-    if os.path.isdir(codedir("directory")):
+    if os.path.isdir(codedir(directory)):
         return "ERROR: Directory exists"
     else:
-        os.mkdir(codedir("directory"))
+        os.mkdir(codedir(directory))
         return f"Directory {directory} created!"
 
 def move_file(source, destination):
@@ -107,7 +110,7 @@ def delete_file(filename):
     print(f"FUNCTION: Deleting file {path}")
 
     if not os.path.exists(path):
-        print(f"File {filename} does not exist")
+        print(f"ERROR:    File {filename} does not exist")
         return f"ERROR: File {filename} does not exist"
 
     try:
@@ -146,39 +149,96 @@ def list_files(list = "", print_output = True):
     # Remove code folder from the beginning of file paths
     files = [file_path.replace("code/", "", 1).replace("code\\", "", 1) for file_path in files]
 
-    if print_output: print(f"FUNCTION: Files in code directory:\n{files}")
+    if print_output: print(f"FUNCTION: Listing files in code directory")
     return f"The following files are currently in the project directory:\n{files}"
 
 def ask_clarification(question):
-    answer = input(f"## ChatGPT Asks a Question ##\n```{question}```\nAnswer: ")
+    if "\n" in question:
+        answer = input(f"\nGPT:\n{question}\n\nYou:\n")
+    else:
+        answer = input(f"\nGPT: {question}\nYou: ")
+    print()
     return answer
 
-def run_cmd(base_dir, command, reason):
+def run_cmd(base_dir, command, reason, asynch=False):
     base_dir = safepath(base_dir)
     base_dir = base_dir.strip("/").strip("\\")
-    print("FUNCTION: Run a command")
-    print("## ChatGPT wants to run a command! ##")
 
-    command = "cd code" + base_dir + "; " + command
-    print(f"Command: `{command}`")
-    print(f"Reason: `{reason}`")
+    if asynch == True:
+        asynchly = " asynchronously"
+    else:
+        asynchly = ""
+
+    print()
+    print(f"GPT: I want to run the following command{asynchly}:")
+
+    the_dir = os.path.join("code", base_dir)
+    command = "cd " + the_dir + "; " + command
+    print("------------------------------")
+    print(f"{command}")
+    print("------------------------------")
+    print(reason)
+    print()
+
+    if asynch == True:
+        print("#################################################")
+        print("# WARNING: This command will run asynchronously #")
+        print("# and it will not be automatically killed after #")
+        print("# GPT-AutoPilot is closed. You must close the   #")
+        print("# program manually afterwards!                  #")
+        print("#################################################")
+        print()
 
     answer = yesno(
         "Do you want to run this command?",
         ["YES", "NO"]
     )
+    print()
 
     if answer == "YES":
-        result = subprocess.run(command, shell=True, capture_output=True, text=True)
-        output = result.stdout + result.stderr
+        if asynch:
+            # Run command asynchronously in the background
+            process = subprocess.Popen(
+                command + " > command_output.txt 2>&1",
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
 
-        return_value = "Result from command (last 245 chars):\n" + output[-245:]
+            # Wait for 4 seconds
+            time.sleep(4)
+
+            # read possible output
+            output_file = os.path.join(the_dir, "command_output.txt")
+            with open(output_file) as f:
+                output = f.read()
+            os.remove(output_file)
+        else:
+            # Run command synchronously and capture stdout and stderr
+            process = subprocess.run(command, shell=True, capture_output=True, text=True)
+
+            # Access the output and error messages
+            stdout = process.stdout
+            stderr = process.stderr
+
+            output = stdout + "\n" + stderr
+
+        return_value = "Result from command (first 400 chars):\n" + output[:400]
+
+        if len(output) > 400:
+            return_value += "\nResult from command (last 245 chars):\n" + output[-245:]
+
+        if output.strip() == "":
+            return_value += "<no output from command>"
+
+        return_value = return_value.strip()
 
         print(return_value)
+        print()
 
         return return_value
     else:
-        return "I don't want you to run that command"
+        return "I don't want to run that command"
 
 def project_finished(finished):
     return "PROJECT_FINISHED"
@@ -381,6 +441,10 @@ definitions = [
                 "reason": {
                     "type": "string",
                     "description": "A reason for why the command should be run",
+                },
+                "asynch": {
+                    "type": "boolean",
+                    "description": "Whether to run the program asynchronously (in the background)",
                 },
             },
             "required": ["base_dir", "command", "reason"],

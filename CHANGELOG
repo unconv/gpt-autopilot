@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3] 2023-06-25
+
+### Added
+
+- Ability to run terminal commands asynchronously
+- Token count and price calculation
+
+### Fixed
+
+- The `cd code/<base_dir>;` command before running a terminal command was missing the `/` and therefore didn't work.
+- Conversation history filenames in `history` folder are now incremented properly, even if some conversations are deleted
+- Give error to GPT if it tries to replace text in a file that doesn't have the given text
+- Create directory did not work because `directory` was passed to `codedir()` as a string instead of a variable
+- Raise TypeErrors and NameErrors when calling OpenAI API
+
+### Changed
+
+- Version folder structure is now `versions/<incrementing_number>/v[1..]` as opposed to previous `versions/code_<timestamp>_v[1..]`.
+- Formatted the output of the script nicer
+
 ## [0.1.2] 2023-06-24
 
 ### Fixed
