@@ -396,7 +396,7 @@ def parse_arguments(argv):
         # make prompt better with GPT
         elif arg_name == "--better":
             if "versions" in arguments:
-                print("ERROR: --version must come after --better")
+                print("ERROR: --versions must come after --better")
                 sys.exit(1)
             arguments["better"] = True
         # don't make prompt better with GPT
