@@ -32,7 +32,7 @@ def send_message(
     conv_id = None,
     temp = 1.0,
 ):
-    print("GPT-API:  Waiting... ", end="")
+    print("GPT-API:  Waiting... ", end="", flush=True)
 
     # add user message to message list
     messages.append(message)
