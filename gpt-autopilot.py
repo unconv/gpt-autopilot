@@ -115,13 +115,23 @@ def print_task_finished(model):
     price_total = round(tokens.get_token_cost(model), 2)
     total_price = (str(price_total)+" USD").rjust(13, " ")
 
+    task_tokens = tokens_total - tokens.prev_tokens_total
+    task_tokens = str(task_tokens).rjust(13, " ")
+    task__price = price_total - tokens.prev_price_total
+    task__price = (str(task__price)+" USD").rjust(13, " ")
+
     print()
     print(f"###############################")
     print(f"# Task is finished!           #")
+    print(f"# Task tokens:  {task_tokens} #")
+    print(f"# Task price:   {task__price} #")
     print(f"# Total tokens: {totaltokens} #")
     print(f"# Total price:  {total_price} #")
     print(f"###############################")
     print()
+
+    tokens.prev_tokens_total = tokens_total
+    tokens.prev_price_total = price_total
 
 def ask_model_switch():
     if yesno("ERROR: You don't seem to have access to the GPT-4 API. Would you like to change to GPT-3.5?") == "y":

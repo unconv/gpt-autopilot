@@ -1,11 +1,16 @@
 import json
 import os
 
+# global token usage
 token_usage = {
     "input": 0.0,
     "output": 0.0,
     "total": 0.0,
 }
+
+# global prev token usage
+prev_tokens_total = 0
+prev_price_total = 0
 
 def get_token_price(model, direction):
     if model == "gpt-4-0613":
