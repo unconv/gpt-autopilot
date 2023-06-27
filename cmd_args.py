@@ -33,6 +33,9 @@ help_info = {
     "--better-versions": {
         "desc": "make a better prompt for every version",
     },
+    "--model": {
+        "desc": "model for ChatGPT API",
+    },
     "--temp": {
         "desc": "temperature for ChatGPT API",
     },
@@ -126,6 +129,12 @@ def parse_arguments(argv):
         # delete code folder contents before starting
         elif arg_name == "--delete":
             reset_code_folder()
+        # which model to use for ChatGPT API
+        elif arg_name == "--model":
+            if sys.argv == []:
+                print(f"ERROR: Missing argument for '{arg_name}'")
+                sys.exit(1)
+            args["model"] = str(sys.argv.pop(0))
         elif arg_name in ["--version", "-v"]:
             print(f"GPT-AutoPilot v{VERSION} by Unconventional Coding")
             sys.exit(69)
