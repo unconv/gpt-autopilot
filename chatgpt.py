@@ -10,6 +10,14 @@ import tokens
 import gpt_functions
 import cmd_args
 
+def redact_always(messages):
+    messages_redact = copy.deepcopy(messages)
+    for msg in messages_redact:
+        if msg["role"] == "user" and "APPEND_OK" in msg["content"]:
+            msg["content"] = "File appended succesfully"
+            break
+    return messages_redact
+
 def redact_messages(messages):
     messages_redact = copy.deepcopy(messages)
     for msg in messages_redact:
@@ -140,6 +148,9 @@ def send_message(
             print_message=print_message,
             temp=temp,
         )
+
+    # redact long responses that don't need to be in history
+    messages = redact_always(messages)
 
     # add response to message list
     messages.append(response["choices"][0]["message"])
