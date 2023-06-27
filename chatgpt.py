@@ -85,7 +85,7 @@ def send_message(
         }
 
     # always ask for a task list first
-    elif gpt_functions.tasklist_finished:
+    elif "no-tasklist" not in cmd_args.args and gpt_functions.tasklist_finished:
         definitions = [gpt_functions.make_tasklist_func]
         function_call = {
             "name": "make_tasklist",
