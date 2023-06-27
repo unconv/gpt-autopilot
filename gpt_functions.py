@@ -315,6 +315,8 @@ Convert the next steps to be taken into a list of tasks and pass them as a list 
 Remember that the tasklist should be able to be completed with simple file
 operations or terminal commands, so don't include anything that can't be
 accomplished using these methods (e.g. checking a UI or running tests)
+
+For a trivial task, make just one task
 """,
     "parameters": {
         "type": "object",
