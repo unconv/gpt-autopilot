@@ -144,7 +144,7 @@ def actually_append_file(filename, content):
     with open(codedir(filename), "r") as f:
         new_file_content = f.read()
 
-    return f"APPEND_OK: File {filename} appended successfully. New content:\n\n```\n{new_file_content}\n```"
+    return f"APPEND_OK: File {filename} appended successfully. IMPORTANT: If you appended code to a file, you might have appended it after the main function or an event listener or other code scope accidentally. Please check the code and rewrite the whole file if you made a mistake. The content of the file is now this:\n\n{new_file_content}"
 
 def print_task_finished(model):
     tokens_total = int(tokens.token_usage["total"])
