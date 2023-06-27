@@ -52,6 +52,9 @@ def parse_arguments(argv):
         # don't create a task list
         elif arg_name == "--no-tasklist":
             args["no-tasklist"] = True
+        # send the whole tasklist to chatgpt at once
+        elif arg_name == "--one-task":
+            args["one-task"] = True
         # how manu clarifying questions to ask in the beginning
         elif arg_name == "--questions":
             if sys.argv == []:

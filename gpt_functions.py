@@ -20,11 +20,14 @@ def make_tasklist(tasks):
     global tasklist_finished
 
     next_task = tasks.pop(0)
+    all_tasks = ""
 
-    print("TASKLIST: 1. " + next_task)
+    all_tasks += "TASKLIST: 1. " + next_task + "\n"
 
     for number, item in enumerate(tasks):
-        print("          " + str( number + 2 ) + ". " + item)
+        all_tasks += "          " + str( number + 2 ) + ". " + item + "\n"
+
+    print(all_tasks, end="")
 
     if "use-tasklist" not in cmd_args.args and yesno("\nGPT: Do you want to continue with this task list?\nYou") != "y":
         modifications = input("\nGPT: What would you like to change?\nYou: ")
@@ -32,6 +35,10 @@ def make_tasklist(tasks):
         return "Task list modification request: " + modifications
 
     print()
+
+    if "one-task" in cmd_args.args:
+        tasklist_finished = False
+        return all_tasks + "\n\nPlease complete the project according to the above requirements"
 
     tasklist += tasks
     tasklist_finished = False
