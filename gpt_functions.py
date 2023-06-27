@@ -224,37 +224,43 @@ def run_cmd(base_dir, command, reason, asynch=False):
 
     answer = yesno(
         "Do you want to run this command?",
-        ["YES", "NO"]
+        ["YES", "NO", "ASYNC", "SYNC"]
     )
     print()
 
-    if answer == "YES":
-        if asynch:
-            # Run command asynchronously in the background
-            process = subprocess.Popen(
-                command + " > command_output.txt 2>&1",
-                shell=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
-            )
+    if answer == "ASYNC":
+        asynch = True
+        answer = "YES"
 
+    elif answer == "SYNC":
+        asynch = False
+        answer = "YES"
+
+    if answer == "YES":
+        process = subprocess.Popen(
+            command + " > gpt-autopilot-cmd-outout.txt 2>&1",
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+
+        # Run command asynchronously in the background
+        if asynch:
             # Wait for 4 seconds
             time.sleep(4)
-
-            # read possible output
-            output_file = os.path.join(the_dir, "command_output.txt")
-            with open(output_file) as f:
-                output = f.read()
-            os.remove(output_file)
         else:
-            # Run command synchronously and capture stdout and stderr
-            process = subprocess.run(command, shell=True, capture_output=True, text=True)
+            try:
+                # Wait for the subprocess to finish
+                process.wait()
+            except KeyboardInterrupt:
+                # Send Ctrl+C signal to the subprocess
+                process.send_signal(signal.SIGINT)
 
-            # Access the output and error messages
-            stdout = process.stdout
-            stderr = process.stderr
-
-            output = stdout + "\n" + stderr
+        # read possible output
+        output_file = os.path.join(the_dir, "gpt-autopilot-cmd-outout.txt")
+        with open(output_file) as f:
+            output = f.read()
+        os.remove(output_file)
 
         return_value = "Result from command (first 400 chars):\n" + output[:400]
 
