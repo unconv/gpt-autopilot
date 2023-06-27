@@ -1,10 +1,16 @@
 # Helper functions
+import shutil
 import sys
 import os
 import re
 
 def codedir(filename):
     return os.path.join("code", filename)
+
+def reset_code_folder():
+    if os.path.isdir("code"):
+        shutil.rmtree("code")
+    os.mkdir("code")
 
 def yesno(prompt, answers = ["y", "n"]):
     answer = ""

@@ -8,6 +8,7 @@ import copy
 from helpers import yesno
 import tokens
 import gpt_functions
+import cmd_args
 
 def redact_messages(messages):
     messages_redact = copy.deepcopy(messages)

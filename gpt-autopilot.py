@@ -12,11 +12,12 @@ import random
 import copy
 
 import gpt_functions
-from helpers import yesno, safepath, codedir, numberfile
+from helpers import yesno, safepath, codedir, numberfile, reset_code_folder
 import chatgpt
 import betterprompter
 from config import get_config, save_config
 import tokens
+import cmd_args
 
 VERSION = "0.1.3"
 CONFIG = get_config()
@@ -363,77 +364,6 @@ def make_prompt_better(prompt, ask=True):
 
     return prompt
 
-def reset_code_folder():
-    shutil.rmtree("code")
-    os.mkdir("code")
-
-def parse_arguments(argv):
-    arguments = {
-        "program_name": sys.argv.pop(0)
-    }
-
-    while sys.argv != []:
-        arg_name = sys.argv.pop(0)
-
-        # conversation id
-        if arg_name == "--conv":
-            if sys.argv == []:
-                print(f"ERROR: Missing argument for '{arg_name}'")
-                sys.exit(1)
-            arguments["conv"] = sys.argv.pop(0)
-        # initial prompt
-        elif arg_name == "--prompt":
-            if sys.argv == []:
-                print(f"ERROR: Missing argument for '{arg_name}'")
-                sys.exit(1)
-            arguments["prompt"] = sys.argv.pop(0)
-        # temperature
-        elif arg_name == "--temp":
-            if sys.argv == []:
-                print(f"ERROR: Missing argument for '{arg_name}'")
-                sys.exit(1)
-            arguments["temp"] = float(sys.argv.pop(0))
-        # make prompt better with GPT
-        elif arg_name == "--better":
-            if "versions" in arguments:
-                print("ERROR: --versions must come after --better")
-                sys.exit(1)
-            arguments["better"] = True
-        # don't make prompt better with GPT
-        elif arg_name == "--not-better":
-            arguments["not-better"] = False
-        # confirm if user wants to use bettered prompt
-        elif arg_name == "--ask-better":
-            arguments["ask-better"] = True
-        # make a new better prompt for every version
-        elif arg_name == "--better-versions":
-            arguments["better-versions"] = True
-            arguments["better"] = True
-        # delete code folder contents before starting
-        elif arg_name == "--delete":
-            reset_code_folder()
-        elif arg_name in ["--version", "-v"]:
-            print(f"GPT-AutoPilot v{VERSION} by Unconventional Coding")
-            sys.exit(69)
-        # make multiple versions of project
-        elif arg_name == "--versions":
-            if "ask-better" in arguments:
-                print(f"ERROR: --ask-better flag is not compatible with --versions flag")
-                sys.exit(1)
-            if sys.argv == []:
-                print(f"ERROR: Missing argument for '{arg_name}'")
-                sys.exit(1)
-            arguments["versions"] = int(sys.argv.pop(0))
-        else:
-            print(f"ERROR: Invalid option '{arg_name}'")
-            sys.exit(1)
-
-    if "not-better" in arguments and "better" in arguments:
-        print("ERROR: --not-better is not compatible with --better")
-        sys.exit(1)
-
-    return arguments
-
 def load_message_history(arguments):
     if "conv" in arguments:
         history_file = arguments["conv"]
@@ -541,7 +471,7 @@ def run_versions(prompt, args, version_messages, temp, prev_version = 1):
 
         # MAKE PROMPT BETTER
         version_loop = version > 1
-        prompt = maybe_make_prompt_better(prompt, args, version_loop)
+        prompt = maybe_make_prompt_better(prompt, cmd_args.args, version_loop)
 
         if version != 1:
             # randomize temperature for every version
@@ -598,12 +528,9 @@ def print_model_info():
     print("#######################################")
     print()
 
-# LOAD COMMAND LINE ARGUMENTS
-args = parse_arguments(sys.argv)
-
 # LOAD MESSAGE HISTORY
 version_messages = {
-    1: load_message_history(args)
+    1: load_message_history(cmd_args.args)
 }
 
 # GET API KEY
@@ -616,17 +543,17 @@ warn_existing_code()
 create_directories()
 
 # GET TEMPERATURE
-temp = get_temp(args)
+temp = get_temp(cmd_args.args)
 temp_orig = temp
 
 # PRINT MODEL
 print_model_info()
 
 # ASK FOR PROMPT
-if "prompt" in args:
-    prompt = args["prompt"]
+if "prompt" in cmd_args.args:
+    prompt = cmd_args.args["prompt"]
 else:
     prompt = input("GPT: What would you like me to do?\nYou: ")
     print()
 
-run_versions(prompt, args, version_messages, temp)
+run_versions(prompt, cmd_args.args, version_messages, temp)
