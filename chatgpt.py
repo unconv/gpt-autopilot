@@ -58,25 +58,49 @@ def send_message(
         with open(history_file, "w") as f:
             f.write(json.dumps(messages, indent=4))
 
-    # gpt-3.5 is not responsible enough for these functions
-    gpt3_disallow = [
-        "create_dir",
-        "move_file",
-        "copy_file",
-        "replace_text",
-    ]
+    definitions = copy.deepcopy(gpt_functions.get_definitions(model))
 
-    if "gpt-4" not in model:
-        for definition in gpt_functions.definitions:
-            if definition["name"] in gpt3_disallow:
-                gpt_functions.definitions.remove(definition)
+    if gpt_functions.tasklist != []:
+        for definition in definitions:
+            # don't take any more task lists if there is one already
+            if definition["name"] == "make_tasklist":
+                definitions.remove(definition)
+            # don't allow project_finished function when task list is unfinished
+            if definition["name"] == "project_finished":
+                definitions.remove(definition)
+    else:
+        # remove task_finished function if there is no task currently
+        for definition in definitions:
+            if definition["name"] == "task_finished":
+                definitions.remove(definition)
+
+    # always ask clarifying questions first
+    if "questions" in cmd_args.args:
+        initial_question_count = questions
+    else:
+        initial_question_count = 5
+
+    if "no-questions" not in cmd_args.args and gpt_functions.clarification_asked < initial_question_count:
+        definitions = [gpt_functions.ask_clarification_func]
+        function_call = {
+            "name": "ask_clarification",
+            "arguments": "questions"
+        }
+
+    # always ask for a task list first
+    elif gpt_functions.tasklist_finished:
+        definitions = [gpt_functions.make_tasklist_func]
+        function_call = {
+            "name": "make_tasklist",
+            "arguments": "tasks"
+        }
 
     try:
         # send prompt to chatgpt
         response = openai.ChatCompletion.create(
             model=model,
             messages=messages,
-            functions=gpt_functions.definitions,
+            functions=definitions,
             function_call=function_call,
             temperature=temp,
             request_timeout=60,

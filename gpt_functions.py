@@ -1,11 +1,43 @@
 import os
+import sys
+import copy
 import time
 import shutil
 import subprocess
 
 from helpers import yesno, safepath, codedir
+import cmd_args
+
+tasklist = []
+tasklist_finished = True
+
+clarification_asked = 0
 
 # Implementation of the functions given to ChatGPT
+
+def make_tasklist(tasks):
+    global tasklist
+    global tasklist_finished
+
+    next_task = tasks.pop(0)
+
+    print("TASKLIST: 1. " + next_task)
+
+    for number, item in enumerate(tasks):
+        print("          " + str( number + 2 ) + ". " + item)
+
+    if "use-tasklist" not in cmd_args.args and yesno("\nGPT: Do you want to continue with this task list?\nYou") != "y":
+        modifications = input("\nGPT: What would you like to change?\nYou: ")
+        print()
+        return "Task list modification request: " + modifications
+
+    print()
+
+    tasklist += tasks
+    tasklist_finished = False
+
+    print("TASK:     " + next_task)
+    return "TASK_LIST_RECEIVED: Start with first task: " + next_task + ". Do all the steps involved in the task and only then run the task_finished function. If the task is already done in a previous task, you can call task_finished right away"
 
 def file_open_for_writing(filename, content = ""):
     print(f"FUNCTION: Writing to file code/{filename}...")
@@ -144,13 +176,22 @@ def list_files(list = "", print_output = True):
     if print_output: print(f"FUNCTION: Listing files in code directory")
     return f"The following files are currently in the project directory:\n{files}"
 
-def ask_clarification(question):
-    if "\n" in question:
-        answer = input(f"\nGPT:\n{question}\n\nYou:\n")
-    else:
-        answer = input(f"\nGPT: {question}\nYou: ")
+def ask_clarification(questions):
+    global clarification_asked
+
+    answers = ""
+
+    for question in questions:
+        if "\n" in question:
+            answer = input(f"\nGPT:\n{question}\n\nYou: \n")
+        else:
+            answer = input(f"\nGPT: {question}\nYou: ")
+        answers += f"Q: {question}\nA: {answer}\n"
+        clarification_asked += 1
+
     print()
-    return answer
+
+    return answers
 
 def run_cmd(base_dir, command, reason, asynch=False):
     base_dir = safepath(base_dir)
@@ -232,12 +273,71 @@ def run_cmd(base_dir, command, reason, asynch=False):
     else:
         return "I don't want to run that command"
 
-def project_finished(finished):
+def project_finished(finished=True):
+    global tasklist_finished
+    if not tasklist_finished:
+        return "ERROR: You must finish the task list before finishing the project"
+    return "PROJECT_FINISHED"
+
+def task_finished(finished=True):
+    global tasklist
+
+    print("FUNCTION: Task finished")
+
+    if len(tasklist) > 0:
+        next_task = tasklist.pop(0)
+        print("TASK:     " + next_task)
+        return "Thank you. Please do the next task: " + next_task
+
+    tasklist_finished = True
     return "PROJECT_FINISHED"
 
 # Function definitions for ChatGPT
 
+make_tasklist_func = {
+    "name": "make_tasklist",
+    "description": """
+Convert the next steps to be taken into a list of tasks and pass them as a list into this function.
+
+Remember that the tasklist should be able to be completed with simple file
+operations or terminal commands, so don't include anything that can't be
+accomplished using these methods (e.g. checking a UI or running tests)
+""",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "tasks": {
+                "type": "array",
+                "items": {
+                    "type": "string",
+                },
+                "description": "The task list",
+            },
+        },
+        "required": ["tasks"],
+    },
+}
+
+ask_clarification_func = {
+    "name": "ask_clarification",
+    "description": "Ask the user clarifying question(s) about the project that are needed to implement it properly",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "question": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                },
+                "description": "A list of clarifying questions for the user",
+            },
+        },
+        "required": ["questions"],
+    },
+}
+
 definitions = [
+    make_tasklist_func,
     {
         "name": "list_files",
         "description": "List the files in the current project",
@@ -384,29 +484,30 @@ definitions = [
             "required": ["filename"],
         },
     },
-    {
-        "name": "ask_clarification",
-        "description": "Ask the user a clarifying question about the project. Returns the answer by the user as string",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "question": {
-                    "type": "string",
-                    "description": "The question to ask the user",
-                },
-            },
-            "required": ["question"],
-        },
-    },
+    ask_clarification_func,
     {
         "name": "project_finished",
-        "description": "Call this function when the project is finished",
+        "description": "Call this function when the whole project is finished",
         "parameters": {
             "type": "object",
             "properties": {
                 "finished": {
-                    "type": "string",
-                    "description": "Set this to 'finished' always",
+                    "type": "boolean",
+                    "description": "Set this to true always",
+                },
+            },
+            "required": ["finished"],
+        },
+    },
+    {
+        "name": "task_finished",
+        "description": "Call this function when a task from the tasklist has been finished",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "finished": {
+                    "type": "boolean",
+                    "description": "Set this to true always",
                 },
             },
             "required": ["finished"],
@@ -439,3 +540,33 @@ definitions = [
         },
     },
 ]
+
+def get_definitions(model):
+    global definitions
+
+    func_definitions = copy.deepcopy(definitions)
+
+    # gpt-3.5 is not responsible enough for these functions
+    gpt3_disallow = [
+        "create_dir",
+        "move_file",
+        "copy_file",
+        "replace_text",
+    ]
+
+    if "gpt-4" not in model:
+        for definition in func_definitions:
+            if definition["name"] in gpt3_disallow:
+                func_definitions.remove(definition)
+
+    if "no-tasklist" in cmd_args.args:
+        for definition in func_definitions:
+            if definition["name"] == "make_tasklist":
+                func_definitions.remove(definition)
+
+    if "no-questions" in cmd_args.args:
+        for definition in func_definitions:
+            if definition["name"] == "ask_clarification":
+                func_definitions.remove(definition)
+
+    return func_definitions
