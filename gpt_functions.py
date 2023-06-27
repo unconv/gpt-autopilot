@@ -557,12 +557,12 @@ def get_definitions(model):
     if "gpt-4" not in model:
         for definition in func_definitions:
             if definition["name"] in gpt3_disallow:
-                func_definitions.remove(definition)
+                del definition
 
     if "no-tasklist" in cmd_args.args:
         for definition in func_definitions:
             if definition["name"] == "make_tasklist":
-                func_definitions.remove(definition)
+                del definition
 
     if "no-questions" in cmd_args.args:
         for definition in func_definitions:

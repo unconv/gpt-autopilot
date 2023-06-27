@@ -64,15 +64,15 @@ def send_message(
         for definition in definitions:
             # don't take any more task lists if there is one already
             if definition["name"] == "make_tasklist":
-                definitions.remove(definition)
+                del definition
             # don't allow project_finished function when task list is unfinished
             if definition["name"] == "project_finished":
-                definitions.remove(definition)
+                del definition
     else:
         # remove task_finished function if there is no task currently
         for definition in definitions:
             if definition["name"] == "task_finished":
-                definitions.remove(definition)
+                del definition
 
     # always ask clarifying questions first
     if "questions" in cmd_args.args:
