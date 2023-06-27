@@ -24,13 +24,13 @@ CONFIG = get_config()
 
 def compact_commands(messages):
     for msg in messages:
-        if msg["role"] == "function" and msg["name"] == "write_file":
-            msg["content"] = "Respond with file content. End with END_OF_FILE_CONTENT"
+        if msg["role"] == "function" and msg["name"] == "file_open_for_writing":
+            msg["content"] = "Respond with file content. Put file content between lines START_OF_FILE_CONTENT and END_OF_FILE_CONTENT"
     return messages
 
 def remove_hallucinations(messages):
     for msg in messages:
-        if msg["role"] == "function" and msg["name"] == "write_file":
+        if msg["role"] == "function" and msg["name"] == "file_open_for_writing":
             try:
                 args = json.loads(msg["function_call"]["arguments"])
                 if "content" in args:
@@ -62,17 +62,7 @@ def strip_markdown(content):
         content = re.sub(r"\n```\s*$", "", content)
     return content
 
-def actually_write_file(filename, content):
-    filename = safepath(filename)
-
-    # Sometimes ChatGPT makes the start and
-    # end tags comments, so we have to remove
-    # comment syntax around these
-    content = unwrap_comments(content, [
-        "START_OF_FILE_CONTENT",
-        "END_OF_FILE_CONTENT",
-    ])
-
+def check_content_format(filename, content):
     # detect partial file content response
     if "END_OF_FILE_CONTENT" not in content:
         print(f"ERROR:    Partial write response for code/{filename}...")
@@ -82,6 +72,22 @@ def actually_write_file(filename, content):
     if "START_OF_FILE_CONTENT" not in content:
         print(f"ERROR:    Invalid content format for code/{filename}...")
         return "ERROR: No START_OF_FILE_CONTENT detected"
+
+    # detect gpt-3.5 stupidity
+    if "`START_OF_FILE_CONTENT` and `END_OF_FILE_CONTENT`" in content:
+        print(f"ERROR:    Invalid content format for code/{filename}...")
+        return "ERROR: Your response needs to start with START_OF_FILE_CONTENT and end with END_OF_FILE_CONTENT, with the file content in between. No other explanations. No apologies. Just the file content."
+
+    return None
+
+def parse_file_content(content):
+    # Sometimes ChatGPT makes the start and
+    # end tags comments, so we have to remove
+    # comment syntax around these
+    content = unwrap_comments(content, [
+        "START_OF_FILE_CONTENT",
+        "END_OF_FILE_CONTENT",
+    ])
 
     parts = content.split("START_OF_FILE_CONTENT")
     content = parts[1]
@@ -93,6 +99,17 @@ def actually_write_file(filename, content):
     # force newline in the end
     if content != "" and content[-1] != "\n":
         content = content + "\n"
+
+    return content
+
+def actually_write_file(filename, content):
+    filename = safepath(filename)
+
+    check = check_content_format(filename, content)
+    if check is not None:
+        return check
+
+    content = parse_file_content(content)
 
     fullpath = codedir(filename)
 
@@ -108,6 +125,27 @@ def actually_write_file(filename, content):
 
     print(f"DONE:     Wrote to file code/{filename}...")
     return f"File {filename} written successfully"
+
+def actually_append_file(filename, content):
+    filename = safepath(filename)
+
+    check = check_content_format(filename, content)
+    if check is not None:
+        return check
+
+    content = parse_file_content(content)
+
+    # Create parent directories if they don't exist
+    parent_dir = os.path.dirname(codedir(filename))
+    os.makedirs(parent_dir, exist_ok=True)
+
+    with open(codedir(filename), "a") as f:
+        f.write(content)
+
+    with open(codedir(filename), "r") as f:
+        new_file_content = f.read()
+
+    return f"APPEND_OK: File {filename} appended successfully. New content:\n\n```\n{new_file_content}\n```"
 
 def print_task_finished(model):
     tokens_total = int(tokens.token_usage["total"])
@@ -142,6 +180,28 @@ def ask_model_switch():
     else:
         sys.exit(1)
 
+def fix_function_name(function_name):
+    if function_name in ["new_file", "create_file"]:
+        return "file_open_for_writing"
+    return function_name
+
+def fix_arguments(function_name, arguments):
+    if function_name == "file_open_for_writing" and "path" in arguments:
+        arguments["filename"] = arguments["path"]
+        del arguments["path"]
+    if function_name == "ask_clarification" and "question" in arguments:
+        arguments["questions"] = arguments["question"]
+        del arguments["question"]
+    return arguments
+
+def function_list(model):
+    func_list = ""
+    for func in gpt_functions.get_definitions(model):
+        func_list += func["name"] + "("
+        func_list += ", ".join([key for key in func["parameters"]["properties"].keys()])
+        func_list += ")\n"
+    return func_list.strip()
+
 # MAIN FUNCTION
 def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None, recursive = True, temp = 1.0):
     if conv_id is None:
@@ -159,6 +219,9 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
 
         # add list of current files to user prompt
         prompt += "\n\n" + gpt_functions.list_files()
+
+        # add list of functions to first prompt
+        prompt += "\n\nYou can call these functions: " + function_list(model)
 
     # add user prompt to chatgpt messages
     try:
@@ -189,64 +252,80 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
     # loop until project is finished
     while True:
         if message.get("function_call"):
+            # sometimes ChatGPT hallucinates dots in function name
+            message["function_call"]["name"] = re.sub(r'\W+', '', message["function_call"]["name"])
+
             # get function name and arguments
             function_name = message["function_call"]["name"]
             arguments_plain = message["function_call"]["arguments"]
             arguments = None
 
-            try:
-                # try to parse arguments
-                arguments = json.loads(arguments_plain)
+            # fix hallucinations
+            function_name = fix_function_name(function_name)
 
-            # if parsing fails, try to fix format
-            except:
+            if not hasattr(gpt_functions, function_name):
+                print(f"NOTICE:   GPT called function '{function_name}' that doesn't exist.")
+                function_response = f"Function '{function_name}' does not exist. You can call these functions:"
+                function_response += function_list(model)
+            else:
                 try:
-                    # gpt-3.5 sometimes uses backticks
-                    # instead of double quotes in JSON value
-                    print("ERROR:    Invalid JSON arguments. Fixing...")
-                    arguments_fixed = arguments_plain.replace("`", '"')
-                    arguments = json.loads(arguments_fixed)
+                    # try to parse arguments
+                    arguments = json.loads(arguments_plain)
+
+                # if parsing fails, try to fix format
                 except:
                     try:
-                        # gpt-3.5 sometimes omits single quotes
-                        # from around keys
-                        print("ERROR:    Invalid JSON arguments. Fixing again...")
-                        arguments_fixed = re.sub(r'(\b\w+\b)(?=\s*:)', r'"\1"')
+                        # gpt-3.5 sometimes uses backticks
+                        # instead of double quotes in JSON value
+                        print("ERROR:    Invalid JSON arguments. Fixing...")
+                        arguments_fixed = arguments_plain.replace("`", '"')
                         arguments = json.loads(arguments_fixed)
                     except:
                         try:
-                            # gpt-3.5 sometimes uses single quotes
-                            # around keys, instead of double quotes
-                            print("ERROR:    Invalid JSON arguments. Fixing third time...")
-                            arguments_fixed = re.sub(r"'(\b\w+\b)'(?=\s*:)", r'"\1"')
+                            # gpt-3.5 sometimes omits single quotes
+                            # from around keys
+                            print("ERROR:    Invalid JSON arguments. Fixing again...")
+                            arguments_fixed = re.sub(r'(\b\w+\b)(?=\s*:)', r'"\1"')
                             arguments = json.loads(arguments_fixed)
                         except:
-                            print("ERROR:    Failed to parse function arguments")
-                            #print("ERROR PARSING ARGUMENTS:\n---\n")
-                            #print(arguments_plain)
-                            #print("\n---\n")
+                            try:
+                                # gpt-3.5 sometimes uses single quotes
+                                # around keys, instead of double quotes
+                                print("ERROR:    Invalid JSON arguments. Fixing third time...")
+                                arguments_fixed = re.sub(r"'(\b\w+\b)'(?=\s*:)", r'"\1"')
+                                arguments = json.loads(arguments_fixed)
+                            except:
+                                print("ERROR:    Failed to parse function arguments")
+                                #print("ERROR PARSING ARGUMENTS:\n---\n")
+                                #print(arguments_plain)
+                                #print("\n---\n")
 
-                            if function_name == "replace_text":
-                                function_response = "ERROR! Please try to replace a shorter text or try another method"
-                            else:
-                                function_response = "Error parsing arguments. Make sure to use properly formatted JSON, with double quotes. If this error persist, change tactics"
+                                if function_name == "replace_text":
+                                    function_response = "ERROR! Please try to replace a shorter text or try another method"
+                                else:
+                                    function_response = "Error parsing arguments. Make sure to use properly formatted JSON, with double quotes. If this error persist, change tactics"
 
-            if arguments is not None:
-                # call the function given by chatgpt
-                if hasattr(gpt_functions, function_name):
+                if arguments is not None:
+                    # fix hallucinations
+                    arguments = fix_arguments(function_name, arguments)
+
+                    # call the function given by chatgpt
                     try:
                         function_response = getattr(gpt_functions, function_name)(**arguments)
                     except TypeError:
                         function_response = "ERROR: Invalid function parameters"
-                else:
-                    print(f"NOTICE:   GPT called function '{function_name}' that doesn't exist.")
-                    function_response = f"Function '{function_name}' does not exist."
 
-                if function_name == "write_file":
-                    mode = "WRITE_FILE"
-                    filename = arguments["filename"]
-                    function_call = "none"
-                    print_message = False
+                    if function_name == "file_open_for_writing":
+                        mode = "WRITE_FILE"
+                        filename = arguments["filename"]
+                        function_call = "none"
+                        print_message = False
+
+                    if function_name == "file_open_for_appending":
+                        mode = "APPEND_FILE"
+                        filename = arguments["filename"]
+                        function_call = "none"
+                        print_message = False
 
             messages = remove_hallucinations(messages)
 
@@ -298,11 +377,21 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
                     print_message = True
 
                 messages = compact_commands(messages)
+            elif mode == "APPEND_FILE":
+                user_message = actually_append_file(filename, message["content"])
+
+                if "ERROR" not in user_message:
+                    mode = None
+                    filename = None
+                    function_call = "auto"
+                    print_message = True
+
+                messages = compact_commands(messages)
             else:
                 if len(message["content"]) > 400:
                     user_message = "ERROR: Please use function calls"
                 # if chatgpt doesn't respond with a function call, ask user for input
-                if "?" in message["content"] or \
+                elif "?" in message["content"] or \
                    "Let me know" in message["content"] or \
                    "Please provide" in message["content"] or \
                    "Could you" in message["content"] or \

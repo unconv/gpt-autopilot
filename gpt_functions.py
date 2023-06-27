@@ -7,9 +7,9 @@ from helpers import yesno, safepath, codedir
 
 # Implementation of the functions given to ChatGPT
 
-def write_file(filename, content = ""):
+def file_open_for_writing(filename, content = ""):
     print(f"FUNCTION: Writing to file code/{filename}...")
-    return f"Please respond in your next response with the full content of the file {filename}. Respond only with the contents of the file, no explanations. Create a fully working, complete file with no limitations on file size. Put file content between lines START_OF_FILE_CONTENT and END_OF_FILE_CONTENT"
+    return f"Please respond in your next response with the full content of the file {filename}. Respond only with the contents of the file, no explanations. Create a fully working, complete file with no limitations on file size. Put file content between lines START_OF_FILE_CONTENT and END_OF_FILE_CONTENT. Start your response with START_OF_FILE_CONTENT"
 
 def replace_text(find, replace, filename, count = -1):
     filename = safepath(filename)
@@ -22,27 +22,19 @@ def replace_text(find, replace, filename, count = -1):
     with open(codedir(filename), "r") as f:
         file_content = f.read()
 
+    new_text = file_content.replace(find, replace, count)
+    if new_text == file_content:
+        print("ERROR:    Did not find text to replace")
+        return "ERROR: Did not find text to replace"
+
     with open(codedir(filename), "w") as f:
-        new_text = file_content.replace(find, replace, count)
-        if new_text == file_content:
-            print("ERROR:    Did not find text to replace")
-            return "ERROR: Did not find text to replace"
         f.write(new_text)
 
     return "Text replaced successfully"
 
-def append_file(filename, content):
-    filename = safepath(filename)
-
+def file_open_for_appending(filename, content = ""):
     print(f"FUNCTION: Appending to file {codedir(filename)}...")
-
-    # Create parent directories if they don't exist
-    parent_dir = os.path.dirname(codedir(filename))
-    os.makedirs(parent_dir, exist_ok=True)
-
-    with open(codedir(filename), "a") as f:
-        f.write(content)
-    return f"File {filename} appended successfully"
+    return f"Please respond in your next response with the full text to append to the end of the file {filename}. Respond only with the contents to add to the end of the file, no explanations. Create a fully working, complete file with no limitations on file size. Put file content between lines START_OF_FILE_CONTENT and END_OF_FILE_CONTENT. Start your response with START_OF_FILE_CONTENT"
 
 def read_file(filename):
     filename = safepath(filename)
@@ -275,8 +267,8 @@ definitions = [
         },
     },
     {
-        "name": "write_file",
-        "description": "Write content to a file with given name. Existing files will be overwritten. Parent directories will be created if they don't exist. Content of file will be asked in the next prompt.",
+        "name": "file_open_for_writing",
+        "description": "Open a file for writing. Existing files will be overwritten. Parent directories will be created if they don't exist. Content of file will be asked in the next prompt.",
         "parameters": {
             "type": "object",
             "properties": {
@@ -315,21 +307,17 @@ definitions = [
         },
     },
     {
-        "name": "append_file",
-        "description": "Write content to the end of a file with given name",
+        "name": "file_open_for_appending",
+        "description": "Open a file for appending content to the end of a file with given name (after the last line). The content to append will be given in the next prompt",
         "parameters": {
             "type": "object",
             "properties": {
                 "filename": {
                     "type": "string",
-                    "description": "The filename to write to",
-                },
-                "content": {
-                    "type": "string",
-                    "description": "The content to write into the file",
+                    "description": "The filename to append to",
                 },
             },
-            "required": ["filename", "content"],
+            "required": ["filename"],
         },
     },
     {
