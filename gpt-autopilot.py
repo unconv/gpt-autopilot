@@ -19,7 +19,6 @@ from config import get_config, save_config
 import tokens
 import cmd_args
 
-VERSION = "0.1.3"
 CONFIG = get_config()
 
 def compact_commands(messages):

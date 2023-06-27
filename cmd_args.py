@@ -6,6 +6,65 @@ args = {
     "program_name": sys.argv.pop(0)
 }
 
+VERSION = "0.2.0"
+
+help_info = {
+    "--prompt": {
+        "desc": "initial prompt for GPT-AutoPilot",
+    },
+    "--conv": {
+        "desc": "conversation id to continue from (e.g. 0123)",
+    },
+    "--delete": {
+        "desc": "delete existing files in code folder before beginning",
+    },
+    "--versions": {
+        "desc": "make multiple versions of the same project from a single prompt",
+    },
+    "--better": {
+        "desc": "make prompt automatically better with ChatGPT",
+    },
+    "--ask-better": {
+        "desc": "ask confirmation before using automatically bettered prompt (to be used with --better)",
+    },
+    "--not-better": {
+        "desc": "don't make prompt automatically better with ChatGPT",
+    },
+    "--better-versions": {
+        "desc": "make a better prompt for every version",
+    },
+    "--temp": {
+        "desc": "temperature for ChatGPT API",
+    },
+    "--use-tasklist": {
+        "desc": "use the first generated task list automatically",
+    },
+    "--no-tasklist": {
+        "desc": "don't create a task list",
+    },
+    "--one-task": {
+        "desc": "send the task list to ChatGPT in a single message",
+    },
+    "--questions": {
+        "desc": "change number of clarifying questions to ask in the beginning",
+    },
+    "--no-questions": {
+        "desc": "don't ask clarifying questions",
+    },
+}
+
+def print_help():
+    global help_info
+
+    print(f"GPT-AutoPilot v{VERSION} by Unconventional Coding\n")
+    print("Command line arguments:")
+
+    for cmd in help_info:
+        desc = help_info[cmd]["desc"]
+        print("  " + cmd.ljust(21, " ") + desc)
+
+    print()
+
 def parse_arguments(argv):
     global args
 
@@ -70,6 +129,9 @@ def parse_arguments(argv):
         elif arg_name in ["--version", "-v"]:
             print(f"GPT-AutoPilot v{VERSION} by Unconventional Coding")
             sys.exit(69)
+        elif arg_name in ["--help", "-h", "/?", "/help", "help"]:
+            print_help()
+            sys.exit(0)
         # make multiple versions of project
         elif arg_name == "--versions":
             if "ask-better" in args:
