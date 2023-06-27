@@ -61,18 +61,15 @@ def send_message(
     definitions = copy.deepcopy(gpt_functions.get_definitions(model))
 
     if gpt_functions.tasklist != []:
-        for definition in definitions:
-            # don't take any more task lists if there is one already
-            if definition["name"] == "make_tasklist":
-                del definition
-            # don't allow project_finished function when task list is unfinished
-            if definition["name"] == "project_finished":
-                del definition
+        remove_funcs = [
+            "make_tasklist", # don't take any more task lists if there is one already
+            "project_finished" # don't allow project_finished function when task list is unfinished
+        ]
+
+        definitions = [definition for definition in definitions if definition["name"] not in remove_funcs]
     else:
         # remove task_finished function if there is no task currently
-        for definition in definitions:
-            if definition["name"] == "task_finished":
-                del definition
+        definitions = [definition for definition in definitions if definition["name"] != "task_finished"]
 
     # always ask clarifying questions first
     if "questions" in cmd_args.args:

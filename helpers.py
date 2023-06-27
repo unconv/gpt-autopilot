@@ -9,8 +9,14 @@ def codedir(filename):
 
 def reset_code_folder():
     if os.path.isdir("code"):
-        shutil.rmtree("code")
-    os.mkdir("code")
+        for item in os.listdir("code"):
+            item_path = os.path.join("code", item)
+            if os.path.isfile(item_path):
+                os.remove(item_path)
+            elif os.path.isdir(item_path):
+                shutil.rmtree(item_path)
+    else:
+        os.mkdir("code")
 
 def yesno(prompt, answers = ["y", "n"]):
     answer = ""
