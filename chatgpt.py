@@ -120,7 +120,7 @@ def send_message(
             raise
 
         if "You exceeded your current quota" in str(e):
-            if yesno("You have exceeded your OpenAI API quota. Would you like to try again?") == "n":
+            if yesno("\n\nERROR:    You have exceeded your OpenAI API quota. Would you like to try again?") == "n":
                 sys.exit(1)
 
         # if request fails, wait 5 seconds and try again
