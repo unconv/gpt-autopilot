@@ -39,7 +39,7 @@ def send_message(
     retries = 0,
     print_message = True,
     conv_id = None,
-    temp = 1.0,
+    temp = 0.6,
 ):
     print("GPT-API:  Waiting... ", end="", flush=True)
 

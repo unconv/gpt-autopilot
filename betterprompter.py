@@ -2,7 +2,7 @@ import openai
 
 import tokens
 
-def make_better(prompt, model, temp = 1.0):
+def make_better(prompt, model, temp = 0.6):
     if len(prompt.split(" ")) < 80:
         words = "an 80 word"
     else:
