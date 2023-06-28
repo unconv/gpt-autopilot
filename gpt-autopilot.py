@@ -215,6 +215,10 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
                 "slug": cmd_args.args["system"],
                 "system_message": paths.relative("prompts", cmd_args.args["system"], "system_message")
             }
+            checklist_path = paths.relative("prompts", cmd_args.args["system"], "checklist.json")
+
+            if os.path.exists(checklist_path):
+                prompt_data["checklist"] = checklist_path
         else:
             print("GPT-API:  Selecting system message...")
             try:
