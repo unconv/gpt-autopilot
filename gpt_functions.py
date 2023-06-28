@@ -98,6 +98,8 @@ def create_dir(directory):
     print(f"FUNCTION: Creating directory {relative}")
     if os.path.isdir(fullpath):
         return "ERROR: Directory exists"
+    elif os.path.exists(fullpath):
+        return "ERROR: A file with this name already exists"
     else:
         os.makedirs(fullpath)
         return f"Directory {relative} created!"
