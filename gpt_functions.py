@@ -563,7 +563,6 @@ def get_definitions(model):
 
     # gpt-3.5 is not responsible enough for these functions
     gpt3_disallow = [
-        "create_dir",
         "move_file",
         "copy_file",
         "replace_text",
