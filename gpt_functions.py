@@ -300,7 +300,7 @@ def task_finished(finished=True):
     if len(tasklist) > 0:
         next_task = tasklist.pop(0)
         print("TASK:     " + next_task)
-        return "Thank you. Please do the next task: " + next_task
+        return "Thank you. Please do the next task, unless it has already been done: " + next_task
 
     tasklist_finished = True
     return "PROJECT_FINISHED"
@@ -530,7 +530,7 @@ definitions = [
     },
     {
         "name": "run_cmd",
-        "description": "Run a terminal command. Returns the output.",
+        "description": "Run a terminal command. Returns the output. Folder navigation commands are disallowed. Do it with base_dir",
         "parameters": {
             "type": "object",
             "properties": {
