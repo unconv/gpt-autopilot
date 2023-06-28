@@ -8,7 +8,7 @@ REM run pyinstaller
 pyinstaller gpt-autopilot.py
 
 REM add prompts to package
-copy prompts dist\gpt-autopilot\
+xcopy /E prompts dist\gpt-autopilot\
 
 REM make zip package using 7-Zip
 cd dist

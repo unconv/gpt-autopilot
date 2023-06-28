@@ -8,7 +8,7 @@ cd gpt-autopilot
 pyinstaller gpt-autopilot.py
 
 # add prompts to package
-cp prompts dist/gpt-autopilot/
+cp -r prompts dist/gpt-autopilot/
 
 # make zip package
 cd dist/
