@@ -40,7 +40,7 @@ def send_message(
     retries = 0,
     print_message = True,
     conv_id = None,
-    temp = 0.6,
+    temp = 0.9,
 ):
     # add user message to message list
     messages.append(message)

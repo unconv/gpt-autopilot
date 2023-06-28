@@ -204,7 +204,7 @@ def function_list(model):
     return func_list.strip()
 
 # MAIN FUNCTION
-def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None, recursive = True, temp = 0.6):
+def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None, recursive = True, temp = 0.9):
     if conv_id is None:
         conv_id = numberfile("history")
 
@@ -557,7 +557,7 @@ def create_directories():
 def get_temp(arguments):
     if "temp" in arguments:
         return arguments["temp"]
-    return 0.6
+    return 0.9
 
 def maybe_make_prompt_better(prompt, args, version_loop = False):
     if version_loop == True and "better-versions" not in args:
