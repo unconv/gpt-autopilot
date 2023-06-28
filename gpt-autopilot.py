@@ -221,8 +221,7 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
             }
 
         slug = prompt_data["slug"]
-        if slug != "default":
-            print(f"SYSTEM:   Using system message '{slug}'")
+        print(f"SYSTEM:   Using system message '{slug}'")
 
         if "checklist" in prompt_data:
             print(f"SYSTEM:   Using checklist '{slug}'")
