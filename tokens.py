@@ -73,8 +73,10 @@ def get_token_cost(model, input_tokens=None, output_tokens=None):
     global token_usage
 
     if input_tokens is None:
-        input_tokens = token_usage["input"]
-        output_tokens = token_usage["output"]
+        input_tokens = int(token_usage["input"])
+
+    if output_tokens is None:
+        output_tokens = int(token_usage["output"])
 
     input_price = get_token_price(
         model=model,

@@ -9,7 +9,7 @@ import paths
 
 def codedir(filename=""):
     if "dir" in cmd_args.args:
-        code_base_path = cmd_args.args["dir"]
+        code_base_path = str(cmd_args.args["dir"])
     else:
         code_base_path = paths.relative("code")
     return os.path.join(code_base_path, filename)

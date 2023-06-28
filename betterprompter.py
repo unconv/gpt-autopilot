@@ -28,4 +28,4 @@ def make_better(prompt, model, temp = 0.9):
 
     tokens.add(response, model)
 
-    return response["choices"][0]["message"]["content"]
+    return response["choices"][0]["message"]["content"] # type: ignore

@@ -1,7 +1,7 @@
 import sys
 import os
 
-args = {
+args: dict[str, str|float|int] = {
     "program_name": sys.argv.pop(0)
 }
 

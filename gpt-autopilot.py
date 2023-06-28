@@ -285,6 +285,7 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
 
             # fix hallucinations
             function_name = fix_function_name(function_name)
+            function_response = "ERROR: Invalid parameters"
 
             if not hasattr(gpt_functions, function_name):
                 print(f"NOTICE:   GPT called function '{function_name}' that doesn't exist.")
@@ -297,25 +298,27 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
 
                 # if parsing fails, try to fix format
                 except:
+                    arguments_fixed = arguments_plain
+
                     try:
                         # gpt-3.5 sometimes uses backticks
                         # instead of double quotes in JSON value
                         print("ERROR:    Invalid JSON arguments. Fixing...")
-                        arguments_fixed = arguments_plain.replace("`", '"')
+                        arguments_fixed = arguments_fixed.replace("`", '"')
                         arguments = json.loads(arguments_fixed)
                     except:
                         try:
                             # gpt-3.5 sometimes omits single quotes
                             # from around keys
                             print("ERROR:    Invalid JSON arguments. Fixing again...")
-                            arguments_fixed = re.sub(r'(\b\w+\b)(?=\s*:)', r'"\1"')
+                            arguments_fixed = re.sub(r'(\b\w+\b)(?=\s*:)', r'"\1"', arguments_fixed)
                             arguments = json.loads(arguments_fixed)
                         except:
                             try:
                                 # gpt-3.5 sometimes uses single quotes
                                 # around keys, instead of double quotes
                                 print("ERROR:    Invalid JSON arguments. Fixing third time...")
-                                arguments_fixed = re.sub(r"'(\b\w+\b)'(?=\s*:)", r'"\1"')
+                                arguments_fixed = re.sub(r"'(\b\w+\b)'(?=\s*:)", r'"\1"', arguments_fixed)
                                 arguments = json.loads(arguments_fixed)
                             except:
                                 print("ERROR:    Failed to parse function arguments")
@@ -611,7 +614,7 @@ def run_versions(prompt, args, version_messages, temp, prev_version = 1):
 
         if version != 1:
             # randomize temperature for every version
-            temp = round( temp_orig + random.uniform(-0.1, 0.1), 2 )
+            temp = round( float(temp_orig) + random.uniform(-0.1, 0.1), 2 )
 
             # always start with original version
             shutil.copytree(ver_orig_dir, codedir())
@@ -677,7 +680,7 @@ def override_model(model):
     return model
 
 # OVERRIDE MODEL
-CONFIG["model"] = override_model(CONFIG["model"])
+CONFIG["model"] = str(override_model(CONFIG["model"]))
 
 # LOAD MESSAGE HISTORY
 version_messages = {

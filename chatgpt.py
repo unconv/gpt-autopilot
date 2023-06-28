@@ -73,7 +73,7 @@ def send_message(
 
     # always ask clarifying questions first
     if "questions" in cmd_args.args:
-        initial_question_count = cmd_args.args["questions"]
+        initial_question_count = int(cmd_args.args["questions"])
     else:
         initial_question_count = 5
 
@@ -107,14 +107,14 @@ def send_message(
         )
 
         tokens.add(response, model)
-        request_tokens = response["usage"]["total_tokens"]
+        request_tokens = response["usage"]["total_tokens"] # type: ignore
         total_tokens = int(tokens.token_usage["total"])
         token_cost = round(tokens.get_token_cost(model), 2)
         print(f"OK! (+{request_tokens} tokens, total {total_tokens} / {token_cost} USD)")
-    except openai.error.AuthenticationError:
+    except openai.error.AuthenticationError: # type: ignore
         print("\nAuthenticationError: Check your API-key")
         sys.exit(1)
-    except openai.InvalidRequestError as e:
+    except openai.InvalidRequestError as e: # type: ignore
         if "maximum context length" in str(e):
             print("\nNOTICE:   Context limit reached, redacting old messages...")
 
@@ -136,12 +136,12 @@ def send_message(
             message=message,
             messages=messages,
             model=model,
-            function_call=function_call,
+            function_call=function_call, # type: ignore
             conv_id=conv_id,
             print_message=print_message,
             temp=temp,
         )
-    except openai.error.PermissionError:
+    except openai.error.PermissionError: # type: ignore
         raise
     except TypeError:
         raise
@@ -166,7 +166,7 @@ def send_message(
             message=message,
             messages=messages,
             model=model,
-            function_call=function_call,
+            function_call=function_call, # type: ignore
             retries=retries+1,
             conv_id=conv_id,
             print_message=print_message,
@@ -177,10 +177,10 @@ def send_message(
     messages = redact_always(messages)
 
     # add response to message list
-    messages.append(response["choices"][0]["message"])
+    messages.append(response["choices"][0]["message"]) # type: ignore
 
     # get message content
-    response_message = response["choices"][0]["message"]["content"]
+    response_message = response["choices"][0]["message"]["content"] # type: ignore
 
     # if response includes content, print it out
     if print_message and response_message != None:

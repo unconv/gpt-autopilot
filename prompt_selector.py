@@ -57,7 +57,7 @@ Available slugs are:\n
 
     tokens.add(response, model)
 
-    slug = json.loads(response["choices"][0]["message"]["function_call"]["arguments"])
+    slug = json.loads(response["choices"][0]["message"]["function_call"]["arguments"]) # type: ignore
     slug = slug["slug"]
 
     if slug not in slugs:
