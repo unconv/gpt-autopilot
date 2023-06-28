@@ -311,12 +311,9 @@ make_tasklist_func = {
     "name": "make_tasklist",
     "description": """
 Convert the next steps to be taken into a list of tasks and pass them as a list into this function. Don't add already done tasks.
-
-Remember that the tasklist should be able to be completed with simple file
-operations or terminal commands, so don't include anything that can't be
-accomplished using these methods (e.g. checking a UI or running tests)
-
-For a trivial task, make just one task
+Explain the task clearly so that there can be no misunderstandings.
+Don't include testing or other operations that require user interaction, unless specifically asked.
+For a trivial project, make just one task
 """,
     "parameters": {
         "type": "object",
