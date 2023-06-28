@@ -214,7 +214,10 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
             prompt_data = prompt_selector.get_data(prompt, model, temp)
         except:
             print("ERROR:    Unable to detect system message")
-            prompt_data = {"slug": "default"}
+            prompt_data = {
+                "slug": "default",
+                "system_message": path.join("prompts", "default", "system_message")
+            }
 
         slug = prompt_data["slug"]
         if slug != "default":
