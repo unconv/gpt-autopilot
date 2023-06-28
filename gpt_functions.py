@@ -6,7 +6,7 @@ import shutil
 import signal
 import subprocess
 
-from helpers import yesno, safepath, codedir
+from helpers import yesno, safepath, codedir, relpath
 import cmd_args
 
 tasklist = []
@@ -48,18 +48,20 @@ def make_tasklist(tasks):
     return "TASK_LIST_RECEIVED: Start with first task: " + next_task + ". Do all the steps involved in the task and only then run the task_finished function. If the task is already done in a previous task, you can call task_finished right away"
 
 def file_open_for_writing(filename, content = ""):
-    print(f"FUNCTION: Writing to file code/{filename}...")
+    filename = relpath(safepath(filename))
+    print(f"FUNCTION: Writing to file {filename}...")
     return f"Please respond in your next response with the full content of the file {filename}. Respond only with the contents of the file, no explanations. Create a fully working, complete file with no limitations on file size. Put file content between lines START_OF_FILE_CONTENT and END_OF_FILE_CONTENT. Start your response with START_OF_FILE_CONTENT"
 
 def replace_text(find, replace, filename, count = -1):
-    filename = safepath(filename)
+    fullpath = safepath(filename)
+    relative = relpath(fullpath)
 
     if ( len(find) + len(replace) ) > 37:
-        print(f"FUNCTION: Replacing text in {codedir(filename)}...")
+        print(f"FUNCTION: Replacing text in {relative}...")
     else:
-        print(f"FUNCTION: Replacing '{find}' with '{replace}' in {codedir(filename)}...")
+        print(f"FUNCTION: Replacing '{find}' with '{replace}' in {relative}...")
 
-    with open(codedir(filename), "r") as f:
+    with open(fullpath, "r") as f:
         file_content = f.read()
 
     new_text = file_content.replace(find, replace, count)
@@ -67,50 +69,56 @@ def replace_text(find, replace, filename, count = -1):
         print("ERROR:    Did not find text to replace")
         return "ERROR: Did not find text to replace"
 
-    with open(codedir(filename), "w") as f:
+    with open(fullpath, "w") as f:
         f.write(new_text)
 
     return "Text replaced successfully"
 
 def file_open_for_appending(filename, content = ""):
-    print(f"FUNCTION: Appending to file {codedir(filename)}...")
+    filename = relpath(safepath(filename))
+    print(f"FUNCTION: Appending to file {filename}...")
     return f"Please respond in your next response with the full text to append to the end of the file {filename}. Respond only with the contents to add to the end of the file, no explanations. Create a fully working, complete file with no limitations on file size. Put file content between lines START_OF_FILE_CONTENT and END_OF_FILE_CONTENT. Start your response with START_OF_FILE_CONTENT"
 
 def read_file(filename):
-    filename = safepath(filename)
+    fullpath = safepath(filename)
+    relative = relpath(fullpath)
 
-    print(f"FUNCTION: Reading file {codedir(filename)}...")
-    if not os.path.exists(codedir(filename)):
-        print(f"ERROR:    File {filename} does not exist")
-        return f"File {filename} does not exist"
-    with open(codedir(filename), "r") as f:
+    print(f"FUNCTION: Reading file {relative}...")
+    if not os.path.exists(fullpath):
+        print(f"ERROR:    File {relative} does not exist")
+        return f"File {relative} does not exist"
+    with open(fullpath, "r") as f:
         content = f.read()
-    return f"The contents of '{filename}':\n{content}"
+    return f"The contents of '{relative}':\n{content}"
 
 def create_dir(directory):
-    directory = safepath(directory)
+    fullpath = safepath(directory)
+    relative = relpath(fullpath)
 
-    print(f"FUNCTION: Creating directory {codedir(directory)}")
-    if os.path.isdir(codedir(directory)):
+    print(f"FUNCTION: Creating directory {relative}")
+    if os.path.isdir(fullpath):
         return "ERROR: Directory exists"
     else:
-        os.makedirs(codedir(directory))
-        return f"Directory {directory} created!"
+        os.makedirs(fullpath)
+        return f"Directory {relative} created!"
 
 def move_file(source, destination):
     source = safepath(source)
     destination = safepath(destination)
 
-    print(f"FUNCTION: Move {codedir(source)} to {codedir(destination)}...")
+    rel_source = relpath(source)
+    rel_destination = relpath(destination)
+
+    print(f"FUNCTION: Move {rel_source} to {rel_destination}...")
 
     # Create parent directories if they don't exist
-    parent_dir = os.path.dirname(codedir(destination))
+    parent_dir = os.path.dirname(destination)
     os.makedirs(parent_dir, exist_ok=True)
 
     try:
-        shutil.move(codedir(source), codedir(destination))
+        shutil.move(source, destination)
     except:
-        if os.path.isdir(codedir(source)) and os.path.isdir(codedir(destination)):
+        if os.path.isdir(source) and os.path.isdir(destination):
             return "ERROR: Destination folder already exists."
         return "Unable to move file."
 
@@ -120,44 +128,47 @@ def copy_file(source, destination):
     source = safepath(source)
     destination = safepath(destination)
 
-    print(f"FUNCTION: Copy {codedir(source)} to {codedir(destination)}...")
+    rel_source = relpath(source)
+    rel_destination = relpath(destination)
+
+    print(f"FUNCTION: Copy {rel_source} to {rel_destination}...")
 
     # Create parent directories if they don't exist
-    parent_dir = os.path.dirname(codedir(destination))
+    parent_dir = os.path.dirname(destination)
     os.makedirs(parent_dir, exist_ok=True)
 
     try:
-        shutil.copy(codedir(source), codedir(destination))
+        shutil.copy(source, destination)
     except:
-        if os.path.isdir(codedir(source)) and os.path.isdir(codedir(destination)):
+        if os.path.isdir(source) and os.path.isdir(destination):
             return "ERROR: Destination folder already exists."
         return "Unable to copy file."
 
-    return f"File {source} copied to {destination}"
+    return f"File {rel_source} copied to {rel_destination}"
 
 def delete_file(filename):
-    filename = safepath(filename)
-    path = codedir(filename)
+    fullpath = safepath(filename)
+    relative = relpath(fullpath)
 
-    print(f"FUNCTION: Deleting file {path}")
+    print(f"FUNCTION: Deleting file {relative}")
 
-    if not os.path.exists(path):
-        print(f"ERROR:    File {filename} does not exist")
-        return f"ERROR: File {filename} does not exist"
+    if not os.path.exists(fullpath):
+        print(f"ERROR:    File {relative} does not exist")
+        return f"ERROR: File {relative} does not exist"
 
     try:
-        if os.path.isdir(path):
-            shutil.rmtree(path)
+        if os.path.isdir(fullpath):
+            shutil.rmtree(fullpath)
         else:
-            os.remove(path)
+            os.remove(fullpath)
     except:
         return "ERROR: Unable to remove file."
 
-    return f"File {filename} successfully deleted"
+    return f"File {relative} successfully deleted"
 
 def list_files(list = "", print_output = True):
     files_by_depth = {}
-    directory = "code"
+    directory = codedir()
 
     for root, _, filenames in os.walk(directory):
         depth = str(root[len(directory):].count(os.sep))
@@ -179,9 +190,9 @@ def list_files(list = "", print_output = True):
             files.append(filename)
 
     # Remove code folder from the beginning of file paths
-    files = [file_path.replace("code/", "", 1).replace("code\\", "", 1) for file_path in files]
+    files = [relpath(file_path) for file_path in files]
 
-    if print_output: print(f"FUNCTION: Listing files in code directory")
+    if print_output: print(f"FUNCTION: Listing files in project directory")
     return f"The following files are currently in the project directory:\n{files}"
 
 def ask_clarification(questions):
@@ -203,7 +214,7 @@ def ask_clarification(questions):
 
 def run_cmd(base_dir, command, reason, asynch=False):
     base_dir = safepath(base_dir)
-    base_dir = base_dir.strip("/").strip("\\")
+    base_dir = base_dir.rstrip("/").rstrip("\\")
 
     if asynch == True:
         asynchly = " asynchronously"
@@ -213,13 +224,16 @@ def run_cmd(base_dir, command, reason, asynch=False):
     print()
     print(f"GPT: I want to run the following command{asynchly}:")
 
-    the_dir = os.path.join("code", base_dir)
-    command = "cd " + the_dir + "; " + command
     print("------------------------------")
     print(f"{command}")
     print("------------------------------")
     print(reason)
+    print("------------------------------")
+    print("Base: " + base_dir)
     print()
+
+    # add cd command
+    command = "cd " + base_dir + "; " + command
 
     if asynch == True:
         print("#################################################")
@@ -265,7 +279,7 @@ def run_cmd(base_dir, command, reason, asynch=False):
                 process.send_signal(signal.SIGINT)
 
         # read possible output
-        output_file = os.path.join(the_dir, "gpt-autopilot-cmd-outout.txt")
+        output_file = os.path.join(base_dir, "gpt-autopilot-cmd-outout.txt")
         with open(output_file) as f:
             output = f.read()
         os.remove(output_file)

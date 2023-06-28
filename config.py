@@ -1,8 +1,11 @@
 import json
+import os
+
+import paths
 
 def get_config():
     try:
-        with open("config.json") as f:
+        with open(paths.relative("config.json")) as f:
             config = json.load(f)
     except:
         config = {
@@ -11,5 +14,5 @@ def get_config():
     return config
 
 def save_config(config):
-    with open("config.json", "w") as f:
+    with open(paths.relative("config.json"), "w") as f:
         f.write(json.dumps(config, indent=4))

@@ -10,6 +10,7 @@ import tokens
 import gpt_functions
 import checklist
 import cmd_args
+import paths
 
 def redact_always(messages):
     messages_redact = copy.deepcopy(messages)
@@ -53,7 +54,7 @@ def send_message(
 
     # save message history
     if conv_id is not None:
-        history_file = os.path.join("history", f"{conv_id}.json")
+        history_file = paths.relative("history", f"{conv_id}.json")
         with open(history_file, "w") as f:
             f.write(json.dumps(messages, indent=4))
 

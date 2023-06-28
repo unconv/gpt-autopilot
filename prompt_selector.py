@@ -4,10 +4,12 @@ import json
 import sys
 import os
 
+import paths
+
 def get_data(prompt, model, temp):
     slugs = []
 
-    for filename in os.scandir("prompts"):
+    for filename in os.scandir(paths.relative("prompts")):
         if os.path.isdir(filename):
             slugs.append(os.path.basename(filename))
 
@@ -65,8 +67,8 @@ Available slugs are:\n
         "slug": slug
     }
 
-    checklist_path = os.path.join("prompts", slug, "checklist.json")
-    system_message_path = os.path.join("prompts", slug, "system_message")
+    checklist_path = paths.relative("prompts", slug, "checklist.json")
+    system_message_path = paths.relative("prompts", slug, "system_message")
 
     if os.path.exists(checklist_path):
         data["checklist"] = checklist_path

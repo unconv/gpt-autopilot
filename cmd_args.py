@@ -1,6 +1,5 @@
 import sys
-
-from helpers import reset_code_folder
+import os
 
 args = {
     "program_name": sys.argv.pop(0)
@@ -11,6 +10,9 @@ VERSION = "0.2.0-dev"
 help_info = {
     "--prompt": {
         "desc": "initial prompt for GPT-AutoPilot",
+    },
+    "--dir": {
+        "desc": "set the project directory",
     },
     "--conv": {
         "desc": "conversation id to continue from (e.g. 0123)",
@@ -92,6 +94,27 @@ def parse_arguments(argv):
                 print(f"ERROR: Missing argument for '{arg_name}'")
                 sys.exit(1)
             args["prompt"] = sys.argv.pop(0)
+        # set the project directory
+        elif arg_name == "--dir":
+            if sys.argv == []:
+                print(f"ERROR: Missing argument for '{arg_name}'")
+                sys.exit(1)
+            args["dir"] = sys.argv.pop(0)
+            project_dir = args["dir"]
+            if "versions" in args:
+                print("ERROR: --dir is not compatible with --versions")
+                sys.exit(1)
+            if not os.path.exists(project_dir):
+                print(f"Project directory '{project_dir}' doesn't exist")
+                answer = input("Do you want to create it? (y/n) ")
+                if answer == "y":
+                    os.makedirs(project_dir)
+                    print()
+                else:
+                    sys.exit(1)
+            if not os.path.isdir(project_dir):
+                print(f"ERROR: Project directory '{project_dir}' is not a directory")
+                sys.exit(1)
         # temperature
         elif arg_name == "--temp":
             if sys.argv == []:
@@ -140,7 +163,7 @@ def parse_arguments(argv):
             args["no-questions"] = True
         # delete code folder contents before starting
         elif arg_name == "--delete":
-            reset_code_folder()
+            args["delete"] = True
         # which model to use for ChatGPT API
         elif arg_name == "--model":
             if sys.argv == []:
@@ -155,6 +178,9 @@ def parse_arguments(argv):
             sys.exit(0)
         # make multiple versions of project
         elif arg_name == "--versions":
+            if "dir" in args:
+                print("ERROR: --dir is not compatible with --versions")
+                sys.exit(1)
             if "ask-better" in args:
                 print(f"ERROR: --ask-better flag is not compatible with --versions flag")
                 sys.exit(1)

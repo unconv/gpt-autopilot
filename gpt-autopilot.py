@@ -12,7 +12,7 @@ import random
 import copy
 
 import gpt_functions
-from helpers import yesno, safepath, codedir, numberfile, reset_code_folder
+from helpers import yesno, safepath, codedir, numberfile, reset_code_folder, relpath
 import chatgpt
 import betterprompter
 from config import get_config, save_config
@@ -20,6 +20,7 @@ import tokens
 import cmd_args
 import checklist
 import prompt_selector
+import paths
 
 CONFIG = get_config()
 
@@ -66,17 +67,17 @@ def strip_markdown(content):
 def check_content_format(filename, content):
     # detect partial file content response
     if "END_OF_FILE_CONTENT" not in content:
-        print(f"ERROR:    Partial write response for code/{filename}...")
+        print(f"ERROR:    Partial write response for {filename}...")
         return "ERROR: No END_OF_FILE_CONTENT detected"
 
     # detect wrongly formatted response
     if "START_OF_FILE_CONTENT" not in content:
-        print(f"ERROR:    Invalid content format for code/{filename}...")
+        print(f"ERROR:    Invalid content format for {filename}...")
         return "ERROR: No START_OF_FILE_CONTENT detected"
 
     # detect gpt-3.5 stupidity
     if "`START_OF_FILE_CONTENT` and `END_OF_FILE_CONTENT`" in content:
-        print(f"ERROR:    Invalid content format for code/{filename}...")
+        print(f"ERROR:    Invalid content format for {filename}...")
         return "ERROR: Your response needs to start with START_OF_FILE_CONTENT and end with END_OF_FILE_CONTENT, with the file content in between. No other explanations. No apologies. Just the file content."
 
     return None
@@ -104,15 +105,14 @@ def parse_file_content(content):
     return content
 
 def actually_write_file(filename, content):
-    filename = safepath(filename)
+    fullpath = safepath(filename)
+    relative = relpath(fullpath)
 
-    check = check_content_format(filename, content)
+    check = check_content_format(relative, content)
     if check is not None:
         return check
 
     content = parse_file_content(content)
-
-    fullpath = codedir(filename)
 
     # Create parent directories if they don't exist
     parent_dir = os.path.dirname(fullpath)
@@ -124,29 +124,30 @@ def actually_write_file(filename, content):
     with open(fullpath, "w") as f:
         f.write(content)
 
-    print(f"DONE:     Wrote to file code/{filename}...")
-    return f"File {filename} written successfully"
+    print(f"DONE:     Wrote to file {relative}")
+    return f"File {relative} written successfully"
 
 def actually_append_file(filename, content):
-    filename = safepath(filename)
+    fullpath = safepath(filename)
+    relative = relpath(fullpath)
 
-    check = check_content_format(filename, content)
+    check = check_content_format(relative, content)
     if check is not None:
         return check
 
     content = parse_file_content(content)
 
     # Create parent directories if they don't exist
-    parent_dir = os.path.dirname(codedir(filename))
+    parent_dir = os.path.dirname(fullpath)
     os.makedirs(parent_dir, exist_ok=True)
 
-    with open(codedir(filename), "a") as f:
+    with open(fullpath, "a") as f:
         f.write(content)
 
-    with open(codedir(filename), "r") as f:
+    with open(fullpath, "r") as f:
         new_file_content = f.read()
 
-    return f"APPEND_OK: File {filename} appended successfully. IMPORTANT: If you appended code to a file, you might have appended it after the main function or an event listener or other code scope accidentally. Please check the code and rewrite the whole file if you made a mistake. The content of the file is now this:\n\n{new_file_content}"
+    return f"APPEND_OK: File {relative} appended successfully. IMPORTANT: If you appended code to a file, you might have appended it after the main function or an event listener or other code scope accidentally. Please check the code and rewrite the whole file if you made a mistake. The content of the file is now this:\n\n{new_file_content}"
 
 def print_task_finished(model):
     tokens_total = int(tokens.token_usage["total"])
@@ -216,7 +217,7 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
             print("ERROR:    Unable to detect system message")
             prompt_data = {
                 "slug": "default",
-                "system_message": path.join("prompts", "default", "system_message")
+                "system_message": paths.relative("prompts", "default", "system_message")
             }
 
         slug = prompt_data["slug"]
@@ -530,11 +531,15 @@ def get_api_key():
     return api_key
 
 def warn_existing_code():
-    if os.path.isdir("code") and len(os.listdir("code")) != 0:
+    if os.path.isdir(codedir()) and len(os.listdir(codedir())) != 0:
+        if "delete" in cmd_args.args:
+            reset_code_folder()
+            return
+
         answer = yesno(
             "#####################################################\n"+
             "# WARNING!                                          #\n"+
-            "# There is already some code in the `code/` folder. #\n"+
+            "# There are already files in the project folder.    #\n"+
             "# GPT-AutoPilot may base the project on these files #\n"+
             "# and and might modify or delete them.              #\n"+
             "#####################################################"+
@@ -578,14 +583,14 @@ def run_versions(prompt, args, version_messages, temp, prev_version = 1):
     else:
         versions = 1
 
-    version_dir = os.path.join("versions", str(version_id))
+    version_dir = paths.relative("versions", str(version_id))
     ver_orig_dir = os.path.join(version_dir, "orig")
 
     if versions > 1:
         if not os.path.isdir(version_dir):
             os.mkdir(version_dir)
 
-        shutil.copytree("code", ver_orig_dir)
+        shutil.copytree(codedir(), ver_orig_dir)
         recursive = False
     else:
         recursive = True
@@ -609,7 +614,7 @@ def run_versions(prompt, args, version_messages, temp, prev_version = 1):
             temp = round( temp_orig + random.uniform(-0.1, 0.1), 2 )
 
             # always start with original version
-            shutil.copytree(ver_orig_dir, "code")
+            shutil.copytree(ver_orig_dir, codedir())
 
         # RUN CONVERSATION
         run_conversation(
@@ -622,8 +627,8 @@ def run_versions(prompt, args, version_messages, temp, prev_version = 1):
 
         if versions > 1:
             version_folder = os.path.join(version_dir, f"v{version}")
-            shutil.copytree("code", version_folder)
-            shutil.rmtree("code")
+            shutil.copytree(codedir(), version_folder)
+            shutil.rmtree(codedir())
             version_folders.append(version_folder)
 
         # save message history of each version
@@ -641,11 +646,12 @@ def run_versions(prompt, args, version_messages, temp, prev_version = 1):
 
             if str(next_up) in ["exit", "quit", "e", "q"]:
                 sys.exit(0)
+            print()
 
         next_version = int(next_up)
 
         # move selected version to code folder and start over
-        shutil.copytree(version_folders[next_version-1], "code")
+        shutil.copytree(version_folders[next_version-1], codedir())
 
         prompt = input("GPT: What would you like to do next?\nYou: ")
         print()
