@@ -11,8 +11,10 @@ Make sure to define JS variable functions BEFORE using them because hoisting doe
 
 Project starting file structure:
 index.html
-js/script.js (create multiple scripts if necessary)
+js/script.js
 css/style.css
+
+Add all javascript to external files, not directly in script tags. You can create multiple javascript files.
 
 It is vital to keep the directory structure of the project simple and not to create unnecessary directories.
 
