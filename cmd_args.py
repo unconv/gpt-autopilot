@@ -11,6 +11,9 @@ help_info = {
     "--prompt": {
         "desc": "initial prompt for GPT-AutoPilot",
     },
+    "--prompt-file": {
+        "desc": "read initial prompt from a file",
+    },
     "--dir": {
         "desc": "set the project directory",
     },
@@ -94,6 +97,13 @@ def parse_arguments(argv):
                 print(f"ERROR: Missing argument for '{arg_name}'")
                 sys.exit(1)
             args["prompt"] = sys.argv.pop(0)
+        # initial prompt from a file
+        elif arg_name == "--prompt-file":
+            if sys.argv == []:
+                print(f"ERROR: Missing argument for '{arg_name}'")
+                sys.exit(1)
+            with open(sys.argv.pop(0)) as f:
+                args["prompt"] = f.read()
         # set the project directory
         elif arg_name == "--dir":
             if sys.argv == []:
