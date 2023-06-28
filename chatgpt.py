@@ -42,14 +42,12 @@ def send_message(
     conv_id = None,
     temp = 0.6,
 ):
-    print("GPT-API:  Waiting... ", end="", flush=True)
-
     # add user message to message list
     messages.append(message)
 
     # redact old messages when encountering partial output
     if "No END_OF_FILE_CONTENT" in message["content"]:
-        print("\nNOTICE:   Partial output detected, redacting messages...")
+        print("NOTICE:   Partial output detected, redacting messages...")
         messages[-2]["content"] = "<file content redacted>"
         messages = redact_messages(messages)
 
@@ -87,11 +85,14 @@ def send_message(
 
     # always ask for a task list first
     elif "no-tasklist" not in cmd_args.args and gpt_functions.tasklist_finished:
+        print("TASKLIST: Creating a tasklist...")
         definitions = [gpt_functions.make_tasklist_func]
         function_call = {
             "name": "make_tasklist",
             "arguments": "tasks"
         }
+
+    print("GPT-API:  Waiting... ", end="", flush=True)
 
     try:
         # send prompt to chatgpt
