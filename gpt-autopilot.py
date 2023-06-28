@@ -334,20 +334,24 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
                     # call the function given by chatgpt
                     try:
                         function_response = getattr(gpt_functions, function_name)(**arguments)
+
+                        if function_name == "file_open_for_writing":
+                            mode = "WRITE_FILE"
+                            filename = arguments["filename"]
+                            function_call = "none"
+                            print_message = False
+
+                        if function_name == "file_open_for_appending":
+                            mode = "APPEND_FILE"
+                            filename = arguments["filename"]
+                            function_call = "none"
+                            print_message = False
+
                     except TypeError:
                         function_response = "ERROR: Invalid function parameters"
 
-                    if function_name == "file_open_for_writing":
-                        mode = "WRITE_FILE"
-                        filename = arguments["filename"]
-                        function_call = "none"
-                        print_message = False
-
-                    if function_name == "file_open_for_appending":
-                        mode = "APPEND_FILE"
-                        filename = arguments["filename"]
-                        function_call = "none"
-                        print_message = False
+                    except KeyError:
+                        function_response = "ERROR: Invalid function parameters"
 
             messages = remove_hallucinations(messages)
 
