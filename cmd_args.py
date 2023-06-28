@@ -17,6 +17,9 @@ help_info = {
     "--dir": {
         "desc": "set the project directory",
     },
+    "--system": {
+        "desc": "set system message slug to use",
+    },
     "--conv": {
         "desc": "conversation id to continue from (e.g. 0123)",
     },
@@ -131,6 +134,12 @@ def parse_arguments(argv):
                 print(f"ERROR: Missing argument for '{arg_name}'")
                 sys.exit(1)
             args["temp"] = float(sys.argv.pop(0))
+        # system message slug
+        elif arg_name == "--system":
+            if sys.argv == []:
+                print(f"ERROR: Missing argument for '{arg_name}'")
+                sys.exit(1)
+            args["system"] = sys.argv.pop(0)
         # make prompt better with GPT
         elif arg_name == "--better":
             if "versions" in args:

@@ -210,15 +210,21 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
         conv_id = numberfile("history")
 
     if messages == []:
-        print("GPT-API:  Selecting system message...")
-        try:
-            prompt_data = prompt_selector.get_data(prompt, model, temp)
-        except:
-            print("ERROR:    Unable to detect system message")
+        if "system" in cmd_args.args:
             prompt_data = {
-                "slug": "default",
-                "system_message": paths.relative("prompts", "default", "system_message")
+                "slug": cmd_args.args["system"],
+                "system_message": paths.relative("prompts", cmd_args.args["system"], "system_message")
             }
+        else:
+            print("GPT-API:  Selecting system message...")
+            try:
+                prompt_data = prompt_selector.get_data(prompt, model, temp)
+            except:
+                print("ERROR:    Unable to detect system message")
+                prompt_data = {
+                    "slug": "default",
+                    "system_message": paths.relative("prompts", "default", "system_message")
+                }
 
         slug = prompt_data["slug"]
         print(f"SYSTEM:   Using system message '{slug}'")
