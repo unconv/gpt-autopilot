@@ -7,8 +7,8 @@ cd gpt-autopilot
 REM run pyinstaller
 pyinstaller gpt-autopilot.py
 
-REM add system_message to package
-copy system_message dist\gpt-autopilot\
+REM add prompts to package
+copy prompts dist\gpt-autopilot\
 
 REM make zip package using 7-Zip
 cd dist

@@ -288,8 +288,7 @@ def run_cmd(base_dir, command, reason, asynch=False):
 
 def project_finished(finished=True):
     global tasklist_finished
-    if not tasklist_finished:
-        return "ERROR: You must finish the task list before finishing the project"
+    tasklist_finished = True
     return "PROJECT_FINISHED"
 
 def task_finished(finished=True):
@@ -310,7 +309,7 @@ def task_finished(finished=True):
 make_tasklist_func = {
     "name": "make_tasklist",
     "description": """
-Convert the next steps to be taken into a list of tasks and pass them as a list into this function.
+Convert the next steps to be taken into a list of tasks and pass them as a list into this function. Don't add already done tasks.
 
 Remember that the tasklist should be able to be completed with simple file
 operations or terminal commands, so don't include anything that can't be

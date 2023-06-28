@@ -8,6 +8,7 @@ import copy
 from helpers import yesno
 import tokens
 import gpt_functions
+import checklist
 import cmd_args
 
 def redact_always(messages):
@@ -60,7 +61,7 @@ def send_message(
 
     definitions = copy.deepcopy(gpt_functions.get_definitions(model))
 
-    if gpt_functions.tasklist != []:
+    if gpt_functions.tasklist != [] or checklist.active_list != []:
         remove_funcs = [
             "make_tasklist", # don't take any more task lists if there is one already
             "project_finished" # don't allow project_finished function when task list is unfinished

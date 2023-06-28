@@ -7,8 +7,8 @@ cd gpt-autopilot
 # run pyinstaller
 pyinstaller gpt-autopilot.py
 
-# add system_message to package
-cp system_message dist/gpt-autopilot/
+# add prompts to package
+cp prompts dist/gpt-autopilot/
 
 # make zip package
 cd dist/

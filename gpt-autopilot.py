@@ -18,6 +18,8 @@ import betterprompter
 from config import get_config, save_config
 import tokens
 import cmd_args
+import checklist
+import prompt_selector
 
 CONFIG = get_config()
 
@@ -207,7 +209,25 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
         conv_id = numberfile("history")
 
     if messages == []:
-        with open("system_message", "r") as f:
+        print("GPT-API:  Selecting system message...")
+        try:
+            prompt_data = prompt_selector.get_data(prompt, model, temp)
+        except:
+            print("ERROR:    Unable to detect system message")
+            prompt_data = {"slug": "default"}
+
+        slug = prompt_data["slug"]
+        if slug != "default":
+            print(f"SYSTEM:   Using system message '{slug}'")
+
+        if "checklist" in prompt_data:
+            print(f"SYSTEM:   Using checklist '{slug}'")
+            checklist.load_checklist(prompt_data["checklist"])
+            checklist.activate_checklist()
+        else:
+            print()
+
+        with open(prompt_data["system_message"], "r") as f:
             system_message = f.read()
 
         # add system message
@@ -330,26 +350,42 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
 
             # if function returns PROJECT_FINISHED, exit
             if function_response == "PROJECT_FINISHED":
-                print_task_finished(model)
-
                 if recursive == False:
+                    checklist.activate_checklist()
+                    print_task_finished(model)
                     return
 
-                next_message = yesno("GPT: Do you want to ask something else?\nYou:", ["y", "n"])
-                print()
-                if next_message == "y":
-                    prompt = input("GPT: What do you want to ask?\nYou: ")
+                do_checklist = "no-checklist" not in cmd_args.args and checklist.active_list != []
+                if do_checklist:
+                    if "use-checklist" not in cmd_args.args and len(checklist.active_list) == len(checklist.the_list):
+                        if yesno("\nGPT: Do you want to run through the checklist?\nYou") == "n":
+                            checklist.active_list = []
+                            do_checklist = False
+                        print()
+                    if do_checklist:
+                        gpt_functions.tasklist_finished = False
+                        prompt = checklist.active_list.pop(0)
+                        print("CHECKLIST: " + prompt)
+
+                if not do_checklist:
+                    print_task_finished(model)
+                    checklist.activate_checklist()
+                    next_message = yesno("GPT: Do you want to ask something else?\nYou:", ["y", "n"])
                     print()
-                    return run_conversation(
-                        prompt=prompt,
-                        model=model,
-                        messages=messages,
-                        conv_id=conv_id,
-                        recursive=recursive,
-                    )
-                else:
-                    print("Exiting")
-                    sys.exit(0)
+                    if next_message == "y":
+                        prompt = input("GPT: What do you want to ask?\nYou: ")
+                        print()
+                    else:
+                        print("Exiting")
+                        sys.exit(0)
+
+                return run_conversation(
+                    prompt=prompt,
+                    model=model,
+                    messages=messages,
+                    conv_id=conv_id,
+                    recursive=recursive,
+                )
 
             # send function result to chatgpt
             messages = chatgpt.send_message(

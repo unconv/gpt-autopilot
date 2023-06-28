@@ -1,0 +1,7 @@
+[
+    "Make sure there is a package.json",
+    "Make sure there is a route for the entrypoint",
+    "Make sure all client side dependencies are loaded",
+    "Make sure static files are linked properly",
+    "Install all required npm packages"
+]

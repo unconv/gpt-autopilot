@@ -48,6 +48,12 @@ help_info = {
     "--one-task": {
         "desc": "send the task list to ChatGPT in a single message",
     },
+    "--do-checklist": {
+        "desc": "run through checklist items automatically",
+    },
+    "--no-checklist": {
+        "desc": "don't use checklist from custom system message",
+    },
     "--questions": {
         "desc": "change number of clarifying questions to ask in the beginning",
     },
@@ -117,6 +123,12 @@ def parse_arguments(argv):
         # send the whole tasklist to chatgpt at once
         elif arg_name == "--one-task":
             args["one-task"] = True
+        # run through checklist items automatically
+        elif arg_name == "--do-checklist":
+            args["do-checklist"] = True
+        # don't use checklist from custom system message
+        elif arg_name == "--no-checklist":
+            args["no-checklist"] = True
         # how manu clarifying questions to ask in the beginning
         elif arg_name == "--questions":
             if sys.argv == []:
