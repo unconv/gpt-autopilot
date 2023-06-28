@@ -74,7 +74,7 @@ def send_message(
 
     # always ask clarifying questions first
     if "questions" in cmd_args.args:
-        initial_question_count = questions
+        initial_question_count = cmd_args.args["questions"]
     else:
         initial_question_count = 5
 
