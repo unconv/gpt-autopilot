@@ -94,7 +94,7 @@ def create_dir(directory):
     if os.path.isdir(codedir(directory)):
         return "ERROR: Directory exists"
     else:
-        os.mkdir(codedir(directory))
+        os.makedirs(codedir(directory))
         return f"Directory {directory} created!"
 
 def move_file(source, destination):
