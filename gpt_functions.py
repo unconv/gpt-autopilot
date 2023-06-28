@@ -3,6 +3,7 @@ import sys
 import copy
 import time
 import shutil
+import signal
 import subprocess
 
 from helpers import yesno, safepath, codedir
