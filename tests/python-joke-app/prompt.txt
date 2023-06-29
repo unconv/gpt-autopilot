@@ -1,0 +1,16 @@
+create a python flask website that has a big red button with text "tell a joke" and when you press it, it shows a random joke
+
+Q: Do you have a specific API or dataset in mind to use for getting random jokes?
+A: create a JSON file and put 5 random jokes there
+
+Q: What should happen when the 'tell a joke' button is pressed? Should the page reload or should the joke be displayed without refreshing the page?
+A: the joke should be displayed below the button without a page reload 
+
+Q: Do you have a specific design in mind for the website? Any preferences for colors, fonts, or layout?
+A: big red "tell a joke" button centered vertically and horizontally
+
+Q: Should the jokes be displayed randomly or in a specific order?
+A: randomly
+
+Q: Should the joke disappear after it is displayed, or should it remain visible?
+A: it should remain visible and change to a new one when the button is clicked again

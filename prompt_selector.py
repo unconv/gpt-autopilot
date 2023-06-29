@@ -68,8 +68,9 @@ Available slugs are:\n
     if slug not in slugs:
         print(f"ERROR:    GPT detected system message '{slug}' that doesn't exist")
         slug = "default"
-    elif "use-system" not in cmd_args.args and yesno(f"\nGPT: Detected project type '{slug}'. Do you want to use this system message?\nYou") == "n":
-        slug = input("\nGPT: Which system message do you want to use?\nYou [default]: ") or "default"
+    elif "use-system" not in cmd_args.args:
+        if yesno(f"\nGPT: Detected project type '{slug}'. Do you want to use this system message?\nYou") == "n":
+            slug = input("\nGPT: Which system message do you want to use?\nYou [default]: ") or "default"
         print()
 
     return slug
@@ -78,6 +79,8 @@ def get_data(prompt, model, temp, slug=None):
     if slug is None:
         try:
             slug = detect_slug(prompt, model, temp)
+        except SystemExit:
+            raise
         except:
             print("ERROR:    Unable to detect system message")
             prompt_data = {

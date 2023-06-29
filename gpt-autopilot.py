@@ -353,7 +353,7 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
 
                 do_checklist = "no-checklist" not in cmd_args.args and checklist.active_list != []
                 if do_checklist:
-                    if "use-checklist" not in cmd_args.args and len(checklist.active_list) == len(checklist.the_list):
+                    if "do-checklist" not in cmd_args.args and len(checklist.active_list) == len(checklist.the_list):
                         if yesno("\nGPT: Do you want to run through the checklist?\nYou") == "n":
                             checklist.active_list = []
                             do_checklist = False
@@ -365,6 +365,10 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
 
                 if not do_checklist:
                     print_task_finished(model)
+
+                    if "one-task" in cmd_args.args:
+                        sys.exit(0)
+
                     checklist.activate_checklist()
                     next_message = yesno("GPT: Do you want to ask something else?\nYou:", ["y", "n"])
                     print()
@@ -432,8 +436,11 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
                    "Explain" in message["content"] or \
                    "What is" in message["content"] or \
                    "How does" in message["content"]:
-                    user_message = input("You:\n")
-                    print()
+                    if "continue" in cmd_args.args:
+                        user_message = "Please continue with using the given functions."
+                    else:
+                        user_message = input("You:\n")
+                        print()
                 else:
                     # if chatgpt doesn't ask a question, continue
                     user_message = "Ok, continue."
@@ -459,6 +466,8 @@ def make_prompt_better(prompt, ask=True):
 
     try:
         better_prompt = betterprompter.make_better(prompt, CONFIG["model"])
+    except SystemExit:
+        raise
     except Exception as e:
         better_prompt = prompt
         if "The model: `gpt-4-0613` does not exist" in str(e):

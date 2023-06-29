@@ -37,7 +37,7 @@ def make_tasklist(tasks):
 
     print()
 
-    if "one-task" in cmd_args.args:
+    if "single-tasklist" in cmd_args.args:
         tasklist_finished = False
         return all_tasks + "\n\nPlease complete the project according to the above requirements"
 
@@ -235,7 +235,7 @@ def run_cmd(base_dir, command, reason, asynch=False):
     print()
 
     # add cd command
-    command = "cd " + base_dir + "; " + command
+    full_command = "cd " + base_dir + "; " + command
 
     if asynch == True:
         print("#################################################")
@@ -246,11 +246,14 @@ def run_cmd(base_dir, command, reason, asynch=False):
         print("#################################################")
         print()
 
-    answer = yesno(
-        "Do you want to run this command?",
-        ["YES", "NO", "ASYNC", "SYNC"]
-    )
-    print()
+    if command.strip() not in cmd_args.allowed_cmd:
+        answer = yesno(
+            "Do you want to run this command?",
+            ["YES", "NO", "ASYNC", "SYNC"]
+        )
+        print()
+    else:
+        answer = "SYNC"
 
     if answer == "ASYNC":
         asynch = True
@@ -262,7 +265,7 @@ def run_cmd(base_dir, command, reason, asynch=False):
 
     if answer == "YES":
         process = subprocess.Popen(
-            command + " > gpt-autopilot-cmd-outout.txt 2>&1",
+            full_command + " > gpt-autopilot-cmd-outout.txt 2>&1",
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE

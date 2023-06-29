@@ -1,5 +1,8 @@
 import json
+import sys
 import os
+
+import cmd_args
 
 # global token usage
 token_usage = {
@@ -59,15 +62,26 @@ def add(response, model):
             "price": 0.0,
         }
 
+    # calculate session price
+    total_price = get_token_cost(model, prompt_tokens, completion_tokens)
+
     # increment total token usage
     total_token_usage["input"] += prompt_tokens
     total_token_usage["output"] += completion_tokens
     total_token_usage["total"] += total_tokens
-    total_token_usage["price"] += get_token_cost(model, prompt_tokens, completion_tokens)
+    total_token_usage["price"] += total_price
 
     # save total token usage
     with open("token_usage.json", "w") as f:
         f.write(json.dumps(total_token_usage, indent=4))
+
+    if "max-tokens" in cmd_args.args and total_tokens >= int(cmd_args.args["max-tokens"]):
+        print("ERROR:    Maximum token limit reached: " + str(cmd_args.args["max-tokens"]) + " tokens")
+        sys.exit(1)
+
+    if "max-price" in cmd_args.args and total_price >= float(cmd_args.args["max-price"]):
+        print("ERROR:    Maximum price limit reached: " + str(cmd_args.args["max-price"]) + " USD")
+        sys.exit(1)
 
 def get_token_cost(model, input_tokens=None, output_tokens=None):
     global token_usage

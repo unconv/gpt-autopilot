@@ -17,6 +17,9 @@ help_info = {
     "--dir": {
         "desc": "set the project directory",
     },
+    "--create-dir": {
+        "desc": "create the project directory automatically if it doesn't exist",
+    },
     "--system": {
         "desc": "set system message slug to use",
     },
@@ -56,8 +59,17 @@ help_info = {
     "--no-tasklist": {
         "desc": "don't create a task list",
     },
-    "--one-task": {
+    "--single-tasklist": {
         "desc": "send the task list to ChatGPT in a single message",
+    },
+    "--one-task": {
+        "desc": "end script after 'task is finished' summary",
+    },
+    "--max-tokens": {
+        "desc": "end script after this amount tokens are used",
+    },
+    "--max-price": {
+        "desc": "end script after this amount of money is used",
     },
     "--do-checklist": {
         "desc": "run through checklist items automatically",
@@ -69,9 +81,14 @@ help_info = {
         "desc": "change number of clarifying questions to ask in the beginning",
     },
     "--no-questions": {
-        "desc": "don't ask clarifying questions",
+        "desc": "don't ask clarifying questions in the beginning",
+    },
+    "--continue": {
+        "desc": "continue automatically if ChatGPT responds without a function call",
     },
 }
+
+allowed_cmd = []
 
 def print_help():
     global help_info
@@ -87,6 +104,7 @@ def print_help():
 
 def parse_arguments(argv):
     global args
+    global allowed_cmd
 
     while sys.argv != []:
         arg_name = sys.argv.pop(0)
@@ -110,6 +128,12 @@ def parse_arguments(argv):
                 sys.exit(1)
             with open(sys.argv.pop(0)) as f:
                 args["prompt"] = f.read()
+        # automatically run this command if ChatGPT requests it
+        elif arg_name == "--allow-cmd":
+            if sys.argv == []:
+                print(f"ERROR: Missing argument for '{arg_name}'")
+                sys.exit(1)
+            allowed_cmd.append(sys.argv.pop(0))
         # set the project directory
         elif arg_name == "--dir":
             if sys.argv == []:
@@ -121,8 +145,12 @@ def parse_arguments(argv):
                 print("ERROR: --dir is not compatible with --versions")
                 sys.exit(1)
             if not os.path.exists(project_dir):
-                print(f"Project directory '{project_dir}' doesn't exist")
-                answer = input("Do you want to create it? (y/n) ")
+                if "create-dir" in args:
+                    print(f"Creating project directory '{project_dir}'", end="")
+                    answer = "y"
+                else:
+                    print(f"Project directory '{project_dir}' doesn't exist")
+                    answer = input("Do you want to create it? (y/n) ")
                 if answer == "y":
                     os.makedirs(project_dir)
                     print()
@@ -137,6 +165,18 @@ def parse_arguments(argv):
                 print(f"ERROR: Missing argument for '{arg_name}'")
                 sys.exit(1)
             args["temp"] = float(sys.argv.pop(0))
+        # maximum amount of tokens to use
+        elif arg_name == "--max-tokens":
+            if sys.argv == []:
+                print(f"ERROR: Missing argument for '{arg_name}'")
+                sys.exit(1)
+            args["max-tokens"] = int(sys.argv.pop(0))
+        # maximum amount of money to use
+        elif arg_name == "--max-price":
+            if sys.argv == []:
+                print(f"ERROR: Missing argument for '{arg_name}'")
+                sys.exit(1)
+            args["max-price"] = float(sys.argv.pop(0))
         # system message slug
         elif arg_name == "--system":
             if sys.argv == []:
@@ -145,7 +185,7 @@ def parse_arguments(argv):
             args["system"] = sys.argv.pop(0)
         # use automatically detected system message without confirmation
         elif arg_name == "--use-system":
-            args["system"] = True
+            args["use-system"] = True
         # make prompt better with GPT
         elif arg_name == "--better":
             if "versions" in args:
@@ -169,6 +209,9 @@ def parse_arguments(argv):
         elif arg_name == "--no-tasklist":
             args["no-tasklist"] = True
         # send the whole tasklist to chatgpt at once
+        elif arg_name == "--single-tasklist":
+            args["single-tasklist"] = True
+        # run only one task and end the script
         elif arg_name == "--one-task":
             args["one-task"] = True
         # run through checklist items automatically
@@ -177,6 +220,12 @@ def parse_arguments(argv):
         # don't use checklist from custom system message
         elif arg_name == "--no-checklist":
             args["no-checklist"] = True
+        # continue automatically if ChatGPT doesn't respond with a function call
+        elif arg_name == "--continue":
+            args["continue"] = True
+        # create project directory automatically if it doesn't exist
+        elif arg_name == "--create-dir":
+            args["create-dir"] = True
         # how manu clarifying questions to ask in the beginning
         elif arg_name == "--questions":
             if sys.argv == []:
