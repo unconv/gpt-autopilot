@@ -1,7 +1,7 @@
 import sys
 import os
 
-args: dict[str, str|float|int] = {
+args = {
     "program_name": sys.argv.pop(0)
 }
 
@@ -114,20 +114,20 @@ def parse_arguments(argv):
             if sys.argv == []:
                 print(f"ERROR: Missing argument for '{arg_name}'")
                 sys.exit(1)
-            args["conv"] = sys.argv.pop(0)
+            args["conv"] = sys.argv.pop(0) # type: ignore
         # initial prompt
         elif arg_name == "--prompt":
             if sys.argv == []:
                 print(f"ERROR: Missing argument for '{arg_name}'")
                 sys.exit(1)
-            args["prompt"] = sys.argv.pop(0)
+            args["prompt"] = sys.argv.pop(0) # type: ignore
         # initial prompt from a file
         elif arg_name == "--prompt-file":
             if sys.argv == []:
                 print(f"ERROR: Missing argument for '{arg_name}'")
                 sys.exit(1)
             with open(sys.argv.pop(0)) as f:
-                args["prompt"] = f.read()
+                args["prompt"] = f.read() # type: ignore
         # automatically run this command if ChatGPT requests it
         elif arg_name == "--allow-cmd":
             if sys.argv == []:
@@ -139,7 +139,7 @@ def parse_arguments(argv):
             if sys.argv == []:
                 print(f"ERROR: Missing argument for '{arg_name}'")
                 sys.exit(1)
-            args["dir"] = sys.argv.pop(0)
+            args["dir"] = sys.argv.pop(0) # type: ignore
             project_dir = args["dir"]
             if "versions" in args:
                 print("ERROR: --dir is not compatible with --versions")
@@ -164,86 +164,86 @@ def parse_arguments(argv):
             if sys.argv == []:
                 print(f"ERROR: Missing argument for '{arg_name}'")
                 sys.exit(1)
-            args["temp"] = float(sys.argv.pop(0))
+            args["temp"] = float(sys.argv.pop(0)) # type: ignore
         # maximum amount of tokens to use
         elif arg_name == "--max-tokens":
             if sys.argv == []:
                 print(f"ERROR: Missing argument for '{arg_name}'")
                 sys.exit(1)
-            args["max-tokens"] = int(sys.argv.pop(0))
+            args["max-tokens"] = int(sys.argv.pop(0)) # type: ignore
         # maximum amount of money to use
         elif arg_name == "--max-price":
             if sys.argv == []:
                 print(f"ERROR: Missing argument for '{arg_name}'")
                 sys.exit(1)
-            args["max-price"] = float(sys.argv.pop(0))
+            args["max-price"] = float(sys.argv.pop(0)) # type: ignore
         # system message slug
         elif arg_name == "--system":
             if sys.argv == []:
                 print(f"ERROR: Missing argument for '{arg_name}'")
                 sys.exit(1)
-            args["system"] = sys.argv.pop(0)
+            args["system"] = sys.argv.pop(0) # type: ignore
         # use automatically detected system message without confirmation
         elif arg_name == "--use-system":
-            args["use-system"] = True
+            args["use-system"] = True # type: ignore
         # make prompt better with GPT
         elif arg_name == "--better":
             if "versions" in args:
                 print("ERROR: --versions must come after --better")
                 sys.exit(1)
-            args["better"] = True
+            args["better"] = True # type: ignore
         # don't make prompt better with GPT
         elif arg_name == "--not-better":
-            args["not-better"] = True
+            args["not-better"] = True # type: ignore
         # confirm if user wants to use bettered prompt
         elif arg_name == "--ask-better":
-            args["ask-better"] = True
+            args["ask-better"] = True # type: ignore
         # make a new better prompt for every version
         elif arg_name == "--better-versions":
-            args["better-versions"] = True
-            args["better"] = True
+            args["better-versions"] = True # type: ignore
+            args["better"] = True # type: ignore
         # use first task list automatically
         elif arg_name == "--use-tasklist":
-            args["use-tasklist"] = True
+            args["use-tasklist"] = True # type: ignore
         # don't create a task list
         elif arg_name == "--no-tasklist":
-            args["no-tasklist"] = True
+            args["no-tasklist"] = True # type: ignore
         # send the whole tasklist to chatgpt at once
         elif arg_name == "--single-tasklist":
-            args["single-tasklist"] = True
+            args["single-tasklist"] = True # type: ignore
         # run only one task and end the script
         elif arg_name == "--one-task":
-            args["one-task"] = True
+            args["one-task"] = True # type: ignore
         # run through checklist items automatically
         elif arg_name == "--do-checklist":
-            args["do-checklist"] = True
+            args["do-checklist"] = True # type: ignore
         # don't use checklist from custom system message
         elif arg_name == "--no-checklist":
-            args["no-checklist"] = True
+            args["no-checklist"] = True # type: ignore
         # continue automatically if ChatGPT doesn't respond with a function call
         elif arg_name == "--continue":
-            args["continue"] = True
+            args["continue"] = True # type: ignore
         # create project directory automatically if it doesn't exist
         elif arg_name == "--create-dir":
-            args["create-dir"] = True
+            args["create-dir"] = True # type: ignore
         # how manu clarifying questions to ask in the beginning
         elif arg_name == "--questions":
             if sys.argv == []:
                 print(f"ERROR: Missing argument for '{arg_name}'")
                 sys.exit(1)
-            args["questions"] = int(sys.argv.pop(0))
+            args["questions"] = int(sys.argv.pop(0)) # type: ignore
         # don't ask clarifying questions
         elif arg_name == "--no-questions":
-            args["no-questions"] = True
+            args["no-questions"] = True # type: ignore
         # delete code folder contents before starting
         elif arg_name == "--delete":
-            args["delete"] = True
+            args["delete"] = True # type: ignore
         # which model to use for ChatGPT API
         elif arg_name == "--model":
             if sys.argv == []:
                 print(f"ERROR: Missing argument for '{arg_name}'")
                 sys.exit(1)
-            args["model"] = str(sys.argv.pop(0))
+            args["model"] = str(sys.argv.pop(0)) # type: ignore
         elif arg_name in ["--version", "-v"]:
             print(f"GPT-AutoPilot v{VERSION} by Unconventional Coding")
             sys.exit(69)
@@ -261,7 +261,7 @@ def parse_arguments(argv):
             if sys.argv == []:
                 print(f"ERROR: Missing argument for '{arg_name}'")
                 sys.exit(1)
-            args["versions"] = int(sys.argv.pop(0))
+            args["versions"] = int(sys.argv.pop(0)) # type: ignore
         else:
             print(f"ERROR: Invalid option '{arg_name}'")
             sys.exit(1)
