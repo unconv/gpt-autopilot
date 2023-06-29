@@ -12,6 +12,9 @@ for test in os.scandir(BASE_PATH):
     if os.path.isdir(test):
         test_name = os.path.basename(test)
 
+        if test_name == "results":
+            continue
+
         if len(sys.argv) > 1 and sys.argv[1] != test_name:
             continue
 
