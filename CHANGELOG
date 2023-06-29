@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `--max-tokens [NUMBER]` to limit the maximum number of tokens the project can use
     - `--max-price [NUMBER]` to limit the maximum amount of money the project can use
     - `--continue` to continue automatically if ChatGPT responds without a function call
-    - `--model` to set the ChatGPT API model to be used
+    - `--model [MODEL_NAME]` to set the ChatGPT API model to be used
 - GPT-AutoPilot will now ask 5 questions about the project in the beginning, before starting to code. The behavior can be changed with the following command line flags:
     - `--no-questions` to not ask any questions
     - `--questions [NUMBER]` to set number of questions to ask
