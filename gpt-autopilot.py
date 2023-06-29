@@ -210,38 +210,7 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
         conv_id = numberfile("history")
 
     if messages == []:
-        if "system" in cmd_args.args:
-            prompt_data = {
-                "slug": cmd_args.args["system"],
-                "system_message": paths.relative("prompts", cmd_args.args["system"], "system_message")
-            }
-            checklist_path = paths.relative("prompts", cmd_args.args["system"], "checklist.json")
-
-            if os.path.exists(checklist_path):
-                prompt_data["checklist"] = checklist_path
-        else:
-            print("GPT-API:  Selecting system message...")
-            try:
-                prompt_data = prompt_selector.get_data(prompt, model, temp)
-            except:
-                print("ERROR:    Unable to detect system message")
-                prompt_data = {
-                    "slug": "default",
-                    "system_message": paths.relative("prompts", "default", "system_message")
-                }
-
-        slug = prompt_data["slug"]
-        print(f"SYSTEM:   Using system message '{slug}'")
-
-        if "checklist" in prompt_data:
-            print(f"SYSTEM:   Using checklist '{slug}'")
-            checklist.load_checklist(prompt_data["checklist"])
-            checklist.activate_checklist()
-        else:
-            print()
-
-        with open(prompt_data["system_message"], "r") as f:
-            system_message = f.read()
+        system_message = prompt_selector.select_system_message(prompt, model, temp)
 
         # add system message
         messages.append({

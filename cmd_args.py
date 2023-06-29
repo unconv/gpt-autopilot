@@ -38,6 +38,9 @@ help_info = {
     "--not-better": {
         "desc": "don't make prompt automatically better with ChatGPT",
     },
+    "--use-system": {
+        "desc": "use automatically detected system message without confirmation",
+    },
     "--better-versions": {
         "desc": "make a better prompt for every version",
     },
@@ -140,6 +143,9 @@ def parse_arguments(argv):
                 print(f"ERROR: Missing argument for '{arg_name}'")
                 sys.exit(1)
             args["system"] = sys.argv.pop(0)
+        # use automatically detected system message without confirmation
+        elif arg_name == "--use-system":
+            args["system"] = True
         # make prompt better with GPT
         elif arg_name == "--better":
             if "versions" in args:

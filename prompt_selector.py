@@ -4,9 +4,12 @@ import json
 import sys
 import os
 
+from helpers import yesno
+import checklist
+import cmd_args
 import paths
 
-def get_data(prompt, model, temp):
+def detect_slug(prompt, model, temp):
     slugs = []
 
     for filename in os.scandir(paths.relative("prompts")):
@@ -27,6 +30,8 @@ Available slugs are:\n
 """
         }
     ]
+
+    print("GPT-API:  Selecting system message...")
 
     response = openai.ChatCompletion.create(
         model=model,
@@ -61,7 +66,24 @@ Available slugs are:\n
     slug = slug["slug"]
 
     if slug not in slugs:
+        print(f"ERROR:    GPT detected system message '{slug}' that doesn't exist")
         slug = "default"
+    elif "use-system" not in cmd_args.args and yesno(f"\nGPT: Detected project type '{slug}'. Do you want to use this system message?\nYou") == "n":
+        slug = input("\nGPT: Which system message do you want to use?\nYou [default]: ") or "default"
+        print()
+
+    return slug
+
+def get_data(prompt, model, temp, slug=None):
+    if slug is None:
+        try:
+            slug = detect_slug(prompt, model, temp)
+        except:
+            print("ERROR:    Unable to detect system message")
+            prompt_data = {
+                "slug": "default",
+                "system_message": paths.relative("prompts", "default", "system_message")
+            }
 
     data = {
         "slug": slug
@@ -80,3 +102,26 @@ Available slugs are:\n
         sys.exit(1)
 
     return data
+
+def select_system_message(prompt, model, temp):
+    if "system" in cmd_args.args:
+        slug = cmd_args.args["system"]
+    else:
+        slug = None
+
+    prompt_data = get_data(prompt, model, temp, slug)
+
+    slug = prompt_data["slug"]
+    print(f"SYSTEM:   Using system message '{slug}'")
+
+    if "checklist" in prompt_data:
+        print(f"SYSTEM:   Using checklist '{slug}'")
+        checklist.load_checklist(prompt_data["checklist"])
+        checklist.activate_checklist()
+    else:
+        print()
+
+    with open(str(prompt_data["system_message"]), "r") as f:
+        system_message = f.read()
+
+    return system_message
