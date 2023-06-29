@@ -247,21 +247,6 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
     if conv_id is None:
         conv_id = numberfile("history")
 
-    if messages == []:
-        system_message = prompt_selector.select_system_message(prompt, model, temp)
-
-        # add system message
-        messages.append({
-            "role": "system",
-            "content": system_message
-        })
-
-        # add list of current files to user prompt
-        prompt += "\n\n" + gpt_functions.list_files()
-
-        # add list of functions to first prompt
-        prompt += "\n\nYou can call these functions: " + function_list(model)
-
     # add user prompt to chatgpt messages
     try:
         messages = chatgpt.send_message(
@@ -565,7 +550,7 @@ def maybe_make_prompt_better(prompt, args, version_loop = False):
     if version_loop == True and "better-versions" not in args:
         return prompt
     if "not-better" not in args:
-        if "better" in args or yesno("GPT: Do you want me to make your prompt better?\nYou") == "y":
+        if "better" in args or yesno("\nGPT: Do you want me to make your prompt better?\nYou") == "y":
             ask = "better" not in args or "ask-better" in args
             prompt = make_prompt_better(prompt, ask)
         print()
@@ -594,6 +579,22 @@ def run_versions(prompt, args, version_messages, temp, prev_version = 1):
 
     version_folders = []
     orig_messages = version_messages[prev_version]
+
+    # add system message on the first round
+    if orig_messages == []:
+        system_message = prompt_selector.select_system_message(prompt, CONFIG["model"], temp)
+
+        # add system message
+        orig_messages.append({
+            "role": "system",
+            "content": system_message
+        })
+
+        # add list of current files to user prompt
+        prompt += "\n\n" + gpt_functions.list_files()
+
+        # add list of functions to first prompt
+        prompt += "\n\nYou can call these functions: " + function_list(CONFIG["model"])
 
     for version in range(1, versions+1):
         # reset message history for every version
