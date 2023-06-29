@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Ability to run the script from outside the script directory
+- More command line flags:
+    - `--dir [DIRECTORY]` to use a custom project folder for reading/writing instead of the `code` folder
+    - `--create-dir` to create project directory automatically if it doesn't exist
+    - `--prompt-file [FILENAME]` to load the first prompt from a file
+    - `--allow-cmd [EXACT_COMMAND]` to allow specific terminal commands to be run without confirmation
+    - `--one-task` to end script after the first 'task is finished' summary
+    - `--max-tokens [NUMBER]` to limit the maximum number of tokens the project can use
+    - `--max-price [NUMBER]` to limit the maximum amount of money the project can use
+    - `--continue` to continue automatically if ChatGPT responds without a function call
+    - `--model` to set the ChatGPT API model to be used
+- GPT-AutoPilot will now ask 5 questions about the project in the beginning, before starting to code. The behavior can be changed with the following command line flags:
+    - `--no-questions` to not ask any questions
+    - `--questions [NUMBER]` to set number of questions to ask
+- GPT-AutoPilot now creates a task list for the project and runs through the list one by one. You can use the following command line flags to change the behavior:
+    - `--no-tasklist` to not generate a task list at all
+    - `--single-tasklist` to send the whole tasklist to ChatGPT at once
+- Custom system messages and checklists for specific projects. A fitting system message from the `prompts` folder is picked automatically and can be changed with these command line flags:
+    - `--system [SYSTEM_MESSAGE_SLUG]` to set which system message from `prompts` folder is used
+    - `--use-system` to not ask for confirmation before using an automatically detected system message
+    - `--do-checklist` to do all tasks in the checklist automatically after the project is finished
+    - `--no-checklist` to not use any checklist
+- Rudamentary tests for sample projects
+
+### Fixed
+
+- Issues with GPT-3.5 model
+- Fixed and "fixed" `pyright` errors
+
+### Changed
+
+- Default temperature from `1.0` to `0.9`
+
 ## [0.1.3] 2023-06-25
 
 ### Added
