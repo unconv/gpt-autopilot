@@ -1,0 +1,17 @@
+create a snake game in python in a single file. don't implement sound effects. don't include high score tracking
+
+Q: Do you want a console-based snake game or a GUI-based snake game?
+A: GUI
+
+Q: Do you have any preference for the GUI library to be used?
+A: no
+
+Q: Do you want any additional features in the game?
+A: when the snake hits the walls, it should appear from the other side
+
+Q: Would you like the ability to change the speed of the game?
+A: no
+
+Q: Do you want to keep track of the score in the game?
+A: yes, keep track of how many pieces of food are eaten
+

@@ -1,0 +1,16 @@
+create a live-view markdown editor with showdown js
+
+Q: Do you want to store the markdown content in a file, or just display it in the editor?
+A: just display it
+
+Q: Should the editor have a live preview of the rendered markdown?
+A: yes
+
+Q: Are there any specific features or functionalities you would like to have in the markdown editor?
+A: no
+
+Q: Do you have any specific design requirements for the markdown editor?
+A: the markdown and the rendered view should be side by side
+
+Q: Do you have the Showdown.js library already included in the project?
+A: no, use a cdn

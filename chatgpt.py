@@ -8,6 +8,17 @@ import copy
 from helpers import yesno
 import tokens
 import gpt_functions
+import checklist
+import cmd_args
+import paths
+
+def redact_always(messages):
+    messages_redact = copy.deepcopy(messages)
+    for msg in messages_redact:
+        if msg["role"] == "user" and "APPEND_OK" in msg["content"]:
+            msg["content"] = "File appended succesfully"
+            break
+    return messages_redact
 
 def redact_messages(messages):
     messages_redact = copy.deepcopy(messages)
@@ -30,58 +41,80 @@ def send_message(
     retries = 0,
     print_message = True,
     conv_id = None,
-    temp = 1.0,
+    temp = 0.9,
 ):
-    print("GPT-API:  Waiting... ", end="", flush=True)
-
     # add user message to message list
     messages.append(message)
 
     # redact old messages when encountering partial output
     if "No END_OF_FILE_CONTENT" in message["content"]:
-        print("\nNOTICE:   Partial output detected, redacting messages...")
+        print("NOTICE:   Partial output detected, redacting messages...")
         messages[-2]["content"] = "<file content redacted>"
         messages = redact_messages(messages)
 
     # save message history
     if conv_id is not None:
-        history_file = os.path.join("history", f"{conv_id}.json")
+        history_file = paths.relative("history", f"{conv_id}.json")
         with open(history_file, "w") as f:
             f.write(json.dumps(messages, indent=4))
 
-    # gpt-3.5 is not responsible enough for these functions
-    gpt3_disallow = [
-        "create_dir",
-        "move_file",
-        "copy_file",
-        "replace_text",
-    ]
+    definitions = copy.deepcopy(gpt_functions.get_definitions(model))
 
-    if "gpt-4" not in model:
-        for definition in gpt_functions.definitions:
-            if definition["name"] in gpt3_disallow:
-                gpt_functions.definitions.remove(definition)
+    if gpt_functions.tasklist != [] or checklist.active_list != []:
+        remove_funcs = [
+            "make_tasklist", # don't take any more task lists if there is one already
+            "project_finished" # don't allow project_finished function when task list is unfinished
+        ]
+
+        definitions = [definition for definition in definitions if definition["name"] not in remove_funcs]
+    else:
+        # remove task_finished function if there is no task currently
+        definitions = [definition for definition in definitions if definition["name"] != "task_finished"]
+
+    # always ask clarifying questions first
+    if "questions" in cmd_args.args:
+        initial_question_count = int(cmd_args.args["questions"])
+    else:
+        initial_question_count = 5
+
+    if "no-questions" not in cmd_args.args and gpt_functions.clarification_asked < initial_question_count:
+        definitions = [gpt_functions.ask_clarification_func]
+        function_call = {
+            "name": "ask_clarification",
+            "arguments": "questions"
+        }
+
+    # always ask for a task list first
+    elif "no-tasklist" not in cmd_args.args and gpt_functions.tasklist_finished:
+        print("TASKLIST: Creating a tasklist...")
+        definitions = [gpt_functions.make_tasklist_func]
+        function_call = {
+            "name": "make_tasklist",
+            "arguments": "tasks"
+        }
+
+    print("GPT-API:  Waiting... ", end="", flush=True)
 
     try:
         # send prompt to chatgpt
         response = openai.ChatCompletion.create(
             model=model,
             messages=messages,
-            functions=gpt_functions.definitions,
+            functions=definitions,
             function_call=function_call,
             temperature=temp,
             request_timeout=60,
         )
 
         tokens.add(response, model)
-        request_tokens = response["usage"]["total_tokens"]
+        request_tokens = response["usage"]["total_tokens"] # type: ignore
         total_tokens = int(tokens.token_usage["total"])
         token_cost = round(tokens.get_token_cost(model), 2)
         print(f"OK! (+{request_tokens} tokens, total {total_tokens} / {token_cost} USD)")
-    except openai.error.AuthenticationError:
+    except openai.error.AuthenticationError: # type: ignore
         print("\nAuthenticationError: Check your API-key")
         sys.exit(1)
-    except openai.InvalidRequestError as e:
+    except openai.InvalidRequestError as e: # type: ignore
         if "maximum context length" in str(e):
             print("\nNOTICE:   Context limit reached, redacting old messages...")
 
@@ -103,12 +136,12 @@ def send_message(
             message=message,
             messages=messages,
             model=model,
-            function_call=function_call,
+            function_call=function_call, # type: ignore
             conv_id=conv_id,
             print_message=print_message,
             temp=temp,
         )
-    except openai.error.PermissionError:
+    except openai.error.PermissionError: # type: ignore
         raise
     except TypeError:
         raise
@@ -119,7 +152,7 @@ def send_message(
             raise
 
         if "You exceeded your current quota" in str(e):
-            if yesno("You have exceeded your OpenAI API quota. Would you like to try again?") == "n":
+            if yesno("\n\nERROR:    You have exceeded your OpenAI API quota. Would you like to try again?") == "n":
                 sys.exit(1)
 
         # if request fails, wait 5 seconds and try again
@@ -133,18 +166,21 @@ def send_message(
             message=message,
             messages=messages,
             model=model,
-            function_call=function_call,
+            function_call=function_call, # type: ignore
             retries=retries+1,
             conv_id=conv_id,
             print_message=print_message,
             temp=temp,
         )
 
+    # redact long responses that don't need to be in history
+    messages = redact_always(messages)
+
     # add response to message list
-    messages.append(response["choices"][0]["message"])
+    messages.append(response["choices"][0]["message"]) # type: ignore
 
     # get message content
-    response_message = response["choices"][0]["message"]["content"]
+    response_message = response["choices"][0]["message"]["content"] # type: ignore
 
     # if response includes content, print it out
     if print_message and response_message != None:

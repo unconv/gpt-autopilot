@@ -1,0 +1,19 @@
+I'm selling a course "How to get in shape in 30 days". I am planning on selling the course on a website. Please create a website in Node.js for me that has a payment form that I can use to collect the payment of 59.95 USD for my course. The form should include name, email and special requests and it should have a Stripe credit card input directly in the form. Make it a single page form and show a thank you message after the payment has been made. Send a notification of the payment to my email jack@superdupercourses.com. Add CSS styling and use a nice font.
+
+Q: Do you have a Stripe account set up?
+A: yes
+
+Q: Do you have the necessary API keys for the Stripe integration?
+A: yes
+
+Q: Do you have any specific styling requirements for the payment form?
+A: it should be like a modal that is in the middle of the screen and it should have a shadow
+
+Q: Do you want to store the payment information on your server or only process it through Stripe?
+A: only process through stripe
+
+Q: Do you have an existing index.html file that you would like to use for the website?
+A: no, create the whole projec from scratch
+
+Q: Do you have the Stripe API keys ready?
+A: please use placeholders for the API keys

@@ -1,10 +1,32 @@
 # Helper functions
+import shutil
 import sys
 import os
 import re
 
-def codedir(filename):
-    return os.path.join("code", filename)
+import cmd_args
+import paths
+
+def codedir(filename=""):
+    if "dir" in cmd_args.args:
+        code_base_path = str(cmd_args.args["dir"])
+    else:
+        code_base_path = paths.relative("code")
+    return os.path.join(code_base_path, filename)
+
+def relpath(filepath):
+    return os.path.relpath(filepath, codedir())
+
+def reset_code_folder():
+    if os.path.isdir(codedir()):
+        for item in os.listdir(codedir()):
+            item_path = os.path.join(codedir(), item)
+            if os.path.isfile(item_path):
+                os.remove(item_path)
+            elif os.path.isdir(item_path):
+                shutil.rmtree(item_path)
+    else:
+        os.mkdir(codedir())
 
 def yesno(prompt, answers = ["y", "n"]):
     answer = ""
@@ -20,14 +42,14 @@ def safepath(path):
     if path == ".":
         path = ""
 
-    base = os.path.abspath("code")
+    base = os.path.abspath(codedir())
     file = os.path.abspath(os.path.join(base, path))
 
     if os.path.commonpath([base, file]) != base:
-        print(f"ERROR:    Tried to access file '{file}' outside of code folder!")
+        print(f"ERROR:    Tried to access file '{file}' outside of project folder!")
         sys.exit(1)
 
-    return path
+    return file
 
 def extract_number(filename):
     match = re.search(r'\d+', filename)

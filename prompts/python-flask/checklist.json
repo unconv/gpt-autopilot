@@ -1,0 +1,9 @@
+[
+    "Make sure there is a requirements.txt file",
+    "Make sure there is a route for the entrypoint",
+    "Make sure static files have a route",
+    "Make sure static files have been linked properly",
+    "Make sure templates are in the correct paths",
+    "Make sure all required routes are added",
+    "Make sure there are no duplicate routes"
+]

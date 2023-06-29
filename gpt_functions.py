@@ -1,84 +1,126 @@
 import os
+import sys
+import copy
 import time
 import shutil
+import signal
 import subprocess
 
-from helpers import yesno, safepath, codedir
+from helpers import yesno, safepath, codedir, relpath
+import cmd_args
+
+tasklist = []
+tasklist_finished = True
+
+clarification_asked = 0
 
 # Implementation of the functions given to ChatGPT
 
-def write_file(filename, content = ""):
-    print(f"FUNCTION: Writing to file code/{filename}...")
-    return f"Please respond in your next response with the full content of the file {filename}. Respond only with the contents of the file, no explanations. Create a fully working, complete file with no limitations on file size. Put file content between lines START_OF_FILE_CONTENT and END_OF_FILE_CONTENT"
+def make_tasklist(tasks):
+    global tasklist
+    global tasklist_finished
+
+    next_task = tasks.pop(0)
+    all_tasks = ""
+
+    all_tasks += "TASKLIST: 1. " + next_task + "\n"
+
+    for number, item in enumerate(tasks):
+        all_tasks += "          " + str( number + 2 ) + ". " + item + "\n"
+
+    print(all_tasks, end="")
+
+    if "use-tasklist" not in cmd_args.args and yesno("\nGPT: Do you want to continue with this task list?\nYou") != "y":
+        modifications = input("\nGPT: What would you like to change?\nYou: ")
+        print()
+        return "Task list modification request: " + modifications
+
+    print()
+
+    if "single-tasklist" in cmd_args.args:
+        tasklist_finished = False
+        return all_tasks + "\n\nPlease complete the project according to the above requirements"
+
+    tasklist += tasks
+    tasklist_finished = False
+
+    print("TASK:     " + next_task)
+    return "TASK_LIST_RECEIVED: Start with first task: " + next_task + ". Do all the steps involved in the task and only then run the task_finished function. If the task is already done in a previous task, you can call task_finished right away"
+
+def file_open_for_writing(filename, content = ""):
+    filename = relpath(safepath(filename))
+    print(f"FUNCTION: Writing to file {filename}...")
+    return f"Please respond in your next response with the full content of the file {filename}. Respond only with the contents of the file, no explanations. Create a fully working, complete file with no limitations on file size. Put file content between lines START_OF_FILE_CONTENT and END_OF_FILE_CONTENT. Start your response with START_OF_FILE_CONTENT"
 
 def replace_text(find, replace, filename, count = -1):
-    filename = safepath(filename)
+    fullpath = safepath(filename)
+    relative = relpath(fullpath)
 
     if ( len(find) + len(replace) ) > 37:
-        print(f"FUNCTION: Replacing text in {codedir(filename)}...")
+        print(f"FUNCTION: Replacing text in {relative}...")
     else:
-        print(f"FUNCTION: Replacing '{find}' with '{replace}' in {codedir(filename)}...")
+        print(f"FUNCTION: Replacing '{find}' with '{replace}' in {relative}...")
 
-    with open(codedir(filename), "r") as f:
+    with open(fullpath, "r") as f:
         file_content = f.read()
 
-    with open(codedir(filename), "w") as f:
-        new_text = file_content.replace(find, replace, count)
-        if new_text == file_content:
-            print("ERROR:    Did not find text to replace")
-            return "ERROR: Did not find text to replace"
+    new_text = file_content.replace(find, replace, count)
+    if new_text == file_content:
+        print("ERROR:    Did not find text to replace")
+        return "ERROR: Did not find text to replace"
+
+    with open(fullpath, "w") as f:
         f.write(new_text)
 
     return "Text replaced successfully"
 
-def append_file(filename, content):
-    filename = safepath(filename)
-
-    print(f"FUNCTION: Appending to file {codedir(filename)}...")
-
-    # Create parent directories if they don't exist
-    parent_dir = os.path.dirname(codedir(filename))
-    os.makedirs(parent_dir, exist_ok=True)
-
-    with open(codedir(filename), "a") as f:
-        f.write(content)
-    return f"File {filename} appended successfully"
+def file_open_for_appending(filename, content = ""):
+    filename = relpath(safepath(filename))
+    print(f"FUNCTION: Appending to file {filename}...")
+    return f"Please respond in your next response with the full text to append to the end of the file {filename}. Respond only with the contents to add to the end of the file, no explanations. Create a fully working, complete file with no limitations on file size. Put file content between lines START_OF_FILE_CONTENT and END_OF_FILE_CONTENT. Start your response with START_OF_FILE_CONTENT"
 
 def read_file(filename):
-    filename = safepath(filename)
+    fullpath = safepath(filename)
+    relative = relpath(fullpath)
 
-    print(f"FUNCTION: Reading file {codedir(filename)}...")
-    if not os.path.exists(codedir(filename)):
-        print(f"ERROR:    File {filename} does not exist")
-        return f"File {filename} does not exist"
-    with open(codedir(filename), "r") as f:
+    print(f"FUNCTION: Reading file {relative}...")
+    if not os.path.exists(fullpath):
+        print(f"ERROR:    File {relative} does not exist")
+        return f"File {relative} does not exist"
+    with open(fullpath, "r") as f:
         content = f.read()
-    return f"The contents of '{filename}':\n{content}"
+    return f"The contents of '{relative}':\n{content}"
 
 def create_dir(directory):
-    directory = safepath(directory)
+    fullpath = safepath(directory)
+    relative = relpath(fullpath)
 
-    print(f"FUNCTION: Creating directory {codedir(directory)}")
-    if os.path.isdir(codedir(directory)):
+    print(f"FUNCTION: Creating directory {relative}")
+    if os.path.isdir(fullpath):
         return "ERROR: Directory exists"
+    elif os.path.exists(fullpath):
+        return "ERROR: A file with this name already exists"
     else:
-        os.mkdir(codedir(directory))
-        return f"Directory {directory} created!"
+        os.makedirs(fullpath)
+        return f"Directory {relative} created!"
 
 def move_file(source, destination):
     source = safepath(source)
     destination = safepath(destination)
 
-    print(f"FUNCTION: Move {codedir(source)} to {codedir(destination)}...")
+    rel_source = relpath(source)
+    rel_destination = relpath(destination)
+
+    print(f"FUNCTION: Move {rel_source} to {rel_destination}...")
 
     # Create parent directories if they don't exist
-    parent_dir = os.path.dirname(codedir(destination))
+    parent_dir = os.path.dirname(destination)
     os.makedirs(parent_dir, exist_ok=True)
 
     try:
-        shutil.move(codedir(source), codedir(destination))
+        shutil.move(source, destination)
     except:
-        if os.path.isdir(codedir(source)) and os.path.isdir(codedir(destination)):
+        if os.path.isdir(source) and os.path.isdir(destination):
             return "ERROR: Destination folder already exists."
         return "Unable to move file."
 
@@ -88,44 +130,47 @@ def copy_file(source, destination):
     source = safepath(source)
     destination = safepath(destination)
 
-    print(f"FUNCTION: Copy {codedir(source)} to {codedir(destination)}...")
+    rel_source = relpath(source)
+    rel_destination = relpath(destination)
+
+    print(f"FUNCTION: Copy {rel_source} to {rel_destination}...")
 
     # Create parent directories if they don't exist
-    parent_dir = os.path.dirname(codedir(destination))
+    parent_dir = os.path.dirname(destination)
     os.makedirs(parent_dir, exist_ok=True)
 
     try:
-        shutil.copy(codedir(source), codedir(destination))
+        shutil.copy(source, destination)
     except:
-        if os.path.isdir(codedir(source)) and os.path.isdir(codedir(destination)):
+        if os.path.isdir(source) and os.path.isdir(destination):
             return "ERROR: Destination folder already exists."
         return "Unable to copy file."
 
-    return f"File {source} copied to {destination}"
+    return f"File {rel_source} copied to {rel_destination}"
 
 def delete_file(filename):
-    filename = safepath(filename)
-    path = codedir(filename)
+    fullpath = safepath(filename)
+    relative = relpath(fullpath)
 
-    print(f"FUNCTION: Deleting file {path}")
+    print(f"FUNCTION: Deleting file {relative}")
 
-    if not os.path.exists(path):
-        print(f"ERROR:    File {filename} does not exist")
-        return f"ERROR: File {filename} does not exist"
+    if not os.path.exists(fullpath):
+        print(f"ERROR:    File {relative} does not exist")
+        return f"ERROR: File {relative} does not exist"
 
     try:
-        if os.path.isdir(path):
-            shutil.rmtree(path)
+        if os.path.isdir(fullpath):
+            shutil.rmtree(fullpath)
         else:
-            os.remove(path)
+            os.remove(fullpath)
     except:
         return "ERROR: Unable to remove file."
 
-    return f"File {filename} successfully deleted"
+    return f"File {relative} successfully deleted"
 
 def list_files(list = "", print_output = True):
     files_by_depth = {}
-    directory = "code"
+    directory = codedir()
 
     for root, _, filenames in os.walk(directory):
         depth = str(root[len(directory):].count(os.sep))
@@ -147,22 +192,31 @@ def list_files(list = "", print_output = True):
             files.append(filename)
 
     # Remove code folder from the beginning of file paths
-    files = [file_path.replace("code/", "", 1).replace("code\\", "", 1) for file_path in files]
+    files = [relpath(file_path) for file_path in files]
 
-    if print_output: print(f"FUNCTION: Listing files in code directory")
+    if print_output: print(f"FUNCTION: Listing files in project directory")
     return f"The following files are currently in the project directory:\n{files}"
 
-def ask_clarification(question):
-    if "\n" in question:
-        answer = input(f"\nGPT:\n{question}\n\nYou:\n")
-    else:
-        answer = input(f"\nGPT: {question}\nYou: ")
+def ask_clarification(questions):
+    global clarification_asked
+
+    answers = ""
+
+    for question in questions:
+        if "\n" in question:
+            answer = input(f"\nGPT:\n{question}\n\nYou: \n")
+        else:
+            answer = input(f"\nGPT: {question}\nYou: ")
+        answers += f"Q: {question}\nA: {answer}\n"
+        clarification_asked += 1
+
     print()
-    return answer
+
+    return answers
 
 def run_cmd(base_dir, command, reason, asynch=False):
     base_dir = safepath(base_dir)
-    base_dir = base_dir.strip("/").strip("\\")
+    base_dir = base_dir.rstrip("/").rstrip("\\")
 
     if asynch == True:
         asynchly = " asynchronously"
@@ -172,13 +226,16 @@ def run_cmd(base_dir, command, reason, asynch=False):
     print()
     print(f"GPT: I want to run the following command{asynchly}:")
 
-    the_dir = os.path.join("code", base_dir)
-    command = "cd " + the_dir + "; " + command
     print("------------------------------")
     print(f"{command}")
     print("------------------------------")
     print(reason)
+    print("------------------------------")
+    print("Base: " + base_dir)
     print()
+
+    # add cd command
+    full_command = "cd " + base_dir + "; " + command
 
     if asynch == True:
         print("#################################################")
@@ -189,39 +246,48 @@ def run_cmd(base_dir, command, reason, asynch=False):
         print("#################################################")
         print()
 
-    answer = yesno(
-        "Do you want to run this command?",
-        ["YES", "NO"]
-    )
-    print()
+    if command.strip() not in cmd_args.allowed_cmd:
+        answer = yesno(
+            "Do you want to run this command?",
+            ["YES", "NO", "ASYNC", "SYNC"]
+        )
+        print()
+    else:
+        answer = "SYNC"
+
+    if answer == "ASYNC":
+        asynch = True
+        answer = "YES"
+
+    elif answer == "SYNC":
+        asynch = False
+        answer = "YES"
 
     if answer == "YES":
-        if asynch:
-            # Run command asynchronously in the background
-            process = subprocess.Popen(
-                command + " > command_output.txt 2>&1",
-                shell=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
-            )
+        process = subprocess.Popen(
+            full_command + " > gpt-autopilot-cmd-outout.txt 2>&1",
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
 
+        # Run command asynchronously in the background
+        if asynch:
             # Wait for 4 seconds
             time.sleep(4)
-
-            # read possible output
-            output_file = os.path.join(the_dir, "command_output.txt")
-            with open(output_file) as f:
-                output = f.read()
-            os.remove(output_file)
         else:
-            # Run command synchronously and capture stdout and stderr
-            process = subprocess.run(command, shell=True, capture_output=True, text=True)
+            try:
+                # Wait for the subprocess to finish
+                process.wait()
+            except KeyboardInterrupt:
+                # Send Ctrl+C signal to the subprocess
+                process.send_signal(signal.SIGINT)
 
-            # Access the output and error messages
-            stdout = process.stdout
-            stderr = process.stderr
-
-            output = stdout + "\n" + stderr
+        # read possible output
+        output_file = os.path.join(base_dir, "gpt-autopilot-cmd-outout.txt")
+        with open(output_file) as f:
+            output = f.read()
+        os.remove(output_file)
 
         return_value = "Result from command (first 400 chars):\n" + output[:400]
 
@@ -240,12 +306,69 @@ def run_cmd(base_dir, command, reason, asynch=False):
     else:
         return "I don't want to run that command"
 
-def project_finished(finished):
+def project_finished(finished=True):
+    global tasklist_finished
+    tasklist_finished = True
+    return "PROJECT_FINISHED"
+
+def task_finished(finished=True):
+    global tasklist
+
+    print("FUNCTION: Task finished")
+
+    if len(tasklist) > 0:
+        next_task = tasklist.pop(0)
+        print("TASK:     " + next_task)
+        return "Thank you. Please do the next task, unless it has already been done: " + next_task
+
+    tasklist_finished = True
     return "PROJECT_FINISHED"
 
 # Function definitions for ChatGPT
 
+make_tasklist_func = {
+    "name": "make_tasklist",
+    "description": """
+Convert the next steps to be taken into a list of tasks and pass them as a list into this function. Don't add already done tasks.
+Explain the task clearly so that there can be no misunderstandings.
+Don't include testing or other operations that require user interaction, unless specifically asked.
+For a trivial project, make just one task
+""",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "tasks": {
+                "type": "array",
+                "items": {
+                    "type": "string",
+                },
+                "description": "The task list",
+            },
+        },
+        "required": ["tasks"],
+    },
+}
+
+ask_clarification_func = {
+    "name": "ask_clarification",
+    "description": "Ask the user clarifying question(s) about the project that are needed to implement it properly",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "question": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                },
+                "description": "A list of clarifying questions for the user",
+            },
+        },
+        "required": ["questions"],
+    },
+}
+
 definitions = [
+    make_tasklist_func,
     {
         "name": "list_files",
         "description": "List the files in the current project",
@@ -275,8 +398,8 @@ definitions = [
         },
     },
     {
-        "name": "write_file",
-        "description": "Write content to a file with given name. Existing files will be overwritten. Parent directories will be created if they don't exist. Content of file will be asked in the next prompt.",
+        "name": "file_open_for_writing",
+        "description": "Open a file for writing. Existing files will be overwritten. Parent directories will be created if they don't exist. Content of file will be asked in the next prompt.",
         "parameters": {
             "type": "object",
             "properties": {
@@ -315,21 +438,17 @@ definitions = [
         },
     },
     {
-        "name": "append_file",
-        "description": "Write content to the end of a file with given name",
+        "name": "file_open_for_appending",
+        "description": "Open a file for appending content to the end of a file with given name (after the last line). The content to append will be given in the next prompt",
         "parameters": {
             "type": "object",
             "properties": {
                 "filename": {
                     "type": "string",
-                    "description": "The filename to write to",
-                },
-                "content": {
-                    "type": "string",
-                    "description": "The content to write into the file",
+                    "description": "The filename to append to",
                 },
             },
-            "required": ["filename", "content"],
+            "required": ["filename"],
         },
     },
     {
@@ -396,29 +515,30 @@ definitions = [
             "required": ["filename"],
         },
     },
-    {
-        "name": "ask_clarification",
-        "description": "Ask the user a clarifying question about the project. Returns the answer by the user as string",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "question": {
-                    "type": "string",
-                    "description": "The question to ask the user",
-                },
-            },
-            "required": ["question"],
-        },
-    },
+    ask_clarification_func,
     {
         "name": "project_finished",
-        "description": "Call this function when the project is finished",
+        "description": "Call this function when the whole project is finished",
         "parameters": {
             "type": "object",
             "properties": {
                 "finished": {
-                    "type": "string",
-                    "description": "Set this to 'finished' always",
+                    "type": "boolean",
+                    "description": "Set this to true always",
+                },
+            },
+            "required": ["finished"],
+        },
+    },
+    {
+        "name": "task_finished",
+        "description": "Call this function when a task from the tasklist has been finished",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "finished": {
+                    "type": "boolean",
+                    "description": "Set this to true always",
                 },
             },
             "required": ["finished"],
@@ -426,7 +546,7 @@ definitions = [
     },
     {
         "name": "run_cmd",
-        "description": "Run a terminal command. Returns the output.",
+        "description": "Run a terminal command. Returns the output. Folder navigation commands are disallowed. Do it with base_dir",
         "parameters": {
             "type": "object",
             "properties": {
@@ -451,3 +571,26 @@ definitions = [
         },
     },
 ]
+
+def get_definitions(model):
+    global definitions
+
+    func_definitions = copy.deepcopy(definitions)
+
+    # gpt-3.5 is not responsible enough for these functions
+    gpt3_disallow = [
+        "move_file",
+        "copy_file",
+        "replace_text",
+    ]
+
+    if "gpt-4" not in model:
+        func_definitions = [definition for definition in func_definitions if definition["name"] not in gpt3_disallow]
+
+    if "no-tasklist" in cmd_args.args:
+        func_definitions = [definition for definition in func_definitions if definition["name"] != "make_tasklist"]
+
+    if "no-questions" in cmd_args.args:
+        func_definitions = [definition for definition in func_definitions if definition["name"] != "ask_clarification"]
+
+    return func_definitions

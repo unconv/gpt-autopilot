@@ -12,24 +12,27 @@ import random
 import copy
 
 import gpt_functions
-from helpers import yesno, safepath, codedir, numberfile
+from helpers import yesno, safepath, codedir, numberfile, reset_code_folder, relpath
 import chatgpt
 import betterprompter
 from config import get_config, save_config
 import tokens
+import cmd_args
+import checklist
+import prompt_selector
+import paths
 
-VERSION = "0.1.3"
 CONFIG = get_config()
 
 def compact_commands(messages):
     for msg in messages:
-        if msg["role"] == "function" and msg["name"] == "write_file":
-            msg["content"] = "Respond with file content. End with END_OF_FILE_CONTENT"
+        if msg["role"] == "function" and msg["name"] == "file_open_for_writing":
+            msg["content"] = "Respond with file content. Put file content between lines START_OF_FILE_CONTENT and END_OF_FILE_CONTENT"
     return messages
 
 def remove_hallucinations(messages):
     for msg in messages:
-        if msg["role"] == "function" and msg["name"] == "write_file":
+        if msg["role"] == "function" and msg["name"] == "file_open_for_writing":
             try:
                 args = json.loads(msg["function_call"]["arguments"])
                 if "content" in args:
@@ -61,9 +64,25 @@ def strip_markdown(content):
         content = re.sub(r"\n```\s*$", "", content)
     return content
 
-def actually_write_file(filename, content):
-    filename = safepath(filename)
+def check_content_format(filename, content):
+    # detect partial file content response
+    if "END_OF_FILE_CONTENT" not in content:
+        print(f"ERROR:    Partial write response for {filename}...")
+        return "ERROR: No END_OF_FILE_CONTENT detected"
 
+    # detect wrongly formatted response
+    if "START_OF_FILE_CONTENT" not in content:
+        print(f"ERROR:    Invalid content format for {filename}...")
+        return "ERROR: No START_OF_FILE_CONTENT detected"
+
+    # detect gpt-3.5 stupidity
+    if "`START_OF_FILE_CONTENT` and `END_OF_FILE_CONTENT`" in content:
+        print(f"ERROR:    Invalid content format for {filename}...")
+        return "ERROR: Your response needs to start with START_OF_FILE_CONTENT and end with END_OF_FILE_CONTENT, with the file content in between. No other explanations. No apologies. Just the file content."
+
+    return None
+
+def parse_file_content(content):
     # Sometimes ChatGPT makes the start and
     # end tags comments, so we have to remove
     # comment syntax around these
@@ -71,16 +90,6 @@ def actually_write_file(filename, content):
         "START_OF_FILE_CONTENT",
         "END_OF_FILE_CONTENT",
     ])
-
-    # detect partial file content response
-    if "END_OF_FILE_CONTENT" not in content:
-        print(f"ERROR:    Partial write response for code/{filename}...")
-        return "ERROR: No END_OF_FILE_CONTENT detected"
-
-    # detect wrongly formatted response
-    if "START_OF_FILE_CONTENT" not in content:
-        print(f"ERROR:    Invalid content format for code/{filename}...")
-        return "ERROR: No START_OF_FILE_CONTENT detected"
 
     parts = content.split("START_OF_FILE_CONTENT")
     content = parts[1]
@@ -93,7 +102,17 @@ def actually_write_file(filename, content):
     if content != "" and content[-1] != "\n":
         content = content + "\n"
 
-    fullpath = codedir(filename)
+    return content
+
+def actually_write_file(filename, content):
+    fullpath = safepath(filename)
+    relative = relpath(fullpath)
+
+    check = check_content_format(relative, content)
+    if check is not None:
+        return check
+
+    content = parse_file_content(content)
 
     # Create parent directories if they don't exist
     parent_dir = os.path.dirname(fullpath)
@@ -105,8 +124,30 @@ def actually_write_file(filename, content):
     with open(fullpath, "w") as f:
         f.write(content)
 
-    print(f"DONE:     Wrote to file code/{filename}...")
-    return f"File {filename} written successfully"
+    print(f"DONE:     Wrote to file {relative}")
+    return f"File {relative} written successfully"
+
+def actually_append_file(filename, content):
+    fullpath = safepath(filename)
+    relative = relpath(fullpath)
+
+    check = check_content_format(relative, content)
+    if check is not None:
+        return check
+
+    content = parse_file_content(content)
+
+    # Create parent directories if they don't exist
+    parent_dir = os.path.dirname(fullpath)
+    os.makedirs(parent_dir, exist_ok=True)
+
+    with open(fullpath, "a") as f:
+        f.write(content)
+
+    with open(fullpath, "r") as f:
+        new_file_content = f.read()
+
+    return f"APPEND_OK: File {relative} appended successfully. IMPORTANT: If you appended code to a file, you might have appended it after the main function or an event listener or other code scope accidentally. Please check the code and rewrite the whole file if you made a mistake. The content of the file is now this:\n\n{new_file_content}"
 
 def print_task_finished(model):
     tokens_total = int(tokens.token_usage["total"])
@@ -134,21 +175,80 @@ def print_task_finished(model):
     tokens.prev_price_total = price_total
 
 def ask_model_switch():
-    if yesno("ERROR: You don't seem to have access to the GPT-4 API. Would you like to change to GPT-3.5?") == "y":
+    if yesno("\nERROR: You don't seem to have access to the GPT-4 API. Would you like to change to GPT-3.5?") == "y":
         CONFIG["model"] = "gpt-3.5-turbo-16k-0613"
         save_config(CONFIG)
         return CONFIG["model"]
     else:
         sys.exit(1)
 
+def fix_function_name(function_name):
+    if function_name in ["new_file", "create_file"]:
+        return "file_open_for_writing"
+    return function_name
+
+def fix_arguments(function_name, arguments):
+    if function_name == "file_open_for_writing" and "path" in arguments:
+        arguments["filename"] = arguments["path"]
+        del arguments["path"]
+    if function_name == "ask_clarification" and "question" in arguments:
+        arguments["questions"] = arguments["question"]
+        del arguments["question"]
+    return arguments
+
+def fix_json_arguments(arguments_plain, function_name):
+    arguments_fixed = arguments_plain
+    function_response = "ERROR: Invalid function arguments"
+    arguments = None
+
+    try:
+        # gpt-3.5 sometimes uses backticks
+        # instead of double quotes in JSON value
+        print("ERROR:    Invalid JSON arguments. Fixing...")
+        arguments_fixed = arguments_fixed.replace("`", '"')
+        arguments = json.loads(arguments_fixed)
+    except:
+        try:
+            # gpt-3.5 sometimes omits single quotes
+            # from around keys
+            print("ERROR:    Invalid JSON arguments. Fixing again...")
+            arguments_fixed = re.sub(r'(\b\w+\b)(?=\s*:)', r'"\1"', arguments_fixed)
+            arguments = json.loads(arguments_fixed)
+        except:
+            try:
+                # gpt-3.5 sometimes uses single quotes
+                # around keys, instead of double quotes
+                print("ERROR:    Invalid JSON arguments. Fixing third time...")
+                arguments_fixed = re.sub(r"'(\b\w+\b)'(?=\s*:)", r'"\1"', arguments_fixed)
+                arguments = json.loads(arguments_fixed)
+            except:
+                print("ERROR:    Failed to fix function arguments")
+                #print("ERROR PARSING ARGUMENTS:\n---\n")
+                #print(arguments_plain)
+                #print("\n---\n")
+
+                if function_name == "replace_text":
+                    function_response = "ERROR! Please try to replace a shorter text or try another method"
+                else:
+                    function_response = "Error parsing arguments. Make sure to use properly formatted JSON, with double quotes. If this error persist, change tactics"
+
+    return (arguments, function_response)
+
+def function_list(model):
+    func_list = ""
+    for func in gpt_functions.get_definitions(model):
+        func_list += func["name"] + "("
+        func_list += ", ".join([key for key in func["parameters"]["properties"].keys()])
+        func_list += ")\n"
+    return func_list.strip()
+
 # MAIN FUNCTION
-def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None, recursive = True, temp = 1.0):
+def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None, recursive = True, temp = 0.9):
     if conv_id is None:
         conv_id = numberfile("history")
 
     if messages == []:
-        with open("system_message", "r") as f:
-            system_message = f.read()
+        system_message = prompt_selector.select_system_message(prompt, model, temp)
 
         # add system message
         messages.append({
@@ -158,6 +258,9 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
 
         # add list of current files to user prompt
         prompt += "\n\n" + gpt_functions.list_files()
+
+        # add list of functions to first prompt
+        prompt += "\n\nYou can call these functions: " + function_list(model)
 
     # add user prompt to chatgpt messages
     try:
@@ -188,89 +291,101 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
     # loop until project is finished
     while True:
         if message.get("function_call"):
+            # sometimes ChatGPT hallucinates dots in function name
+            message["function_call"]["name"] = re.sub(r'\W+', '', message["function_call"]["name"])
+
             # get function name and arguments
             function_name = message["function_call"]["name"]
             arguments_plain = message["function_call"]["arguments"]
             arguments = None
 
-            try:
-                # try to parse arguments
-                arguments = json.loads(arguments_plain)
+            # fix hallucinations
+            function_name = fix_function_name(function_name)
+            function_response = "ERROR: Invalid parameters"
 
-            # if parsing fails, try to fix format
-            except:
+            if not hasattr(gpt_functions, function_name):
+                print(f"NOTICE:   GPT called function '{function_name}' that doesn't exist.")
+                function_response = f"Function '{function_name}' does not exist. You can call these functions:"
+                function_response += function_list(model)
+            else:
                 try:
-                    # gpt-3.5 sometimes uses backticks
-                    # instead of double quotes in JSON value
-                    print("ERROR:    Invalid JSON arguments. Fixing...")
-                    arguments_fixed = arguments_plain.replace("`", '"')
-                    arguments = json.loads(arguments_fixed)
+                    # try to parse arguments
+                    arguments = json.loads(arguments_plain)
+
+                # if parsing fails, try to fix format
                 except:
-                    try:
-                        # gpt-3.5 sometimes omits single quotes
-                        # from around keys
-                        print("ERROR:    Invalid JSON arguments. Fixing again...")
-                        arguments_fixed = re.sub(r'(\b\w+\b)(?=\s*:)', r'"\1"')
-                        arguments = json.loads(arguments_fixed)
-                    except:
-                        try:
-                            # gpt-3.5 sometimes uses single quotes
-                            # around keys, instead of double quotes
-                            print("ERROR:    Invalid JSON arguments. Fixing third time...")
-                            arguments_fixed = re.sub(r"'(\b\w+\b)'(?=\s*:)", r'"\1"')
-                            arguments = json.loads(arguments_fixed)
-                        except:
-                            print("ERROR:    Failed to parse function arguments")
-                            #print("ERROR PARSING ARGUMENTS:\n---\n")
-                            #print(arguments_plain)
-                            #print("\n---\n")
+                    arguments, function_response = fix_json_arguments(arguments_plain, function_name)
 
-                            if function_name == "replace_text":
-                                function_response = "ERROR! Please try to replace a shorter text or try another method"
-                            else:
-                                function_response = "Error parsing arguments. Make sure to use properly formatted JSON, with double quotes. If this error persist, change tactics"
+                if arguments is not None:
+                    # fix hallucinations
+                    arguments = fix_arguments(function_name, arguments)
 
-            if arguments is not None:
-                # call the function given by chatgpt
-                if hasattr(gpt_functions, function_name):
+                    # call the function given by chatgpt
                     try:
                         function_response = getattr(gpt_functions, function_name)(**arguments)
+
+                        if function_name == "file_open_for_writing":
+                            mode = "WRITE_FILE"
+                            filename = arguments["filename"]
+                            function_call = "none"
+                            print_message = False
+
+                        if function_name == "file_open_for_appending":
+                            mode = "APPEND_FILE"
+                            filename = arguments["filename"]
+                            function_call = "none"
+                            print_message = False
+
                     except TypeError:
                         function_response = "ERROR: Invalid function parameters"
-                else:
-                    print(f"NOTICE:   GPT called function '{function_name}' that doesn't exist.")
-                    function_response = f"Function '{function_name}' does not exist."
 
-                if function_name == "write_file":
-                    mode = "WRITE_FILE"
-                    filename = arguments["filename"]
-                    function_call = "none"
-                    print_message = False
+                    except KeyError:
+                        function_response = "ERROR: Invalid function parameters"
 
             messages = remove_hallucinations(messages)
 
             # if function returns PROJECT_FINISHED, exit
             if function_response == "PROJECT_FINISHED":
-                print_task_finished(model)
-
                 if recursive == False:
+                    checklist.activate_checklist()
+                    print_task_finished(model)
                     return
 
-                next_message = yesno("GPT: Do you want to ask something else?\nYou:", ["y", "n"])
-                print()
-                if next_message == "y":
-                    prompt = input("GPT: What do you want to ask?\nYou: ")
+                do_checklist = "no-checklist" not in cmd_args.args and checklist.active_list != []
+                if do_checklist:
+                    if "do-checklist" not in cmd_args.args and len(checklist.active_list) == len(checklist.the_list):
+                        if yesno("\nGPT: Do you want to run through the checklist?\nYou") == "n":
+                            checklist.active_list = []
+                            do_checklist = False
+                        print()
+                    if do_checklist:
+                        gpt_functions.tasklist_finished = False
+                        prompt = checklist.active_list.pop(0)
+                        print("CHECKLIST: " + prompt)
+
+                if not do_checklist:
+                    print_task_finished(model)
+
+                    if "one-task" in cmd_args.args:
+                        sys.exit(0)
+
+                    checklist.activate_checklist()
+                    next_message = yesno("GPT: Do you want to ask something else?\nYou:", ["y", "n"])
                     print()
-                    return run_conversation(
-                        prompt=prompt,
-                        model=model,
-                        messages=messages,
-                        conv_id=conv_id,
-                        recursive=recursive,
-                    )
-                else:
-                    print("Exiting")
-                    sys.exit(0)
+                    if next_message == "y":
+                        prompt = input("GPT: What do you want to ask?\nYou: ")
+                        print()
+                    else:
+                        print("Exiting")
+                        sys.exit(0)
+
+                return run_conversation(
+                    prompt=prompt,
+                    model=model,
+                    messages=messages,
+                    conv_id=conv_id,
+                    recursive=recursive,
+                )
 
             # send function result to chatgpt
             messages = chatgpt.send_message(
@@ -297,11 +412,21 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
                     print_message = True
 
                 messages = compact_commands(messages)
+            elif mode == "APPEND_FILE":
+                user_message = actually_append_file(filename, message["content"])
+
+                if "ERROR" not in user_message:
+                    mode = None
+                    filename = None
+                    function_call = "auto"
+                    print_message = True
+
+                messages = compact_commands(messages)
             else:
                 if len(message["content"]) > 400:
                     user_message = "ERROR: Please use function calls"
                 # if chatgpt doesn't respond with a function call, ask user for input
-                if "?" in message["content"] or \
+                elif "?" in message["content"] or \
                    "Let me know" in message["content"] or \
                    "Please provide" in message["content"] or \
                    "Could you" in message["content"] or \
@@ -311,8 +436,11 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
                    "Explain" in message["content"] or \
                    "What is" in message["content"] or \
                    "How does" in message["content"]:
-                    user_message = input("You:\n")
-                    print()
+                    if "continue" in cmd_args.args:
+                        user_message = "Please continue with using the given functions."
+                    else:
+                        user_message = input("You:\n")
+                        print()
                 else:
                     # if chatgpt doesn't ask a question, continue
                     user_message = "Ok, continue."
@@ -338,6 +466,8 @@ def make_prompt_better(prompt, ask=True):
 
     try:
         better_prompt = betterprompter.make_better(prompt, CONFIG["model"])
+    except SystemExit:
+        raise
     except Exception as e:
         better_prompt = prompt
         if "The model: `gpt-4-0613` does not exist" in str(e):
@@ -362,77 +492,6 @@ def make_prompt_better(prompt, ask=True):
             print("Using original prompt...")
 
     return prompt
-
-def reset_code_folder():
-    shutil.rmtree("code")
-    os.mkdir("code")
-
-def parse_arguments(argv):
-    arguments = {
-        "program_name": sys.argv.pop(0)
-    }
-
-    while sys.argv != []:
-        arg_name = sys.argv.pop(0)
-
-        # conversation id
-        if arg_name == "--conv":
-            if sys.argv == []:
-                print(f"ERROR: Missing argument for '{arg_name}'")
-                sys.exit(1)
-            arguments["conv"] = sys.argv.pop(0)
-        # initial prompt
-        elif arg_name == "--prompt":
-            if sys.argv == []:
-                print(f"ERROR: Missing argument for '{arg_name}'")
-                sys.exit(1)
-            arguments["prompt"] = sys.argv.pop(0)
-        # temperature
-        elif arg_name == "--temp":
-            if sys.argv == []:
-                print(f"ERROR: Missing argument for '{arg_name}'")
-                sys.exit(1)
-            arguments["temp"] = float(sys.argv.pop(0))
-        # make prompt better with GPT
-        elif arg_name == "--better":
-            if "versions" in arguments:
-                print("ERROR: --versions must come after --better")
-                sys.exit(1)
-            arguments["better"] = True
-        # don't make prompt better with GPT
-        elif arg_name == "--not-better":
-            arguments["not-better"] = False
-        # confirm if user wants to use bettered prompt
-        elif arg_name == "--ask-better":
-            arguments["ask-better"] = True
-        # make a new better prompt for every version
-        elif arg_name == "--better-versions":
-            arguments["better-versions"] = True
-            arguments["better"] = True
-        # delete code folder contents before starting
-        elif arg_name == "--delete":
-            reset_code_folder()
-        elif arg_name in ["--version", "-v"]:
-            print(f"GPT-AutoPilot v{VERSION} by Unconventional Coding")
-            sys.exit(69)
-        # make multiple versions of project
-        elif arg_name == "--versions":
-            if "ask-better" in arguments:
-                print(f"ERROR: --ask-better flag is not compatible with --versions flag")
-                sys.exit(1)
-            if sys.argv == []:
-                print(f"ERROR: Missing argument for '{arg_name}'")
-                sys.exit(1)
-            arguments["versions"] = int(sys.argv.pop(0))
-        else:
-            print(f"ERROR: Invalid option '{arg_name}'")
-            sys.exit(1)
-
-    if "not-better" in arguments and "better" in arguments:
-        print("ERROR: --not-better is not compatible with --better")
-        sys.exit(1)
-
-    return arguments
 
 def load_message_history(arguments):
     if "conv" in arguments:
@@ -469,11 +528,15 @@ def get_api_key():
     return api_key
 
 def warn_existing_code():
-    if os.path.isdir("code") and len(os.listdir("code")) != 0:
+    if os.path.isdir(codedir()) and len(os.listdir(codedir())) != 0:
+        if "delete" in cmd_args.args:
+            reset_code_folder()
+            return
+
         answer = yesno(
             "#####################################################\n"+
             "# WARNING!                                          #\n"+
-            "# There is already some code in the `code/` folder. #\n"+
+            "# There are already files in the project folder.    #\n"+
             "# GPT-AutoPilot may base the project on these files #\n"+
             "# and and might modify or delete them.              #\n"+
             "#####################################################"+
@@ -496,7 +559,7 @@ def create_directories():
 def get_temp(arguments):
     if "temp" in arguments:
         return arguments["temp"]
-    return 1.0
+    return 0.9
 
 def maybe_make_prompt_better(prompt, args, version_loop = False):
     if version_loop == True and "better-versions" not in args:
@@ -517,14 +580,14 @@ def run_versions(prompt, args, version_messages, temp, prev_version = 1):
     else:
         versions = 1
 
-    version_dir = os.path.join("versions", str(version_id))
+    version_dir = paths.relative("versions", str(version_id))
     ver_orig_dir = os.path.join(version_dir, "orig")
 
     if versions > 1:
         if not os.path.isdir(version_dir):
             os.mkdir(version_dir)
 
-        shutil.copytree("code", ver_orig_dir)
+        shutil.copytree(codedir(), ver_orig_dir)
         recursive = False
     else:
         recursive = True
@@ -541,14 +604,14 @@ def run_versions(prompt, args, version_messages, temp, prev_version = 1):
 
         # MAKE PROMPT BETTER
         version_loop = version > 1
-        prompt = maybe_make_prompt_better(prompt, args, version_loop)
+        prompt = maybe_make_prompt_better(prompt, cmd_args.args, version_loop)
 
         if version != 1:
             # randomize temperature for every version
-            temp = round( temp_orig + random.uniform(-0.1, 0.1), 2 )
+            temp = round( float(temp_orig) + random.uniform(-0.1, 0.1), 2 )
 
             # always start with original version
-            shutil.copytree(ver_orig_dir, "code")
+            shutil.copytree(ver_orig_dir, codedir())
 
         # RUN CONVERSATION
         run_conversation(
@@ -561,8 +624,8 @@ def run_versions(prompt, args, version_messages, temp, prev_version = 1):
 
         if versions > 1:
             version_folder = os.path.join(version_dir, f"v{version}")
-            shutil.copytree("code", version_folder)
-            shutil.rmtree("code")
+            shutil.copytree(codedir(), version_folder)
+            shutil.rmtree(codedir())
             version_folders.append(version_folder)
 
         # save message history of each version
@@ -580,11 +643,12 @@ def run_versions(prompt, args, version_messages, temp, prev_version = 1):
 
             if str(next_up) in ["exit", "quit", "e", "q"]:
                 sys.exit(0)
+            print()
 
         next_version = int(next_up)
 
         # move selected version to code folder and start over
-        shutil.copytree(version_folders[next_version-1], "code")
+        shutil.copytree(version_folders[next_version-1], codedir())
 
         prompt = input("GPT: What would you like to do next?\nYou: ")
         print()
@@ -598,12 +662,23 @@ def print_model_info():
     print("#######################################")
     print()
 
-# LOAD COMMAND LINE ARGUMENTS
-args = parse_arguments(sys.argv)
+def override_model(model):
+    if "model" in cmd_args.args:
+        model = cmd_args.args["model"]
+        if model in ["gpt-4", "gpt4"]:
+            model = "gpt-4-0613"
+        elif model in ["gpt-3", "gpt3", "gpt-3.5", "gpt3.5"]:
+            model = "gpt-3.5-turbo-16k-0613"
+        elif model in ["gpt-3-4k", "gpt3-4k", "gpt-3.5-4k", "gpt3.5-4k"]:
+            model = "gpt-3.5-turbo-0613"
+    return model
+
+# OVERRIDE MODEL
+CONFIG["model"] = str(override_model(CONFIG["model"]))
 
 # LOAD MESSAGE HISTORY
 version_messages = {
-    1: load_message_history(args)
+    1: load_message_history(cmd_args.args)
 }
 
 # GET API KEY
@@ -616,17 +691,17 @@ warn_existing_code()
 create_directories()
 
 # GET TEMPERATURE
-temp = get_temp(args)
+temp = get_temp(cmd_args.args)
 temp_orig = temp
 
 # PRINT MODEL
 print_model_info()
 
 # ASK FOR PROMPT
-if "prompt" in args:
-    prompt = args["prompt"]
+if "prompt" in cmd_args.args:
+    prompt = cmd_args.args["prompt"]
 else:
     prompt = input("GPT: What would you like me to do?\nYou: ")
     print()
 
-run_versions(prompt, args, version_messages, temp)
+run_versions(prompt, cmd_args.args, version_messages, temp)

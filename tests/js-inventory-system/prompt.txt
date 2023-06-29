@@ -1,0 +1,16 @@
+Create a simple one page inventory system application in javascript for the browser. Ask for a product name, price and quantity and add them to a table. Calculate the total price of the products in the inventory. Add a search function and a delete product button. Style the application with bootstrap from a CDN. Save products to localstorage
+
+Q: Should the table have a header row?
+A: yes, name, price, quantity
+
+Q: Should the table have a footer row?
+A: yes, with the total price of all products
+
+Q: Should the table be sortable?
+A: no
+
+Q: Should the search function be case-sensitive?
+A: no
+
+Q: Which format do you want the total price to be displayed in? (currency or number)
+A: in USD

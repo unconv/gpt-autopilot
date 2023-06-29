@@ -2,7 +2,7 @@ import openai
 
 import tokens
 
-def make_better(prompt, model, temp = 1.0):
+def make_better(prompt, model, temp = 0.9):
     if len(prompt.split(" ")) < 80:
         words = "an 80 word"
     else:
@@ -28,4 +28,4 @@ def make_better(prompt, model, temp = 1.0):
 
     tokens.add(response, model)
 
-    return response["choices"][0]["message"]["content"]
+    return response["choices"][0]["message"]["content"] # type: ignore

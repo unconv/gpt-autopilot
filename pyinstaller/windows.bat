@@ -1,4 +1,5 @@
 @echo off
+cd /d "%~dp0"
 
 REM clone and cd into repo
 git clone https://github.com/unconv/gpt-autopilot.git
@@ -7,8 +8,8 @@ cd gpt-autopilot
 REM run pyinstaller
 pyinstaller gpt-autopilot.py
 
-REM add system_message to package
-copy system_message dist\gpt-autopilot\
+REM add prompts to package
+xcopy /E prompts dist\gpt-autopilot\prompts\
 
 REM make zip package using 7-Zip
 cd dist
