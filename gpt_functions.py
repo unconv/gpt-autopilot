@@ -13,6 +13,12 @@ tasklist = []
 tasklist_finished = True
 
 clarification_asked = 0
+initial_questions = ""
+
+if "questions" in cmd_args.args:
+    initial_question_count = int(cmd_args.args["questions"])
+else:
+    initial_question_count = 5
 
 # Implementation of the functions given to ChatGPT
 
@@ -199,8 +205,12 @@ def list_files(list = "", print_output = True):
 
 def ask_clarification(questions):
     global clarification_asked
+    global initial_question_count
+    global initial_questions
 
     answers = ""
+
+    save_initial_questions = "no-questions" not in cmd_args.args and clarification_asked < initial_question_count
 
     for question in questions:
         if "\n" in question:
@@ -211,6 +221,9 @@ def ask_clarification(questions):
         clarification_asked += 1
 
     print()
+
+    if save_initial_questions:
+        initial_questions += answers
 
     return answers
 

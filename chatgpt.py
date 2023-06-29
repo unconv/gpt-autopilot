@@ -72,12 +72,7 @@ def send_message(
         definitions = [definition for definition in definitions if definition["name"] != "task_finished"]
 
     # always ask clarifying questions first
-    if "questions" in cmd_args.args:
-        initial_question_count = int(cmd_args.args["questions"])
-    else:
-        initial_question_count = 5
-
-    if "no-questions" not in cmd_args.args and gpt_functions.clarification_asked < initial_question_count:
+    if "no-questions" not in cmd_args.args and gpt_functions.clarification_asked < gpt_functions.initial_question_count:
         definitions = [gpt_functions.ask_clarification_func]
         function_call = {
             "name": "ask_clarification",

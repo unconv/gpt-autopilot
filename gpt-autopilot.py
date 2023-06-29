@@ -607,6 +607,10 @@ def run_versions(prompt, args, version_messages, temp, prev_version = 1):
         version_loop = version > 1
         prompt = maybe_make_prompt_better(prompt, cmd_args.args, version_loop)
 
+        # add initial questions to versions' chat history
+        if gpt_functions.initial_questions != "":
+            prompt += "\n\n"+gpt_functions.initial_questions
+
         if version != 1:
             # randomize temperature for every version
             temp = round( float(temp_orig) + random.uniform(-0.1, 0.1), 2 )
