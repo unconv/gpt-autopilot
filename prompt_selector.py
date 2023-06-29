@@ -83,8 +83,9 @@ def get_data(prompt, model, temp, slug=None):
             raise
         except:
             print("ERROR:    Unable to detect system message")
+            slug = "default"
             prompt_data = {
-                "slug": "default",
+                "slug": slug,
                 "system_message": paths.relative("prompts", "default", "system_message")
             }
 
