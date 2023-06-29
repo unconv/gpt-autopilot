@@ -175,7 +175,7 @@ def print_task_finished(model):
     tokens.prev_price_total = price_total
 
 def ask_model_switch():
-    if yesno("ERROR: You don't seem to have access to the GPT-4 API. Would you like to change to GPT-3.5?") == "y":
+    if yesno("\nERROR: You don't seem to have access to the GPT-4 API. Would you like to change to GPT-3.5?") == "y":
         CONFIG["model"] = "gpt-3.5-turbo-16k-0613"
         save_config(CONFIG)
         return CONFIG["model"]
