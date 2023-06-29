@@ -265,7 +265,7 @@ def run_cmd(base_dir, command, reason, asynch=False):
 
     if answer == "YES":
         process = subprocess.Popen(
-            full_command + " > gpt-autopilot-cmd-outout.txt 2>&1",
+            full_command + " > gpt-autopilot-cmd-output.txt 2>&1",
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE
@@ -284,10 +284,11 @@ def run_cmd(base_dir, command, reason, asynch=False):
                 process.send_signal(signal.SIGINT)
 
         # read possible output
-        output_file = os.path.join(base_dir, "gpt-autopilot-cmd-outout.txt")
-        with open(output_file) as f:
-            output = f.read()
-        os.remove(output_file)
+        output_file = os.path.join(base_dir, "gpt-autopilot-cmd-output.txt")
+        if os.path.exists(output_file):
+            with open(output_file) as f:
+                output = f.read()
+            os.remove(output_file)
 
         return_value = "Result from command (first 400 chars):\n" + output[:400]
 
