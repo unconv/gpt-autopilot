@@ -335,6 +335,7 @@ def run_cmd(base_dir, command, reason, asynch=False):
                 process.send_signal(signal.SIGINT)
 
         # read possible output
+        output = ""
         output_file = os.path.join(base_dir, "gpt-autopilot-cmd-output.txt")
         if os.path.exists(output_file):
             with open(output_file) as f:
