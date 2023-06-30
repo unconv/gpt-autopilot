@@ -647,6 +647,8 @@ def run_versions(prompt, args, version_messages, temp, prev_version = 1):
     version_folders = []
     orig_messages = version_messages[prev_version]
 
+    extra_prompt = ""
+
     # add system message on the first round
     if orig_messages == []:
         system_message = prompt_selector.select_system_message(prompt, CONFIG["model"], temp)
@@ -658,10 +660,10 @@ def run_versions(prompt, args, version_messages, temp, prev_version = 1):
         })
 
         # add list of current files to user prompt
-        prompt += "\n\n" + gpt_functions.list_files()
+        extra_prompt += "\n\n" + gpt_functions.list_files()
 
         # add list of functions to first prompt
-        prompt += "\n\nYou can call these functions: " + function_list(CONFIG["model"])
+        extra_prompt += "\n\nYou can call these functions: " + function_list(CONFIG["model"])
 
     for version in range(1, versions+1):
         # reset message history for every version
@@ -673,6 +675,9 @@ def run_versions(prompt, args, version_messages, temp, prev_version = 1):
         # MAKE PROMPT BETTER
         version_loop = version > 1
         prompt = maybe_make_prompt_better(prompt, cmd_args.args, version_loop)
+
+        # add extra data to prompt
+        final_prompt = prompt + extra_prompt
 
         # messages to be added to first ChatGPT request
         # after the new user prompt
@@ -713,7 +718,7 @@ def run_versions(prompt, args, version_messages, temp, prev_version = 1):
 
         # RUN CONVERSATION
         run_conversation(
-            prompt=prompt,
+            prompt=final_prompt,
             model=CONFIG["model"],
             messages=messages,
             recursive=recursive,
