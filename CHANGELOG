@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Exception when no output was generated from a failed terminal command
 - System message was detected again for each version when using `--versions`
 - Initial clarifying questions now are added to each version when using `--versions`
-- The tasklist is now are added to each version when using `--versions`
+- The tasklist is now added to each version when using `--versions`
 
 ### Changed
 
