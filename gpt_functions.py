@@ -12,6 +12,7 @@ import cmd_args
 tasklist = []
 active_tasklist = []
 tasklist_finished = True
+tasklist_skipped = False
 
 clarification_asked = 0
 initial_questions = []
@@ -27,6 +28,9 @@ def make_tasklist(tasks):
     global tasklist
     global active_tasklist
     global tasklist_finished
+    global tasklist_skipped
+
+    tasklist_skipped = False
 
     tasklist = copy.deepcopy(tasks)
 
@@ -41,8 +45,12 @@ def make_tasklist(tasks):
     print(all_tasks, end="")
 
     if "use-tasklist" not in cmd_args.args and yesno("\nGPT: Do you want to continue with this task list?\nYou") != "y":
-        modifications = input("\nGPT: What would you like to change?\nYou: ")
+        modifications = input("\nGPT: What would you like to change? (type 'skip' to skip)\nYou: ")
         print()
+
+        if modifications == "skip":
+            return "SKIP_TASKLIST"
+
         return "Task list modification request: " + modifications
 
     print()
@@ -601,6 +609,7 @@ definitions = [
 
 def get_definitions(model):
     global definitions
+    global tasklist_skipped
 
     func_definitions = copy.deepcopy(definitions)
 
@@ -614,7 +623,7 @@ def get_definitions(model):
     if "gpt-4" not in model:
         func_definitions = [definition for definition in func_definitions if definition["name"] not in gpt3_disallow]
 
-    if "no-tasklist" in cmd_args.args:
+    if "no-tasklist" in cmd_args.args or tasklist_skipped == True:
         func_definitions = [definition for definition in func_definitions if definition["name"] != "make_tasklist"]
 
     if "no-questions" in cmd_args.args:

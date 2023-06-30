@@ -286,6 +286,7 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
 
     # loop until project is finished
     while True:
+        function_message = None
         if message.get("function_call"):
             # sometimes ChatGPT hallucinates dots in function name
             message["function_call"]["name"] = re.sub(r'\W+', '', message["function_call"]["name"])
@@ -340,6 +341,19 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
 
             messages = remove_hallucinations(messages)
 
+            # if we want to skip the tasklist, reset it
+            if function_response == "SKIP_TASKLIST":
+                gpt_functions.tasklist = []
+                gpt_functions.active_tasklist = []
+                gpt_functions.tasklist_finished = False
+                gpt_functions.tasklist_skipped = True
+
+                # remove tasklist functions from history
+                last_message = messages.pop()
+                while '"name": "make_tasklist"' in json.dumps(last_message):
+                    last_message = messages.pop()
+                function_message = last_message
+
             # if function returns PROJECT_FINISHED, exit
             if function_response == "PROJECT_FINISHED":
                 if recursive == False:
@@ -383,13 +397,16 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
                     recursive=recursive,
                 )
 
-            # send function result to chatgpt
-            messages = chatgpt.send_message(
-                message={
+            if function_message is None:
+                function_message = {
                     "role": "function",
                     "name": function_name,
                     "content": function_response,
-                },
+                }
+
+            # send function result to chatgpt
+            messages = chatgpt.send_message(
+                message=function_message,
                 messages=messages,
                 model=model,
                 function_call=function_call,
