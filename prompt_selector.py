@@ -25,7 +25,6 @@ Categorize the following description onto the below categories. If uncertain, re
 {prompt}
 ```
 Note that the same technology might have different applications, such as command line tool or web application.
-Select a slug only if the technology and application match. If uncertain at all, return 'default'
 
 List of category slugs:\n
 {slugs}
