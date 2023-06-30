@@ -30,6 +30,9 @@ def make_tasklist(tasks):
     global tasklist_finished
     global tasklist_skipped
 
+    if tasklist_skipped:
+        return "ERROR: Creating a task list is not allowed at this moment."
+
     tasklist_skipped = False
 
     tasklist = copy.deepcopy(tasks)

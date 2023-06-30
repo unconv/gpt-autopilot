@@ -344,6 +344,8 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
 
             messages = remove_hallucinations(messages)
 
+            gpt_functions.tasklist_skipped = False
+
             # if we got answers to clarifying questions
             if "clarifications" in function_response:
                 # remove ask_clarifications function call from history
