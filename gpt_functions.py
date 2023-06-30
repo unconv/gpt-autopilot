@@ -226,6 +226,10 @@ def ask_clarification(questions):
     save_initial_questions = "no-questions" not in cmd_args.args and clarification_asked < initial_question_count
 
     for question in questions:
+        # stop after limit
+        if clarification_asked >= initial_question_count:
+            break
+
         if "\n" in question:
             answer = input(f"\nGPT:\n{question}\n\nYou: \n")
         else:
