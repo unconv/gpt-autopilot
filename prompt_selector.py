@@ -33,7 +33,7 @@ List of category slugs:\n
         }
     ]
 
-    print("GPT-API:  Selecting system message...")
+    print("GPT-API:  Detecting system message...")
 
     response = openai.ChatCompletion.create(
         model=model,
@@ -71,7 +71,7 @@ List of category slugs:\n
         print(f"ERROR:    GPT detected system message '{slug}' that doesn't exist")
         slug = "default"
     elif "use-system" not in cmd_args.args:
-        if yesno(f"\nGPT: Detected project type '{slug}'. Do you want to use this system message?\nYou") == "n":
+        if yesno(f"\nDetected project type '{slug}'.\nDo you want to use this system message?\nYou") == "n":
             slug = input("\nGPT: Which system message do you want to use?\nYou [default]: ") or "default"
         print()
 
@@ -113,7 +113,11 @@ def select_system_message(prompt, model, temp):
     if "system" in cmd_args.args:
         slug = cmd_args.args["system"]
     else:
-        slug = None
+        if yesno("GPT: Do you want me to automatically detect a custom system message?\nYou") == "y":
+            slug = None
+        else:
+            slug = "default"
+        print()
 
     prompt_data = get_data(prompt, model, temp, slug)
 

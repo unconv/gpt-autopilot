@@ -572,7 +572,7 @@ def run_versions(prompt, args, version_messages, temp, prev_version = 1):
 
     if "versions" in args:
         versions = args["versions"]
-        print(f"INFO:     Creating {versions} versions...")
+        print(f"INFO:     Creating {versions} versions...\n")
     else:
         versions = 1
 
