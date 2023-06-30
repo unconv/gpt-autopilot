@@ -10,10 +10,11 @@ from helpers import yesno, safepath, codedir, relpath
 import cmd_args
 
 tasklist = []
+active_tasklist = []
 tasklist_finished = True
 
 clarification_asked = 0
-initial_questions = ""
+initial_questions = []
 
 if "questions" in cmd_args.args:
     initial_question_count = int(cmd_args.args["questions"])
@@ -24,7 +25,10 @@ else:
 
 def make_tasklist(tasks):
     global tasklist
+    global active_tasklist
     global tasklist_finished
+
+    tasklist = copy.deepcopy(tasks)
 
     next_task = tasks.pop(0)
     all_tasks = ""
@@ -47,7 +51,7 @@ def make_tasklist(tasks):
         tasklist_finished = False
         return all_tasks + "\n\nPlease complete the project according to the above requirements"
 
-    tasklist += tasks
+    active_tasklist = copy.deepcopy(tasks)
     tasklist_finished = False
 
     print("TASK:     " + next_task)
@@ -210,6 +214,7 @@ def ask_clarification(questions):
 
     answers = ""
 
+    # if these are initial questions, save them for next versions
     save_initial_questions = "no-questions" not in cmd_args.args and clarification_asked < initial_question_count
 
     for question in questions:
@@ -220,10 +225,18 @@ def ask_clarification(questions):
         answers += f"Q: {question}\nA: {answer}\n"
         clarification_asked += 1
 
-    print()
+        # save initial questions for next versions
+        if save_initial_questions:
+            initial_questions.append({
+                "role": "assistant",
+                "content": "Q: " + question
+            })
+            initial_questions.append({
+                "role": "user",
+                "content": "A: " + answer
+            })
 
-    if save_initial_questions:
-        initial_questions += answers
+    print()
 
     return answers
 
@@ -326,12 +339,12 @@ def project_finished(finished=True):
     return "PROJECT_FINISHED"
 
 def task_finished(finished=True):
-    global tasklist
+    global active_tasklist
 
     print("FUNCTION: Task finished")
 
-    if len(tasklist) > 0:
-        next_task = tasklist.pop(0)
+    if len(active_tasklist) > 0:
+        next_task = active_tasklist.pop(0)
         print("TASK:     " + next_task)
         return "Thank you. Please do the next task, unless it has already been done: " + next_task
 

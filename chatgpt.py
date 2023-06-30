@@ -60,7 +60,7 @@ def send_message(
 
     definitions = copy.deepcopy(gpt_functions.get_definitions(model))
 
-    if gpt_functions.tasklist != [] or checklist.active_list != []:
+    if gpt_functions.active_tasklist != [] or checklist.active_list != []:
         remove_funcs = [
             "make_tasklist", # don't take any more task lists if there is one already
             "project_finished" # don't allow project_finished function when task list is unfinished
@@ -80,7 +80,7 @@ def send_message(
         }
 
     # always ask for a task list first
-    elif "no-tasklist" not in cmd_args.args and gpt_functions.tasklist_finished:
+    elif "no-tasklist" not in cmd_args.args and gpt_functions.tasklist_finished and gpt_functions.tasklist == []:
         print("TASKLIST: Creating a tasklist...")
         definitions = [gpt_functions.make_tasklist_func]
         function_call = {

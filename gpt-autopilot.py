@@ -243,17 +243,28 @@ def function_list(model):
     return func_list.strip()
 
 # MAIN FUNCTION
-def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None, recursive = True, temp = 0.9):
+def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None, recursive = True, temp = 0.9, extra_messages = []):
     if conv_id is None:
         conv_id = numberfile("history")
+
+    # format user message for ChatGPT
+    user_message = {
+        "role": "user",
+        "content": prompt
+    }
+
+    # add extra messages
+    if extra_messages != []:
+        messages.append(user_message)
+        messages += extra_messages
+
+        # take user message from last extra message
+        user_message = messages.pop()
 
     # add user prompt to chatgpt messages
     try:
         messages = chatgpt.send_message(
-            message={
-                "role": "user",
-                "content": prompt
-            },
+            message=user_message,
             messages=messages,
             model=model,
             conv_id=conv_id,
@@ -607,9 +618,35 @@ def run_versions(prompt, args, version_messages, temp, prev_version = 1):
         version_loop = version > 1
         prompt = maybe_make_prompt_better(prompt, cmd_args.args, version_loop)
 
+        # messages to be added to first ChatGPT request
+        # after the new user prompt
+        extra_messages = []
+
         # add initial questions to versions' chat history
-        if gpt_functions.initial_questions != "":
-            prompt += "\n\n"+gpt_functions.initial_questions
+        extra_messages += gpt_functions.initial_questions
+
+        # reset tasklist for every version
+        gpt_functions.tasklist_finished = True
+        gpt_functions.active_tasklist = copy.deepcopy(gpt_functions.tasklist)
+
+        # add tasklist to every version
+        if gpt_functions.active_tasklist != []:
+            print("TASK:     " + gpt_functions.active_tasklist[0])
+            extra_messages.append({
+                "role": "assistant",
+                "content": None,
+                "function_call": {
+                    "name": "make_tasklist",
+                    "arguments": json.dumps({
+                        "tasks": gpt_functions.active_tasklist
+                    })
+                }
+            })
+            extra_messages.append({
+                "role": "function",
+                "name": "make_tasklist",
+                "content": "TASK_LIST_RECEIVED: Start with first task: " + gpt_functions.active_tasklist.pop(0) + ". Do all the steps involved in the task and only then run the task_finished function."
+            })
 
         if version != 1:
             # randomize temperature for every version
@@ -625,6 +662,7 @@ def run_versions(prompt, args, version_messages, temp, prev_version = 1):
             messages=messages,
             recursive=recursive,
             temp=temp,
+            extra_messages=extra_messages,
         )
 
         if versions > 1:
