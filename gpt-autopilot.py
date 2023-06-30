@@ -607,6 +607,7 @@ def warn_existing_code():
 def create_directories():
     dirs = ["code", "history", "versions"]
     for directory in dirs:
+        directory = paths.relative(directory)
         if not os.path.isdir(directory):
             os.mkdir(directory)
 
