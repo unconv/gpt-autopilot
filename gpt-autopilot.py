@@ -141,6 +141,9 @@ def actually_append_file(filename, content):
     parent_dir = os.path.dirname(fullpath)
     os.makedirs(parent_dir, exist_ok=True)
 
+    if os.path.isdir(fullpath):
+        return "ERROR: This is a directory, not a file"
+
     with open(fullpath, "a") as f:
         f.write(content)
 
