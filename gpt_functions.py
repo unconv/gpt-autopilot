@@ -220,7 +220,9 @@ def ask_clarification(questions):
     global initial_question_count
     global initial_questions
 
-    answers = ""
+    answers = {
+        "clarifications": []
+    }
 
     # if these are initial questions, save them for next versions
     save_initial_questions = "no-questions" not in cmd_args.args and clarification_asked < initial_question_count
@@ -230,23 +232,33 @@ def ask_clarification(questions):
         if clarification_asked >= initial_question_count:
             break
 
+        # add question to clarifications
+        answers["clarifications"].append({
+            "role": "assistant",
+            "content": question
+        })
+
+        # get answer to question
         if "\n" in question:
             answer = input(f"\nGPT:\n{question}\n\nYou: \n")
         else:
             answer = input(f"\nGPT: {question}\nYou: ")
-        answers += f"Q: {question}\nA: {answer}\n"
+
+        # answer must be a string
+        if not answer:
+            answer = "<no answer>"
+
+        # add answer to clarifications
+        answers["clarifications"].append({
+            "role": "user",
+            "content": answer
+        })
+
         clarification_asked += 1
 
         # save initial questions for next versions
         if save_initial_questions:
-            initial_questions.append({
-                "role": "assistant",
-                "content": "Q: " + question
-            })
-            initial_questions.append({
-                "role": "user",
-                "content": "A: " + answer
-            })
+            initial_questions += answers["clarifications"]
 
     print()
 

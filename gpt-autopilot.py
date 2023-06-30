@@ -341,8 +341,17 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
 
             messages = remove_hallucinations(messages)
 
+            # if we got answers to clarifying questions
+            if "clarifications" in function_response:
+                # remove ask_clarifications function call from history
+                messages.pop()
+
+                # add questions and answers to message history
+                messages += function_response["clarifications"]
+                function_message = messages.pop()
+
             # if we want to skip the tasklist, reset it
-            if function_response == "SKIP_TASKLIST":
+            elif function_response == "SKIP_TASKLIST":
                 gpt_functions.tasklist = []
                 gpt_functions.active_tasklist = []
                 gpt_functions.tasklist_finished = False
@@ -355,7 +364,7 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
                 function_message = last_message
 
             # if function returns PROJECT_FINISHED, exit
-            if function_response == "PROJECT_FINISHED":
+            elif function_response == "PROJECT_FINISHED":
                 if recursive == False:
                     checklist.activate_checklist()
                     print_task_finished(model)
