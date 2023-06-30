@@ -248,7 +248,7 @@ def function_list(model):
 # MAIN FUNCTION
 def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None, recursive = True, temp = 0.9, extra_messages = []):
     if conv_id is None:
-        conv_id = numberfile("history")
+        conv_id = numberfile(paths.relative("history"))
 
     # format user message for ChatGPT
     user_message = {
@@ -630,7 +630,7 @@ def maybe_make_prompt_better(prompt, args, version_loop = False):
     return prompt
 
 def run_versions(prompt, args, version_messages, temp, prev_version = 1):
-    version_id = numberfile("versions", folder=True)
+    version_id = numberfile(paths.relative("versions"), folder=True)
 
     if "versions" in args:
         versions = args["versions"]
