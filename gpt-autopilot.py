@@ -491,11 +491,19 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
         # save last response for the while loop
         message = messages[-1]
 
-def make_prompt_better(prompt, ask=True):
+def make_prompt_better(prompt, orig_prompt=None, ask=True, temp = 0.9, messages = []):
     print("\nMaking prompt better...")
 
+    if orig_prompt is None:
+        orig_prompt = prompt
+
     try:
-        better_prompt = betterprompter.make_better(prompt, CONFIG["model"])
+        better_prompt, messages = betterprompter.make_better(
+            prompt=prompt,
+            model=CONFIG["model"],
+            temp=temp,
+            messages=messages
+        )
     except SystemExit:
         raise
     except Exception as e:
@@ -515,11 +523,22 @@ def make_prompt_better(prompt, ask=True):
         print("## Better prompt: ##\n" + better_prompt)
         print()
 
-        if ask == False or yesno("Do you want to use this prompt?") == "y":
-            print("Using better prompt...")
+        if ask == False or yesno("GPT: Do you want to use this prompt?\nYou") == "y":
+            print("\nUsing better prompt...")
             prompt = better_prompt
         else:
-            print("Using original prompt...")
+            answer = input("\nGPT: What do you want to modify in the prompt? (type 'orig' to use original)\nYou: ")
+            if answer == "orig":
+                print("\nUsing original prompt...")
+                return orig_prompt
+
+            return make_prompt_better(
+                prompt=answer,
+                orig_prompt=orig_prompt,
+                ask=ask,
+                temp=temp,
+                messages=messages
+            )
 
     return prompt
 
@@ -597,7 +616,10 @@ def maybe_make_prompt_better(prompt, args, version_loop = False):
     if "not-better" not in args:
         if "better" in args or yesno("\nGPT: Do you want me to make your prompt better?\nYou") == "y":
             ask = "better" not in args or "ask-better" in args
-            prompt = make_prompt_better(prompt, ask)
+            prompt = make_prompt_better(
+                prompt=prompt,
+                ask=ask
+            )
         print()
     return prompt
 
