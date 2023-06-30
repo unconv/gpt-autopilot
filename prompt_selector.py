@@ -20,12 +20,14 @@ def detect_slug(prompt, model, temp):
         {
             "role": "user",
             "content": f"""
-Select the most fitting category slug for the following prompt (if any):
+Categorize the following description onto the below categories. If uncertain, return 'default'
 ```
 {prompt}
 ```
+Note that the same technology might have different applications, such as command line tool or web application.
+Select a slug only if the technology and application match. If uncertain at all, return 'default'
 
-Available slugs are:\n
+List of category slugs:\n
 {slugs}
 """
         }
@@ -45,7 +47,7 @@ Available slugs are:\n
         functions=[
             {
                 "name": "set_slug",
-                "description": "Set the most fitting slug for the prompt",
+                "description": "Set the category slug. Default if uncertain.",
                 "parameters": {
                     "type": "object",
                     "properties": {
