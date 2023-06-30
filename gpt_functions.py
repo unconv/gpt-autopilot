@@ -232,21 +232,22 @@ def ask_clarification(questions):
         if clarification_asked >= initial_question_count:
             break
 
-        # add question to clarifications
-        answers["clarifications"].append({
-            "role": "assistant",
-            "content": question
-        })
-
         # get answer to question
         if "\n" in question:
             answer = input(f"\nGPT:\n{question}\n\nYou: \n")
         else:
             answer = input(f"\nGPT: {question}\nYou: ")
 
-        # answer must be a string
-        if not answer:
-            answer = "<no answer>"
+        # skip unanswered questions
+        if answer == "":
+            print("\nSKIPPED:  Previous question/answer not included in message history")
+            continue
+
+        # add question to clarifications
+        answers["clarifications"].append({
+            "role": "assistant",
+            "content": question
+        })
 
         # add answer to clarifications
         answers["clarifications"].append({
