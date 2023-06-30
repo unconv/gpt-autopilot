@@ -381,7 +381,7 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
                 if recursive == False:
                     checklist.activate_checklist()
                     print_task_finished(model)
-                    return
+                    return messages
 
                 do_checklist = "no-checklist" not in cmd_args.args and checklist.active_list != []
                 if do_checklist:
@@ -654,6 +654,11 @@ def run_versions(prompt, args, version_messages, temp, prev_version = 1):
 
     extra_prompt = ""
 
+    # reset tasklist for every version iteration
+    gpt_functions.tasklist = []
+    gpt_functions.active_tasklist = []
+    gpt_functions.tasklist_finished = True
+
     # add system message on the first round
     if orig_messages == []:
         system_message = prompt_selector.select_system_message(prompt, CONFIG["model"], temp)
@@ -722,7 +727,7 @@ def run_versions(prompt, args, version_messages, temp, prev_version = 1):
             shutil.copytree(ver_orig_dir, codedir())
 
         # RUN CONVERSATION
-        run_conversation(
+        messages = run_conversation(
             prompt=final_prompt,
             model=CONFIG["model"],
             messages=messages,
