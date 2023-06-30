@@ -350,6 +350,14 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
                 messages += function_response["clarifications"]
                 function_message = messages.pop()
 
+            # remove task list modification requests from history
+            elif "TASK_LIST_RECEIVED" in function_response:
+                # remove tasklist functions from history
+                prev_message = messages.pop(-2)
+                while '"name": "make_tasklist"' in json.dumps(prev_message):
+                    prev_message = messages.pop(-2)
+                messages.insert(-1, prev_message)
+
             # if we want to skip the tasklist, reset it
             elif function_response == "SKIP_TASKLIST":
                 gpt_functions.tasklist = []
