@@ -111,14 +111,14 @@ def get_data(prompt, model, temp, slug=None):
 def select_system_message(prompt, model, temp):
     if "system" in cmd_args.args:
         slug = cmd_args.args["system"]
-    elif "use-system" not in cmd_args.args:
+    elif "use-system" in cmd_args.args:
+        slug = None
+    else:
         if yesno("GPT: Do you want me to automatically detect a custom system message?\nYou") == "y":
             slug = None
         else:
             slug = "default"
         print()
-    else:
-        slug = "default"
 
     prompt_data = get_data(prompt, model, temp, slug)
 
