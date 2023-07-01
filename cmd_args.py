@@ -7,7 +7,7 @@ args = {
     "program_name": sys.argv.pop(0)
 }
 
-VERSION = "0.3.0-dev"
+VERSION = "0.3.0"
 
 help_info = {
     "--prompt": {
