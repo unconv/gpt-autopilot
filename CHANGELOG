@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Ability to set default command line flags in `config.json`
+- `--step-by-step` flag to run tasklist step by step as separate messages to GPT
 - Ability to modify original prompt iteratively with GPT
 - Confirmation before detecting custom system message with GPT
 - Ability to skip a tasklist entirely
@@ -25,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- By default, GPT-AutoPilot will ask whether you want to go through the tasklist step by step or as a single message. You can change this behavior with the flags `--step-by-step` and `--single-tasklist`
 - Changed the prompt for the system prompt detector
 - Clarification questions and their answers are now added to message history as actual assistant/user messages instead of a combined Q/A message.
 - Only the final tasklist after changes is kept in the message history
