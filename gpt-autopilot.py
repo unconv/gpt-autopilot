@@ -780,12 +780,12 @@ def print_model_info():
 
 def override_model(model):
     if "model" in cmd_args.args:
-        model = cmd_args.args["model"]
-        if model in ["gpt-4", "gpt4"]:
+        model = str(cmd_args.args["model"])
+        if model in ["gpt-4", "gpt4", "4"]:
             model = "gpt-4-0613"
-        elif model in ["gpt-3", "gpt3", "gpt-3.5", "gpt3.5"]:
+        elif model in ["gpt-3", "gpt3", "gpt-3.5", "gpt3.5", "3", "3.5"]:
             model = "gpt-3.5-turbo-16k-0613"
-        elif model in ["gpt-3-4k", "gpt3-4k", "gpt-3.5-4k", "gpt3.5-4k"]:
+        elif model in ["gpt-3-4k", "gpt3-4k", "gpt-3.5-4k", "gpt3.5-4k", "3-4k", "3.5-4k"]:
             model = "gpt-3.5-turbo-0613"
     return model
 
