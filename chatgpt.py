@@ -98,7 +98,7 @@ def send_message(
             functions=definitions,
             function_call=function_call,
             temperature=temp,
-            request_timeout=60,
+            request_timeout=120,
         )
 
         tokens.add(response, model)
