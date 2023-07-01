@@ -3,7 +3,7 @@ import json
 
 import tokens
 
-def make_better(prompt, model, temp = 0.9, messages = []):
+def make_better(prompt, model, temp = 1.0, messages = []):
     if len(prompt.split(" ")) < 80:
         words = "an 80 word"
     else:

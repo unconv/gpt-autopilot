@@ -3,6 +3,7 @@ import sys
 import os
 
 import cmd_args
+import paths
 
 # global token usage
 token_usage = {
@@ -50,9 +51,11 @@ def add(response, model):
     token_usage["output"] += completion_tokens
     token_usage["total"] += total_tokens
 
+    token_usage_file = paths.relative("token_usage.json")
+
     # load total token usage
-    if os.path.exists("token_usage.json"):
-        with open("token_usage.json") as f:
+    if os.path.exists(token_usage_file):
+        with open(token_usage_file) as f:
             total_token_usage = json.load(f)
     else:
         total_token_usage = {
@@ -72,7 +75,7 @@ def add(response, model):
     total_token_usage["price"] += total_price
 
     # save total token usage
-    with open("token_usage.json", "w") as f:
+    with open(token_usage_file, "w") as f:
         f.write(json.dumps(total_token_usage, indent=4))
 
     if "max-tokens" in cmd_args.args and total_tokens >= int(cmd_args.args["max-tokens"]):

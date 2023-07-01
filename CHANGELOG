@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Clarification questions and their answers are now added to message history as actual assistant/user messages instead of a combined Q/A message.
 - Only the final tasklist after changes is kept in the message history
 - Unanswered clarifying questions are omitted from the message history and not sent to GPT
+- Default temperature from `0.9` to `1.0`
 
 ## [0.2.0] 2023-06-29
 
