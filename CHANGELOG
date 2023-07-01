@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0]
+
+### Added
+
+- Ability to set default command line flags in `config.json`
+- `--step-by-step` flag to run tasklist step by step as separate messages to GPT
+- Ability to modify original prompt iteratively with GPT
+- Confirmation before detecting custom system message with GPT
+- Ability to skip a tasklist entirely
+- System message for PHP websites
+
+### Fixed
+
+- Enforcement of the `--questions` flag even when GPT responds with more questions
+- Exception when no output was generated from a failed terminal command
+- System message was detected again for each version when using `--versions`
+- Initial clarifying questions now are added to each version when using `--versions`
+- The tasklist is now added to each version when using `--versions`
+
+### Changed
+
+- By default, GPT-AutoPilot will ask whether you want to go through the tasklist step by step or as a single message. You can change this behavior with the flags `--step-by-step` and `--single-tasklist`
+- Changed the prompt for the system prompt detector
+- Clarification questions and their answers are now added to message history as actual assistant/user messages instead of a combined Q/A message.
+- Only the final tasklist after changes is kept in the message history
+- Unanswered clarifying questions are omitted from the message history and not sent to GPT
+- Default temperature from `0.9` to `1.0`
+
 ## [0.2.0] 2023-06-29
 
 ### Added

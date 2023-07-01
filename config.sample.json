@@ -1,3 +1,8 @@
 {
-    "model": "gpt-4-0613"
+    "model": "gpt-4-0613",
+    "args": [
+        "--system default",
+        "--single-tasklist",
+        "--no-questions"
+    ]
 }

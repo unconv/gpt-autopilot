@@ -41,7 +41,7 @@ def send_message(
     retries = 0,
     print_message = True,
     conv_id = None,
-    temp = 0.9,
+    temp = 1.0,
 ):
     # add user message to message list
     messages.append(message)
@@ -60,7 +60,7 @@ def send_message(
 
     definitions = copy.deepcopy(gpt_functions.get_definitions(model))
 
-    if gpt_functions.tasklist != [] or checklist.active_list != []:
+    if gpt_functions.active_tasklist != [] or checklist.active_list != []:
         remove_funcs = [
             "make_tasklist", # don't take any more task lists if there is one already
             "project_finished" # don't allow project_finished function when task list is unfinished
@@ -72,12 +72,7 @@ def send_message(
         definitions = [definition for definition in definitions if definition["name"] != "task_finished"]
 
     # always ask clarifying questions first
-    if "questions" in cmd_args.args:
-        initial_question_count = int(cmd_args.args["questions"])
-    else:
-        initial_question_count = 5
-
-    if "no-questions" not in cmd_args.args and gpt_functions.clarification_asked < initial_question_count:
+    if "no-questions" not in cmd_args.args and gpt_functions.clarification_asked < gpt_functions.initial_question_count:
         definitions = [gpt_functions.ask_clarification_func]
         function_call = {
             "name": "ask_clarification",
@@ -85,7 +80,7 @@ def send_message(
         }
 
     # always ask for a task list first
-    elif "no-tasklist" not in cmd_args.args and gpt_functions.tasklist_finished:
+    elif "no-tasklist" not in cmd_args.args and gpt_functions.tasklist_finished and gpt_functions.tasklist == []:
         print("TASKLIST: Creating a tasklist...")
         definitions = [gpt_functions.make_tasklist_func]
         function_call = {
@@ -103,7 +98,7 @@ def send_message(
             functions=definitions,
             function_call=function_call,
             temperature=temp,
-            request_timeout=60,
+            request_timeout=120,
         )
 
         tokens.add(response, model)

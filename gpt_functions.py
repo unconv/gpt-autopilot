@@ -10,15 +10,35 @@ from helpers import yesno, safepath, codedir, relpath
 import cmd_args
 
 tasklist = []
+active_tasklist = []
 tasklist_finished = True
+tasklist_skipped = False
+use_single_tasklist = False
 
 clarification_asked = 0
+initial_questions = []
+
+if "questions" in cmd_args.args:
+    initial_question_count = int(cmd_args.args["questions"])
+else:
+    initial_question_count = 5
 
 # Implementation of the functions given to ChatGPT
 
 def make_tasklist(tasks):
     global tasklist
+    global active_tasklist
     global tasklist_finished
+    global tasklist_skipped
+    global initial_questions
+    global use_single_tasklist
+
+    if tasklist_skipped:
+        return "ERROR: Creating a task list is not allowed at this moment."
+
+    tasklist_skipped = False
+
+    tasklist = copy.deepcopy(tasks)
 
     next_task = tasks.pop(0)
     all_tasks = ""
@@ -31,17 +51,47 @@ def make_tasklist(tasks):
     print(all_tasks, end="")
 
     if "use-tasklist" not in cmd_args.args and yesno("\nGPT: Do you want to continue with this task list?\nYou") != "y":
-        modifications = input("\nGPT: What would you like to change?\nYou: ")
+        modifications = input("\nGPT: What would you like to change? (type 'skip' to skip)\nYou: ")
         print()
+
+        if modifications == "skip":
+            return "SKIP_TASKLIST"
+
         return "Task list modification request: " + modifications
 
     print()
 
-    if "single-tasklist" in cmd_args.args:
-        tasklist_finished = False
-        return all_tasks + "\n\nPlease complete the project according to the above requirements"
+    step_by_step = "step-by-step" in cmd_args.args
+    single_tasklist = "single-tasklist" in cmd_args.args
 
-    tasklist += tasks
+    if not step_by_step and not single_tasklist:
+        tasklist_type = yesno(
+            "How do you want go though the task list?\n"+
+            "1) at once (faster, cheaper, less accurate)\n"+
+            "2) step by step (slower, more expensive, more accurate)\n"+
+            "Answer",
+            ["1", "2"]
+        )
+        single_tasklist = tasklist_type == "1"
+        print()
+
+    if single_tasklist:
+        tasklist_finished = False
+        tasklist_prompt = all_tasks + "\n\nPlease complete the project according to the above requirements"
+
+        # reset tasklist for versions
+        active_tasklist = []
+        use_single_tasklist = True
+
+        # add tasklist to initial questions for versions
+        initial_questions.append({
+            "role": "user",
+            "content": tasklist_prompt
+        })
+
+        return tasklist_prompt
+
+    active_tasklist = copy.deepcopy(tasks)
     tasklist_finished = False
 
     print("TASK:     " + next_task)
@@ -199,16 +249,49 @@ def list_files(list = "", print_output = True):
 
 def ask_clarification(questions):
     global clarification_asked
+    global initial_question_count
+    global initial_questions
 
-    answers = ""
+    answers = {
+        "clarifications": []
+    }
+
+    # if these are initial questions, save them for next versions
+    save_initial_questions = "no-questions" not in cmd_args.args and clarification_asked < initial_question_count
 
     for question in questions:
+        # stop after limit
+        if clarification_asked >= initial_question_count:
+            break
+
+        # get answer to question
         if "\n" in question:
             answer = input(f"\nGPT:\n{question}\n\nYou: \n")
         else:
             answer = input(f"\nGPT: {question}\nYou: ")
-        answers += f"Q: {question}\nA: {answer}\n"
+
+        # skip unanswered questions
+        if answer == "":
+            print("\nSKIPPED:  Previous question/answer not included in message history")
+            continue
+
+        # add question to clarifications
+        answers["clarifications"].append({
+            "role": "assistant",
+            "content": question
+        })
+
+        # add answer to clarifications
+        answers["clarifications"].append({
+            "role": "user",
+            "content": answer
+        })
+
         clarification_asked += 1
+
+        # save initial questions for next versions
+        if save_initial_questions:
+            initial_questions += answers["clarifications"]
 
     print()
 
@@ -265,7 +348,7 @@ def run_cmd(base_dir, command, reason, asynch=False):
 
     if answer == "YES":
         process = subprocess.Popen(
-            full_command + " > gpt-autopilot-cmd-outout.txt 2>&1",
+            full_command + " > gpt-autopilot-cmd-output.txt 2>&1",
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE
@@ -284,10 +367,12 @@ def run_cmd(base_dir, command, reason, asynch=False):
                 process.send_signal(signal.SIGINT)
 
         # read possible output
-        output_file = os.path.join(base_dir, "gpt-autopilot-cmd-outout.txt")
-        with open(output_file) as f:
-            output = f.read()
-        os.remove(output_file)
+        output = ""
+        output_file = os.path.join(base_dir, "gpt-autopilot-cmd-output.txt")
+        if os.path.exists(output_file):
+            with open(output_file) as f:
+                output = f.read()
+            os.remove(output_file)
 
         return_value = "Result from command (first 400 chars):\n" + output[:400]
 
@@ -312,12 +397,12 @@ def project_finished(finished=True):
     return "PROJECT_FINISHED"
 
 def task_finished(finished=True):
-    global tasklist
+    global active_tasklist
 
     print("FUNCTION: Task finished")
 
-    if len(tasklist) > 0:
-        next_task = tasklist.pop(0)
+    if len(active_tasklist) > 0:
+        next_task = active_tasklist.pop(0)
         print("TASK:     " + next_task)
         return "Thank you. Please do the next task, unless it has already been done: " + next_task
 
@@ -574,6 +659,7 @@ definitions = [
 
 def get_definitions(model):
     global definitions
+    global tasklist_skipped
 
     func_definitions = copy.deepcopy(definitions)
 
@@ -587,7 +673,7 @@ def get_definitions(model):
     if "gpt-4" not in model:
         func_definitions = [definition for definition in func_definitions if definition["name"] not in gpt3_disallow]
 
-    if "no-tasklist" in cmd_args.args:
+    if "no-tasklist" in cmd_args.args or tasklist_skipped == True:
         func_definitions = [definition for definition in func_definitions if definition["name"] != "make_tasklist"]
 
     if "no-questions" in cmd_args.args:

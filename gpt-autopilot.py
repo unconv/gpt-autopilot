@@ -141,6 +141,9 @@ def actually_append_file(filename, content):
     parent_dir = os.path.dirname(fullpath)
     os.makedirs(parent_dir, exist_ok=True)
 
+    if os.path.isdir(fullpath):
+        return "ERROR: This is a directory, not a file"
+
     with open(fullpath, "a") as f:
         f.write(content)
 
@@ -243,32 +246,28 @@ def function_list(model):
     return func_list.strip()
 
 # MAIN FUNCTION
-def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None, recursive = True, temp = 0.9):
+def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None, recursive = True, temp = 1.0, extra_messages = []):
     if conv_id is None:
-        conv_id = numberfile("history")
+        conv_id = numberfile(paths.relative("history"))
 
-    if messages == []:
-        system_message = prompt_selector.select_system_message(prompt, model, temp)
+    # format user message for ChatGPT
+    user_message = {
+        "role": "user",
+        "content": prompt
+    }
 
-        # add system message
-        messages.append({
-            "role": "system",
-            "content": system_message
-        })
+    # add extra messages
+    if extra_messages != []:
+        messages.append(user_message)
+        messages += extra_messages
 
-        # add list of current files to user prompt
-        prompt += "\n\n" + gpt_functions.list_files()
-
-        # add list of functions to first prompt
-        prompt += "\n\nYou can call these functions: " + function_list(model)
+        # take user message from last extra message
+        user_message = messages.pop()
 
     # add user prompt to chatgpt messages
     try:
         messages = chatgpt.send_message(
-            message={
-                "role": "user",
-                "content": prompt
-            },
+            message=user_message,
             messages=messages,
             model=model,
             conv_id=conv_id,
@@ -290,6 +289,7 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
 
     # loop until project is finished
     while True:
+        function_message = None
         if message.get("function_call"):
             # sometimes ChatGPT hallucinates dots in function name
             message["function_call"]["name"] = re.sub(r'\W+', '', message["function_call"]["name"])
@@ -344,12 +344,44 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
 
             messages = remove_hallucinations(messages)
 
+            gpt_functions.tasklist_skipped = False
+
+            # if we got answers to clarifying questions
+            if "clarifications" in function_response:
+                # remove ask_clarifications function call from history
+                messages.pop()
+
+                # add questions and answers to message history
+                messages += function_response["clarifications"]
+                function_message = messages.pop()
+
+            # remove task list modification requests from history
+            elif "TASK_LIST_RECEIVED" in function_response:
+                # remove tasklist functions from history
+                prev_message = messages.pop(-2)
+                while '"name": "make_tasklist"' in json.dumps(prev_message):
+                    prev_message = messages.pop(-2)
+                messages.insert(-1, prev_message)
+
+            # if we want to skip the tasklist, reset it
+            elif function_response == "SKIP_TASKLIST":
+                gpt_functions.tasklist = []
+                gpt_functions.active_tasklist = []
+                gpt_functions.tasklist_finished = False
+                gpt_functions.tasklist_skipped = True
+
+                # remove tasklist functions from history
+                last_message = messages.pop()
+                while '"name": "make_tasklist"' in json.dumps(last_message):
+                    last_message = messages.pop()
+                function_message = last_message
+
             # if function returns PROJECT_FINISHED, exit
-            if function_response == "PROJECT_FINISHED":
+            elif function_response == "PROJECT_FINISHED":
                 if recursive == False:
                     checklist.activate_checklist()
                     print_task_finished(model)
-                    return
+                    return messages
 
                 do_checklist = "no-checklist" not in cmd_args.args and checklist.active_list != []
                 if do_checklist:
@@ -387,13 +419,16 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
                     recursive=recursive,
                 )
 
-            # send function result to chatgpt
-            messages = chatgpt.send_message(
-                message={
+            if function_message is None:
+                function_message = {
                     "role": "function",
                     "name": function_name,
                     "content": function_response,
-                },
+                }
+
+            # send function result to chatgpt
+            messages = chatgpt.send_message(
+                message=function_message,
                 messages=messages,
                 model=model,
                 function_call=function_call,
@@ -461,11 +496,19 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
         # save last response for the while loop
         message = messages[-1]
 
-def make_prompt_better(prompt, ask=True):
+def make_prompt_better(prompt, orig_prompt=None, ask=True, temp = 1.0, messages = []):
     print("\nMaking prompt better...")
 
+    if orig_prompt is None:
+        orig_prompt = prompt
+
     try:
-        better_prompt = betterprompter.make_better(prompt, CONFIG["model"])
+        better_prompt, messages = betterprompter.make_better(
+            prompt=prompt,
+            model=CONFIG["model"],
+            temp=temp,
+            messages=messages
+        )
     except SystemExit:
         raise
     except Exception as e:
@@ -485,11 +528,22 @@ def make_prompt_better(prompt, ask=True):
         print("## Better prompt: ##\n" + better_prompt)
         print()
 
-        if ask == False or yesno("Do you want to use this prompt?") == "y":
-            print("Using better prompt...")
+        if ask == False or yesno("GPT: Do you want to use this prompt?\nYou") == "y":
+            print("\nUsing better prompt...")
             prompt = better_prompt
         else:
-            print("Using original prompt...")
+            answer = input("\nGPT: What do you want to modify in the prompt? (type 'orig' to use original)\nYou: ")
+            if answer == "orig":
+                print("\nUsing original prompt...")
+                return orig_prompt
+
+            return make_prompt_better(
+                prompt=answer,
+                orig_prompt=orig_prompt,
+                ask=ask,
+                temp=temp,
+                messages=messages
+            )
 
     return prompt
 
@@ -553,30 +607,34 @@ def warn_existing_code():
 def create_directories():
     dirs = ["code", "history", "versions"]
     for directory in dirs:
+        directory = paths.relative(directory)
         if not os.path.isdir(directory):
             os.mkdir(directory)
 
 def get_temp(arguments):
     if "temp" in arguments:
         return arguments["temp"]
-    return 0.9
+    return 1.0
 
 def maybe_make_prompt_better(prompt, args, version_loop = False):
     if version_loop == True and "better-versions" not in args:
         return prompt
     if "not-better" not in args:
-        if "better" in args or yesno("GPT: Do you want me to make your prompt better?\nYou") == "y":
+        if "better" in args or yesno("\nGPT: Do you want me to make your prompt better?\nYou") == "y":
             ask = "better" not in args or "ask-better" in args
-            prompt = make_prompt_better(prompt, ask)
+            prompt = make_prompt_better(
+                prompt=prompt,
+                ask=ask
+            )
         print()
     return prompt
 
 def run_versions(prompt, args, version_messages, temp, prev_version = 1):
-    version_id = numberfile("versions", folder=True)
+    version_id = numberfile(paths.relative("versions"), folder=True)
 
     if "versions" in args:
         versions = args["versions"]
-        print(f"INFO:     Creating {versions} versions...")
+        print(f"INFO:     Creating {versions} versions...\n")
     else:
         versions = 1
 
@@ -595,6 +653,29 @@ def run_versions(prompt, args, version_messages, temp, prev_version = 1):
     version_folders = []
     orig_messages = version_messages[prev_version]
 
+    extra_prompt = ""
+
+    # reset tasklist for every version iteration
+    gpt_functions.tasklist = []
+    gpt_functions.active_tasklist = []
+    gpt_functions.tasklist_finished = True
+
+    # add system message on the first round
+    if orig_messages == []:
+        system_message = prompt_selector.select_system_message(prompt, CONFIG["model"], temp)
+
+        # add system message
+        orig_messages.append({
+            "role": "system",
+            "content": system_message
+        })
+
+        # add list of current files to user prompt
+        extra_prompt += "\n\n" + gpt_functions.list_files()
+
+        # add list of functions to first prompt
+        extra_prompt += "\n\nYou can call these functions: " + function_list(CONFIG["model"])
+
     for version in range(1, versions+1):
         # reset message history for every version
         messages = copy.deepcopy(orig_messages)
@@ -606,6 +687,40 @@ def run_versions(prompt, args, version_messages, temp, prev_version = 1):
         version_loop = version > 1
         prompt = maybe_make_prompt_better(prompt, cmd_args.args, version_loop)
 
+        # add extra data to prompt
+        final_prompt = prompt + extra_prompt
+
+        # messages to be added to first ChatGPT request
+        # after the new user prompt
+        extra_messages = []
+
+        # add initial questions to versions' chat history
+        extra_messages += gpt_functions.initial_questions
+
+        # reset tasklist for every version
+        gpt_functions.tasklist_finished = True
+        if not gpt_functions.use_single_tasklist:
+            gpt_functions.active_tasklist = copy.deepcopy(gpt_functions.tasklist)
+
+        # add tasklist to every version
+        if gpt_functions.active_tasklist != []:
+            print("TASK:     " + gpt_functions.active_tasklist[0])
+            extra_messages.append({
+                "role": "assistant",
+                "content": None,
+                "function_call": {
+                    "name": "make_tasklist",
+                    "arguments": json.dumps({
+                        "tasks": gpt_functions.active_tasklist
+                    })
+                }
+            })
+            extra_messages.append({
+                "role": "function",
+                "name": "make_tasklist",
+                "content": "TASK_LIST_RECEIVED: Start with first task: " + gpt_functions.active_tasklist.pop(0) + ". Do all the steps involved in the task and only then run the task_finished function."
+            })
+
         if version != 1:
             # randomize temperature for every version
             temp = round( float(temp_orig) + random.uniform(-0.1, 0.1), 2 )
@@ -614,12 +729,13 @@ def run_versions(prompt, args, version_messages, temp, prev_version = 1):
             shutil.copytree(ver_orig_dir, codedir())
 
         # RUN CONVERSATION
-        run_conversation(
-            prompt=prompt,
+        messages = run_conversation(
+            prompt=final_prompt,
             model=CONFIG["model"],
             messages=messages,
             recursive=recursive,
             temp=temp,
+            extra_messages=extra_messages,
         )
 
         if versions > 1:
@@ -664,12 +780,12 @@ def print_model_info():
 
 def override_model(model):
     if "model" in cmd_args.args:
-        model = cmd_args.args["model"]
-        if model in ["gpt-4", "gpt4"]:
+        model = str(cmd_args.args["model"])
+        if model in ["gpt-4", "gpt4", "4"]:
             model = "gpt-4-0613"
-        elif model in ["gpt-3", "gpt3", "gpt-3.5", "gpt3.5"]:
+        elif model in ["gpt-3", "gpt3", "gpt-3.5", "gpt3.5", "3", "3.5"]:
             model = "gpt-3.5-turbo-16k-0613"
-        elif model in ["gpt-3-4k", "gpt3-4k", "gpt-3.5-4k", "gpt3.5-4k"]:
+        elif model in ["gpt-3-4k", "gpt3-4k", "gpt-3.5-4k", "gpt3.5-4k", "3-4k", "3.5-4k"]:
             model = "gpt-3.5-turbo-0613"
     return model
 

@@ -35,7 +35,7 @@ def yesno(prompt, answers = ["y", "n"]):
         answer = input(f"{prompt} ({slash_list}): ")
         if answer not in answers:
             or_list = "' or '".join(answers)
-            print(f"ERROR:    Please type '{or_list}'")
+            print(f"\nERROR:    Please type '{or_list}'\n")
     return answer
 
 def safepath(path):

@@ -1,11 +1,13 @@
 import sys
 import os
 
+import config
+
 args = {
     "program_name": sys.argv.pop(0)
 }
 
-VERSION = "0.2.0"
+VERSION = "0.3.0"
 
 help_info = {
     "--prompt": {
@@ -62,6 +64,9 @@ help_info = {
     "--single-tasklist": {
         "desc": "send the task list to ChatGPT in a single message",
     },
+    "--step-by-step": {
+        "desc": "send the task list to ChatGPT as separate messages",
+    },
     "--one-task": {
         "desc": "end script after 'task is finished' summary",
     },
@@ -106,40 +111,40 @@ def parse_arguments(argv):
     global args
     global allowed_cmd
 
-    while sys.argv != []:
-        arg_name = sys.argv.pop(0)
+    while argv != []:
+        arg_name = argv.pop(0)
 
         # conversation id
         if arg_name == "--conv":
-            if sys.argv == []:
+            if argv == []:
                 print(f"ERROR: Missing argument for '{arg_name}'")
                 sys.exit(1)
-            args["conv"] = sys.argv.pop(0) # type: ignore
+            args["conv"] = argv.pop(0) # type: ignore
         # initial prompt
         elif arg_name == "--prompt":
-            if sys.argv == []:
+            if argv == []:
                 print(f"ERROR: Missing argument for '{arg_name}'")
                 sys.exit(1)
-            args["prompt"] = sys.argv.pop(0) # type: ignore
+            args["prompt"] = argv.pop(0) # type: ignore
         # initial prompt from a file
         elif arg_name == "--prompt-file":
-            if sys.argv == []:
+            if argv == []:
                 print(f"ERROR: Missing argument for '{arg_name}'")
                 sys.exit(1)
-            with open(sys.argv.pop(0)) as f:
+            with open(argv.pop(0)) as f:
                 args["prompt"] = f.read() # type: ignore
         # automatically run this command if ChatGPT requests it
         elif arg_name == "--allow-cmd":
-            if sys.argv == []:
+            if argv == []:
                 print(f"ERROR: Missing argument for '{arg_name}'")
                 sys.exit(1)
-            allowed_cmd.append(sys.argv.pop(0))
+            allowed_cmd.append(argv.pop(0))
         # set the project directory
         elif arg_name == "--dir":
-            if sys.argv == []:
+            if argv == []:
                 print(f"ERROR: Missing argument for '{arg_name}'")
                 sys.exit(1)
-            args["dir"] = sys.argv.pop(0) # type: ignore
+            args["dir"] = argv.pop(0) # type: ignore
             project_dir = args["dir"]
             if "versions" in args:
                 print("ERROR: --dir is not compatible with --versions")
@@ -161,28 +166,28 @@ def parse_arguments(argv):
                 sys.exit(1)
         # temperature
         elif arg_name == "--temp":
-            if sys.argv == []:
+            if argv == []:
                 print(f"ERROR: Missing argument for '{arg_name}'")
                 sys.exit(1)
-            args["temp"] = float(sys.argv.pop(0)) # type: ignore
+            args["temp"] = float(argv.pop(0)) # type: ignore
         # maximum amount of tokens to use
         elif arg_name == "--max-tokens":
-            if sys.argv == []:
+            if argv == []:
                 print(f"ERROR: Missing argument for '{arg_name}'")
                 sys.exit(1)
-            args["max-tokens"] = int(sys.argv.pop(0)) # type: ignore
+            args["max-tokens"] = int(argv.pop(0)) # type: ignore
         # maximum amount of money to use
         elif arg_name == "--max-price":
-            if sys.argv == []:
+            if argv == []:
                 print(f"ERROR: Missing argument for '{arg_name}'")
                 sys.exit(1)
-            args["max-price"] = float(sys.argv.pop(0)) # type: ignore
+            args["max-price"] = float(argv.pop(0)) # type: ignore
         # system message slug
         elif arg_name == "--system":
-            if sys.argv == []:
+            if argv == []:
                 print(f"ERROR: Missing argument for '{arg_name}'")
                 sys.exit(1)
-            args["system"] = sys.argv.pop(0) # type: ignore
+            args["system"] = argv.pop(0) # type: ignore
         # use automatically detected system message without confirmation
         elif arg_name == "--use-system":
             args["use-system"] = True # type: ignore
@@ -211,6 +216,9 @@ def parse_arguments(argv):
         # send the whole tasklist to chatgpt at once
         elif arg_name == "--single-tasklist":
             args["single-tasklist"] = True # type: ignore
+        # send the tasklist to chatgpt as separate messages
+        elif arg_name == "--step-by-step":
+            args["step-by-step"] = True # type: ignore
         # run only one task and end the script
         elif arg_name == "--one-task":
             args["one-task"] = True # type: ignore
@@ -228,10 +236,10 @@ def parse_arguments(argv):
             args["create-dir"] = True # type: ignore
         # how manu clarifying questions to ask in the beginning
         elif arg_name == "--questions":
-            if sys.argv == []:
+            if argv == []:
                 print(f"ERROR: Missing argument for '{arg_name}'")
                 sys.exit(1)
-            args["questions"] = int(sys.argv.pop(0)) # type: ignore
+            args["questions"] = int(argv.pop(0)) # type: ignore
         # don't ask clarifying questions
         elif arg_name == "--no-questions":
             args["no-questions"] = True # type: ignore
@@ -240,10 +248,10 @@ def parse_arguments(argv):
             args["delete"] = True # type: ignore
         # which model to use for ChatGPT API
         elif arg_name == "--model":
-            if sys.argv == []:
+            if argv == []:
                 print(f"ERROR: Missing argument for '{arg_name}'")
                 sys.exit(1)
-            args["model"] = str(sys.argv.pop(0)) # type: ignore
+            args["model"] = str(argv.pop(0)) # type: ignore
         elif arg_name in ["--version", "-v"]:
             print(f"GPT-AutoPilot v{VERSION} by Unconventional Coding")
             sys.exit(69)
@@ -258,10 +266,10 @@ def parse_arguments(argv):
             if "ask-better" in args:
                 print(f"ERROR: --ask-better flag is not compatible with --versions flag")
                 sys.exit(1)
-            if sys.argv == []:
+            if argv == []:
                 print(f"ERROR: Missing argument for '{arg_name}'")
                 sys.exit(1)
-            args["versions"] = int(sys.argv.pop(0)) # type: ignore
+            args["versions"] = int(argv.pop(0)) # type: ignore
         else:
             print(f"ERROR: Invalid option '{arg_name}'")
             sys.exit(1)
@@ -272,4 +280,22 @@ def parse_arguments(argv):
 
     return args
 
-parse_arguments(sys.argv)
+def get_default_args():
+    default_args = []
+    config_data= config.get_config()
+    if "args" in config_data:
+        args = config_data["args"]
+        if isinstance(args, str):
+            args = args.split(" ")
+
+        for arg in args:
+            if isinstance(arg, list):
+                default_args += arg
+            else:
+                arglist = arg.split(" ")
+                default_args += arglist
+    return default_args
+
+parse_arguments(
+    get_default_args() + sys.argv
+)

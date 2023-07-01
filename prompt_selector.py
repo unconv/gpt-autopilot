@@ -20,18 +20,19 @@ def detect_slug(prompt, model, temp):
         {
             "role": "user",
             "content": f"""
-Select the most fitting category slug for the following prompt (if any):
+Categorize the following description onto the below categories. If uncertain, return 'default'
 ```
 {prompt}
 ```
+Note that the same technology might have different applications, such as command line tool or web application.
 
-Available slugs are:\n
+List of category slugs:\n
 {slugs}
 """
         }
     ]
 
-    print("GPT-API:  Selecting system message...")
+    print("GPT-API:  Detecting system message...")
 
     response = openai.ChatCompletion.create(
         model=model,
@@ -45,7 +46,7 @@ Available slugs are:\n
         functions=[
             {
                 "name": "set_slug",
-                "description": "Set the most fitting slug for the prompt",
+                "description": "Set the category slug. Default if uncertain.",
                 "parameters": {
                     "type": "object",
                     "properties": {
@@ -69,7 +70,7 @@ Available slugs are:\n
         print(f"ERROR:    GPT detected system message '{slug}' that doesn't exist")
         slug = "default"
     elif "use-system" not in cmd_args.args:
-        if yesno(f"\nGPT: Detected project type '{slug}'. Do you want to use this system message?\nYou") == "n":
+        if yesno(f"\nDetected project type '{slug}'.\nDo you want to use this system message?\nYou") == "n":
             slug = input("\nGPT: Which system message do you want to use?\nYou [default]: ") or "default"
         print()
 
@@ -110,8 +111,14 @@ def get_data(prompt, model, temp, slug=None):
 def select_system_message(prompt, model, temp):
     if "system" in cmd_args.args:
         slug = cmd_args.args["system"]
-    else:
+    elif "use-system" in cmd_args.args:
         slug = None
+    else:
+        if yesno("GPT: Do you want me to automatically detect a custom system message?\nYou") == "y":
+            slug = None
+        else:
+            slug = "default"
+        print()
 
     prompt_data = get_data(prompt, model, temp, slug)
 

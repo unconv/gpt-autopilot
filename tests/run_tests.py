@@ -22,7 +22,7 @@ for test in os.scandir(BASE_PATH):
         command = os.path.join(BASE_PATH, "..", "gpt-autopilot.py")
         command += " --prompt-file " + prompt_file
         command += " --create-dir"
-        command += " --dir tests/results/" + test_name
+        command += " --dir " + os.path.join(BASE_PATH, "results", test_name)
         command += " --delete"
         command += " --not-better"
         command += " --use-system"
