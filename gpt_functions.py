@@ -13,6 +13,7 @@ tasklist = []
 active_tasklist = []
 tasklist_finished = True
 tasklist_skipped = False
+use_single_tasklist = False
 
 clarification_asked = 0
 initial_questions = []
@@ -29,6 +30,8 @@ def make_tasklist(tasks):
     global active_tasklist
     global tasklist_finished
     global tasklist_skipped
+    global initial_questions
+    global use_single_tasklist
 
     if tasklist_skipped:
         return "ERROR: Creating a task list is not allowed at this moment."
@@ -74,7 +77,19 @@ def make_tasklist(tasks):
 
     if single_tasklist:
         tasklist_finished = False
-        return all_tasks + "\n\nPlease complete the project according to the above requirements"
+        tasklist_prompt = all_tasks + "\n\nPlease complete the project according to the above requirements"
+
+        # reset tasklist for versions
+        active_tasklist = []
+        use_single_tasklist = True
+
+        # add tasklist to initial questions for versions
+        initial_questions.append({
+            "role": "user",
+            "content": tasklist_prompt
+        })
+
+        return tasklist_prompt
 
     active_tasklist = copy.deepcopy(tasks)
     tasklist_finished = False

@@ -699,7 +699,8 @@ def run_versions(prompt, args, version_messages, temp, prev_version = 1):
 
         # reset tasklist for every version
         gpt_functions.tasklist_finished = True
-        gpt_functions.active_tasklist = copy.deepcopy(gpt_functions.tasklist)
+        if not gpt_functions.use_single_tasklist:
+            gpt_functions.active_tasklist = copy.deepcopy(gpt_functions.tasklist)
 
         # add tasklist to every version
         if gpt_functions.active_tasklist != []:
