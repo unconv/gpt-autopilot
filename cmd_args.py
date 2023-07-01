@@ -64,6 +64,9 @@ help_info = {
     "--single-tasklist": {
         "desc": "send the task list to ChatGPT in a single message",
     },
+    "--step-by-step": {
+        "desc": "send the task list to ChatGPT as separate messages",
+    },
     "--one-task": {
         "desc": "end script after 'task is finished' summary",
     },
@@ -213,6 +216,9 @@ def parse_arguments(argv):
         # send the whole tasklist to chatgpt at once
         elif arg_name == "--single-tasklist":
             args["single-tasklist"] = True # type: ignore
+        # send the tasklist to chatgpt as separate messages
+        elif arg_name == "--step-by-step":
+            args["step-by-step"] = True # type: ignore
         # run only one task and end the script
         elif arg_name == "--one-task":
             args["one-task"] = True # type: ignore

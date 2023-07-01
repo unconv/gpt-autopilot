@@ -58,7 +58,21 @@ def make_tasklist(tasks):
 
     print()
 
-    if "single-tasklist" in cmd_args.args:
+    step_by_step = "step-by-step" in cmd_args.args
+    single_tasklist = "single-tasklist" in cmd_args.args
+
+    if not step_by_step and not single_tasklist:
+        tasklist_type = yesno(
+            "How do you want go though the task list?\n"+
+            "1) at once (faster, cheaper, less accurate)\n"+
+            "2) step by step (slower, more expensive, more accurate)\n"+
+            "Answer",
+            ["1", "2"]
+        )
+        single_tasklist = tasklist_type == "1"
+        print()
+
+    if single_tasklist:
         tasklist_finished = False
         return all_tasks + "\n\nPlease complete the project according to the above requirements"
 
