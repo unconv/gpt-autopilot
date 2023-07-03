@@ -40,14 +40,33 @@ def make_tasklist(tasks):
 
     tasklist_skipped = False
 
-    tasklist = copy.deepcopy(tasks)
+    # combine same file tasks into one task
+    combined_tasklist = []
+    prev_file = None
+    task_string = ""
+    for item in tasks:
+        if prev_file != None and prev_file != item["file_involved"]:
+            if "NO_FILE" not in prev_file:
+                task_string = "In " + prev_file + ": " + task_string
+            combined_tasklist.append(task_string)
+            task_string = ""
+        prev_file = item["file_involved"]
+        task_string += item["task_description"] + ". "
 
-    next_task = tasks.pop(0)
+    # add remaining task
+    if task_string != "":
+        if "NO_FILE" not in prev_file:
+            task_string = "In " + prev_file + ": " + task_string
+        combined_tasklist.append(task_string)
+
+    tasklist = copy.deepcopy(combined_tasklist)
+
+    next_task = combined_tasklist.pop(0)
     all_tasks = ""
 
     all_tasks += "TASKLIST: 1. " + next_task + "\n"
 
-    for number, item in enumerate(tasks):
+    for number, item in enumerate(combined_tasklist):
         all_tasks += "          " + str( number + 2 ) + ". " + item + "\n"
 
     print(all_tasks, end="")
@@ -93,11 +112,11 @@ def make_tasklist(tasks):
 
         return tasklist_prompt
 
-    active_tasklist = copy.deepcopy(tasks)
+    active_tasklist = copy.deepcopy(combined_tasklist)
     tasklist_finished = False
 
     print("TASK:     " + next_task)
-    return "TASK_LIST_RECEIVED: Start with first task: " + next_task + ". Do all the steps involved in the task and only then run the task_finished function. If the task is already done in a previous task, you can call task_finished right away"
+    return "TASK_LIST_RECEIVED: Start with first task: \n\n```\n" + next_task + "```\n\nDo all the steps involved in the task and only then run the task_finished function."
 
 def write_file(filename, content):
     fullpath = safepath(filename)
@@ -446,6 +465,7 @@ def project_finished(finished=True):
 
 def task_finished(finished=True):
     global active_tasklist
+    global tasklist_finished
 
     print("FUNCTION: Task finished")
 
@@ -488,19 +508,24 @@ replace_text_func = {
 
 make_tasklist_func = {
     "name": "make_tasklist",
-    "description": """
-Convert the next steps to be taken into a list of tasks and pass them as a list into this function. Don't add already done tasks.
-Explain the task clearly so that there can be no misunderstandings.
-Don't include testing or other operations that require user interaction, unless specifically asked.
-For a trivial project, make just one task
-""",
+    "description": "Create a tasklist for the project",
     "parameters": {
         "type": "object",
         "properties": {
             "tasks": {
                 "type": "array",
                 "items": {
-                    "type": "string",
+                    "type": "object",
+                    "properties": {
+                        "file_involved": {
+                            "type": "string",
+                            "description": "The name of the file involved in the step, or NO_FILE"
+                        },
+                        "task_description": {
+                            "type": "string"
+                        }
+                    },
+                    "description": "A step in the tasklist"
                 },
                 "description": "The task list",
             },
