@@ -108,6 +108,9 @@ def write_file(filename, content):
     if os.path.isdir(fullpath):
         return "ERROR: There is already a directory with this name"
 
+    # force newline in the end
+    content = content.rstrip("\n") + "\n"
+
     with open(fullpath, "w") as f:
         f.write(content)
 
@@ -151,6 +154,9 @@ def append_file(filename, content):
 
     if os.path.isdir(fullpath):
         return "ERROR: There is already a directory with this name"
+
+    # force newline in the end
+    content = content.rstrip("\n") + "\n"
 
     with open(fullpath, "a") as f:
         f.write(content)
