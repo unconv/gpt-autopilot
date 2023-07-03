@@ -12,6 +12,8 @@ import checklist
 import cmd_args
 import paths
 
+create_outline = False
+
 def redact_always(messages):
     messages_redact = copy.deepcopy(messages)
     for msg in messages_redact:
@@ -43,6 +45,8 @@ def send_message(
     conv_id = None,
     temp = 1.0,
 ):
+    global create_outline
+
     # add user message to message list
     messages.append(message)
 
@@ -78,6 +82,17 @@ def send_message(
             "name": "ask_clarification",
             "arguments": "questions"
         }
+    elif "no-outline" not in cmd_args.args and not gpt_functions.outline_created:
+        print("OUTLINE:  Creating an outline for the project")
+        create_outline = True
+        print_message = False
+        definitions = [gpt_functions.ask_clarification_func]
+        function_call = "none"
+        messages.append({
+            "role": "user",
+            "content": "Please create a comprehensive outline and plan for implementing this project fully"
+        })
+        gpt_functions.outline_created = True
 
     # always ask for a task list first
     elif "no-tasklist" not in cmd_args.args and gpt_functions.tasklist_finished and gpt_functions.tasklist == []:

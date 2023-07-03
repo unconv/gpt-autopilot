@@ -46,6 +46,9 @@ help_info = {
     "--use-system": {
         "desc": "use automatically detected system message without confirmation",
     },
+    "--no-outline": {
+        "desc": "don't create an outline of the project in the beginning",
+    },
     "--better-versions": {
         "desc": "make a better prompt for every version",
     },
@@ -197,6 +200,9 @@ def parse_arguments(argv):
                 print("ERROR: --versions must come after --better")
                 sys.exit(1)
             args["better"] = True # type: ignore
+        # don't create an outline in the beginning
+        elif arg_name == "--no-outline":
+            args["no-outline"] = True # type: ignore
         # don't make prompt better with GPT
         elif arg_name == "--not-better":
             args["not-better"] = True # type: ignore

@@ -441,7 +441,10 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
                 temp=temp,
             )
         else:
-            if mode == "WRITE_FILE":
+            if chatgpt.create_outline:
+                chatgpt.create_outline = False
+                user_message = "Thank you. Please continue to implement fully the complete project"
+            elif mode == "WRITE_FILE":
                 user_message = actually_write_file(filename, message["content"])
 
                 if "ERROR" not in user_message:

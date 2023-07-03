@@ -17,6 +17,7 @@ use_single_tasklist = False
 
 clarification_asked = 0
 initial_questions = []
+outline_created = False
 
 if "questions" in cmd_args.args:
     initial_question_count = int(cmd_args.args["questions"])
@@ -560,8 +561,8 @@ file_open_for_appending_func = {
     },
 }
 
-real_write_file_func = write_file_func
-real_append_file_func = append_file_func
+real_write_file_func = file_open_for_writing_func
+real_append_file_func = file_open_for_appending_func
 
 definitions = [
     make_tasklist_func,

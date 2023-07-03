@@ -10,10 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - A system message for creating PowerPoint presentations using Marp
+- Creation of a project outline in the beginning of the project. Can be skipped with `--no-outline`
 
 ### Changed
 
-- Changed to using `write_file(filename, content)` function call by default and only switching to `file_open_for_writing(filename)` if parsing the arguments to `write_file` fails, saving ~50% of tokens in some cases
+- Updated system messages
 
 ## [0.3.0]
 
