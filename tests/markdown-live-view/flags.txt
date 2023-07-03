@@ -1,1 +1,1 @@
---no-checklist --single-tasklist --max-tokens 20000 --max-price 0.6
+--no-checklist --max-tokens 20000 --max-price 0.6
