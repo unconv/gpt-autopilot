@@ -89,7 +89,7 @@ def send_message(
         function_call = "none"
         messages.append({
             "role": "user",
-            "content": "Please create a comprehensive outline and plan for implementing this project fully"
+            "content": "Please tell me in full detail how you will implement this project. Write it in the first person as if you are the one who will be creating it. Start sentences with 'I will', 'Then I will' and 'Next I will'"
         })
         gpt_functions.outline_created = True
 
