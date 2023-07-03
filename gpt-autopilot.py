@@ -454,13 +454,18 @@ def run_conversation(prompt, model = "gpt-3.5-turbo-16k-0613", messages = [], co
                 if gpt_functions.modify_outline:
                     messages.pop(-2)
 
-                if yesno("\nGPT: Do you want to use this project outline?\nYou") == "y":
+                if "use-outline" in cmd_args.args or yesno("\nGPT: Do you want to use this project outline?\nYou") == "y":
+                    user_message = "Thank you. Please continue to implement fully the complete project"
+
                     # add outline to initial questions for versions
                     gpt_functions.initial_questions.append({
                         "role": "assistant",
                         "content": message["content"]
                     })
-                    user_message = "Thank you. Please continue to implement fully the complete project"
+                    gpt_functions.initial_questions.append({
+                        "role": "user",
+                        "content": user_message
+                    })
                 else:
                     changes = input("\nGPT: What would you like to modify? (type 'skip' to skip outline)\nYou: ")
                     user_message = "Thank you for the project outline. Please make the following changes to it and respond only with the new project outline in the first person: " + changes
