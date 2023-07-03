@@ -15,6 +15,10 @@ tasklist_finished = True
 tasklist_skipped = False
 use_single_tasklist = False
 
+# keep track of whether an operation
+# has been performed after a task
+task_operation_performed = False
+
 clarification_asked = 0
 initial_questions = []
 outline_created = False
@@ -34,6 +38,7 @@ def make_tasklist(tasks):
     global tasklist_skipped
     global initial_questions
     global use_single_tasklist
+    global task_operation_performed
 
     if tasklist_skipped:
         return "ERROR: Creating a task list is not allowed at this moment."
@@ -114,6 +119,7 @@ def make_tasklist(tasks):
 
     active_tasklist = copy.deepcopy(combined_tasklist)
     tasklist_finished = False
+    task_operation_performed = False
 
     print("TASK:     " + next_task)
     return "TASK_LIST_RECEIVED: Start with first task: \n\n```\n" + next_task + "```\n\nDo all the steps involved in the task and only then run the task_finished function."
@@ -466,6 +472,11 @@ def project_finished(finished=True):
 def task_finished(finished=True):
     global active_tasklist
     global tasklist_finished
+    global task_operation_performed
+
+    if not task_operation_performed:
+        print("ERROR:    Tried to finish task before operation")
+        return "ERROR: You need to perform the task first"
 
     print("FUNCTION: Task finished")
 

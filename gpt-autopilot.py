@@ -328,6 +328,9 @@ def run_conversation(prompt, model = "gpt-3.5-turbo-16k-0613", messages = [], co
                     try:
                         function_response = getattr(gpt_functions, function_name)(**arguments)
 
+                        if function_name not in ["task_finished", "project_finished", "make_tasklist"]:
+                            gpt_functions.task_operation_performed = True
+
                         if function_name == "file_open_for_writing":
                             mode = "WRITE_FILE"
                             filename = arguments["filename"]

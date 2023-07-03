@@ -75,6 +75,10 @@ def send_message(
         # remove task_finished function if there is no task currently
         definitions = [definition for definition in definitions if definition["name"] != "task_finished"]
 
+    if gpt_functions.task_operation_performed == False:
+        # remove task_finished until an operation is performed
+        definitions = [definition for definition in definitions if definition["name"] != "task_finished"]
+
     # always ask clarifying questions first
     if "no-questions" not in cmd_args.args and gpt_functions.clarification_asked < gpt_functions.initial_question_count:
         definitions = [gpt_functions.ask_clarification_func]
