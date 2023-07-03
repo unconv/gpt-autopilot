@@ -94,7 +94,7 @@ def send_message(
         if not gpt_functions.modify_outline:
             messages.append({
                 "role": "user",
-                "content": "Please tell me in full detail how you will implement this project. Prefer to separate functionality into different files. Write it in the first person as if you are the one who will be creating it. Start sentences with 'I will', 'Then I will' and 'Next I will'"
+                "content": "Please tell me in full detail how you will implement this project. Write it in the first person as if you are the one who will be creating it. Start sentences with 'I will', 'Then I will' and 'Next I will'"
             })
         gpt_functions.outline_created = True
 
@@ -105,7 +105,6 @@ def send_message(
             "role": "user",
             "content": """
 Please create a tasklist for the next steps involved in implementing the project. Don't add tasks that have already been done.
-Prefer to separate functionality into different files.
 Explain the task clearly and comprehensively so that there can be no misunderstandings.
 Don't include testing or other operations that require user interaction, unless specifically asked.
 For a trivial project, make just one task"""
