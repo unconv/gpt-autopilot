@@ -199,9 +199,11 @@ def fix_arguments(function_name, arguments):
         del arguments["question"]
     return arguments
 
-def function_list(model):
+def function_list(model, exclude=[]):
     func_list = ""
     for func in gpt_functions.get_definitions(model):
+        if func["name"] in exclude:
+            continue
         func_list += func["name"] + "("
         func_list += ", ".join([key for key in func["parameters"]["properties"].keys()])
         func_list += ")\n"
@@ -714,7 +716,15 @@ def run_versions(prompt, args, version_messages, temp, prev_version = 1):
         extra_prompt += "\n\n" + gpt_functions.list_files()
 
         # add list of functions to first prompt
-        extra_prompt += "\n\nYou can call these functions: " + function_list(CONFIG["model"])
+        extra_prompt += "\n\nYou can call these functions among others: " + function_list(CONFIG["model"], exclude=[
+            "run_cmd",
+            "append_file",
+            "file_open_for_appending",
+            "replace_text",
+            "list_files",
+            "read_file",
+            "delete_file",
+        ])
 
     for version in range(1, versions+1):
         # reset message history for every version
