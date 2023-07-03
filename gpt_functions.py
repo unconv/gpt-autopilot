@@ -474,7 +474,8 @@ def task_finished(finished=True):
     global tasklist_finished
     global task_operation_performed
 
-    if not task_operation_performed:
+    if task_operation_performed == False:
+        task_operation_performed = True # prevent loop
         print("ERROR:    Tried to finish task before operation")
         return "ERROR: You need to perform the task first"
 
@@ -482,6 +483,7 @@ def task_finished(finished=True):
 
     if len(active_tasklist) > 0:
         next_task = active_tasklist.pop(0)
+        task_operation_performed = False
         print("TASK:     " + next_task)
         return "Thank you. Please do the next task, unless it has already been done: " + next_task
 
