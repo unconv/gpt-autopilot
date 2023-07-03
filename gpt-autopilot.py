@@ -443,6 +443,15 @@ def run_conversation(prompt, model = "gpt-3.5-turbo-16k-0613", messages = [], co
         else:
             if chatgpt.create_outline:
                 chatgpt.create_outline = False
+
+                # remove prompt about creating outline
+                messages.pop()
+
+                # add outline to initial questions for versions
+                gpt_functions.initial_questions.append({
+                    "role": "assistant",
+                    "content": message["content"]
+                })
                 user_message = "Thank you. Please continue to implement fully the complete project"
             elif mode == "WRITE_FILE":
                 user_message = actually_write_file(filename, message["content"])
