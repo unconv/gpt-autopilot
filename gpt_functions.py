@@ -534,7 +534,11 @@ append_file_func = {
         "properties": {
             "filename": {
                 "type": "string",
-                "description": "The full content to be written, max 5 MB",
+                "description": "The filename to append to",
+            },
+            "content": {
+                "type": "string",
+                "description": "The full content to be appended, max 5 MB",
             },
         },
         "required": ["filename", "content"],
