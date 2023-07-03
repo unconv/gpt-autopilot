@@ -183,6 +183,12 @@ def read_file(filename):
     return f"The contents of '{relative}':\n{content}"
 
 def create_dir(directory):
+    if isinstance(directory, list):
+        output = ""
+        for dir in directory:
+            output += create_dir(dir)+"\n"
+        return output
+
     fullpath = safepath(directory)
     relative = relpath(fullpath)
 
@@ -643,13 +649,16 @@ definitions = [
     },
     {
         "name": "create_dir",
-        "description": "Create a directory with given name",
+        "description": "Create a directory or directories with given name(s)",
         "parameters": {
             "type": "object",
             "properties": {
                 "directory": {
-                    "type": "string",
-                    "description": "Name of the directory to create",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Name of the directory to create or an array of directories to create",
                 },
             },
             "required": ["directory"],
