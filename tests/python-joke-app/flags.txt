@@ -1,1 +1,1 @@
---do-checklist --step-by-step --max-tokens 200000 --max-price 1
+--no-checklist --allow-cmd "pip install flask" --max-tokens 200000 --max-price 1

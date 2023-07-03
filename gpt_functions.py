@@ -15,8 +15,14 @@ tasklist_finished = True
 tasklist_skipped = False
 use_single_tasklist = False
 
+# keep track of whether an operation
+# has been performed after a task
+task_operation_performed = False
+
 clarification_asked = 0
 initial_questions = []
+outline_created = False
+modify_outline = False
 
 if "questions" in cmd_args.args:
     initial_question_count = int(cmd_args.args["questions"])
@@ -32,20 +38,40 @@ def make_tasklist(tasks):
     global tasklist_skipped
     global initial_questions
     global use_single_tasklist
+    global task_operation_performed
 
     if tasklist_skipped:
         return "ERROR: Creating a task list is not allowed at this moment."
 
     tasklist_skipped = False
 
-    tasklist = copy.deepcopy(tasks)
+    # combine same file tasks into one task
+    combined_tasklist = []
+    prev_file = None
+    task_string = ""
+    for item in tasks:
+        if prev_file != None and prev_file != item["file_involved"]:
+            if "NO_FILE" not in prev_file:
+                task_string = "In " + prev_file + ": " + task_string
+            combined_tasklist.append(task_string)
+            task_string = ""
+        prev_file = item["file_involved"]
+        task_string += item["task_description"] + ". "
 
-    next_task = tasks.pop(0)
+    # add remaining task
+    if task_string != "":
+        if "NO_FILE" not in prev_file:
+            task_string = "In " + prev_file + ": " + task_string
+        combined_tasklist.append(task_string)
+
+    tasklist = copy.deepcopy(combined_tasklist)
+
+    next_task = combined_tasklist.pop(0)
     all_tasks = ""
 
     all_tasks += "TASKLIST: 1. " + next_task + "\n"
 
-    for number, item in enumerate(tasks):
+    for number, item in enumerate(combined_tasklist):
         all_tasks += "          " + str( number + 2 ) + ". " + item + "\n"
 
     print(all_tasks, end="")
@@ -91,11 +117,32 @@ def make_tasklist(tasks):
 
         return tasklist_prompt
 
-    active_tasklist = copy.deepcopy(tasks)
+    active_tasklist = copy.deepcopy(combined_tasklist)
     tasklist_finished = False
+    task_operation_performed = False
 
     print("TASK:     " + next_task)
-    return "TASK_LIST_RECEIVED: Start with first task: " + next_task + ". Do all the steps involved in the task and only then run the task_finished function. If the task is already done in a previous task, you can call task_finished right away"
+    return "TASK_LIST_RECEIVED: Start with first task: \n\n```\n" + next_task + "```\n\nDo all the steps involved in the task and only then run the task_finished function."
+
+def write_file(filename, content):
+    fullpath = safepath(filename)
+    relative = relpath(fullpath)
+
+    # Create parent directories if they don't exist
+    parent_dir = os.path.dirname(fullpath)
+    os.makedirs(parent_dir, exist_ok=True)
+
+    if os.path.isdir(fullpath):
+        return "ERROR: There is already a directory with this name"
+
+    # force newline in the end
+    content = content.rstrip("\n") + "\n"
+
+    with open(fullpath, "w") as f:
+        f.write(content)
+
+    print(f"FUNCTION: Wrote to file {relative}")
+    return f"File {relative} written successfully"
 
 def file_open_for_writing(filename, content = ""):
     filename = relpath(safepath(filename))
@@ -124,6 +171,26 @@ def replace_text(find, replace, filename, count = -1):
 
     return "Text replaced successfully"
 
+def append_file(filename, content):
+    fullpath = safepath(filename)
+    relative = relpath(fullpath)
+
+    # Create parent directories if they don't exist
+    parent_dir = os.path.dirname(fullpath)
+    os.makedirs(parent_dir, exist_ok=True)
+
+    if os.path.isdir(fullpath):
+        return "ERROR: There is already a directory with this name"
+
+    # force newline in the end
+    content = content.rstrip("\n") + "\n"
+
+    with open(fullpath, "a") as f:
+        f.write(content)
+
+    print(f"FUNCTION: Wrote to file {relative}")
+    return f"File {relative} appended successfully"
+
 def file_open_for_appending(filename, content = ""):
     filename = relpath(safepath(filename))
     print(f"FUNCTION: Appending to file {filename}...")
@@ -142,6 +209,12 @@ def read_file(filename):
     return f"The contents of '{relative}':\n{content}"
 
 def create_dir(directory):
+    if isinstance(directory, list):
+        output = ""
+        for dir in directory:
+            output += create_dir(dir)+"\n"
+        return output
+
     fullpath = safepath(directory)
     relative = relpath(fullpath)
 
@@ -398,11 +471,19 @@ def project_finished(finished=True):
 
 def task_finished(finished=True):
     global active_tasklist
+    global tasklist_finished
+    global task_operation_performed
+
+    if task_operation_performed == False:
+        task_operation_performed = True # prevent loop
+        print("ERROR:    Tried to finish task before operation")
+        return "ERROR: You need to perform the task first"
 
     print("FUNCTION: Task finished")
 
     if len(active_tasklist) > 0:
         next_task = active_tasklist.pop(0)
+        task_operation_performed = False
         print("TASK:     " + next_task)
         return "Thank you. Please do the next task, unless it has already been done: " + next_task
 
@@ -411,21 +492,53 @@ def task_finished(finished=True):
 
 # Function definitions for ChatGPT
 
+replace_text_func = {
+    "name": "replace_text",
+    "description": "Replace text in given file",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "find": {
+                "type": "string",
+                "description": "The text to look for",
+            },
+            "replace": {
+                "type": "string",
+                "description": "The text to replace the occurences with",
+            },
+            "filename": {
+                "type": "string",
+                "description": "The name of file to modify",
+            },
+            "count": {
+                "type": "number",
+                "description": "The number of occurences to replace (default = all occurences)",
+            },
+        },
+        "required": ["find", "replace", "filename"],
+    },
+}
+
 make_tasklist_func = {
     "name": "make_tasklist",
-    "description": """
-Convert the next steps to be taken into a list of tasks and pass them as a list into this function. Don't add already done tasks.
-Explain the task clearly so that there can be no misunderstandings.
-Don't include testing or other operations that require user interaction, unless specifically asked.
-For a trivial project, make just one task
-""",
+    "description": "Create a tasklist for the project",
     "parameters": {
         "type": "object",
         "properties": {
             "tasks": {
                 "type": "array",
                 "items": {
-                    "type": "string",
+                    "type": "object",
+                    "properties": {
+                        "file_involved": {
+                            "type": "string",
+                            "description": "The name of the file involved in the step, or NO_FILE"
+                        },
+                        "task_description": {
+                            "type": "string"
+                        }
+                    },
+                    "description": "A step in the tasklist"
                 },
                 "description": "The task list",
             },
@@ -452,8 +565,83 @@ ask_clarification_func = {
     },
 }
 
+write_file_func = {
+    "name": "write_file",
+    "description": "Write content to a file. Existing files will be overwritten. Parent directories will be created if they don't exist.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "filename": {
+                "type": "string",
+                "description": "The filename to write to",
+            },
+            "content": {
+                "type": "string",
+                "description": "The full content to be written, max 5 MB",
+            },
+        },
+        "required": ["filename", "content"],
+    },
+}
+
+file_open_for_writing_func = {
+    "name": "file_open_for_writing",
+    "description": "Open a file for writing. Existing files will be overwritten. Parent directories will be created if they don't exist. Content of file will be asked in the next prompt.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "filename": {
+                "type": "string",
+                "description": "The filename to write to",
+            },
+        },
+        "required": ["filename"],
+    },
+}
+
+append_file_func = {
+    "name": "append_file",
+    "description": "Append content to a file (after the last line).",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "filename": {
+                "type": "string",
+                "description": "The filename to append to",
+            },
+            "content": {
+                "type": "string",
+                "description": "The full content to be appended, max 5 MB",
+            },
+        },
+        "required": ["filename", "content"],
+    },
+}
+
+file_open_for_appending_func = {
+    "name": "file_open_for_appending",
+    "description": "Open a file for appending content to the end of a file with given name (after the last line). The content to append will be given in the next prompt",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "filename": {
+                "type": "string",
+                "description": "The filename to append to",
+            },
+        },
+        "required": ["filename"],
+    },
+}
+
+real_write_file_func = file_open_for_writing_func
+real_append_file_func = file_open_for_appending_func
+
 definitions = [
     make_tasklist_func,
+    real_write_file_func,
+    #real_append_file_func,
+    ask_clarification_func,
+    #replace_text_func,
     {
         "name": "list_files",
         "description": "List the files in the current project",
@@ -483,60 +671,6 @@ definitions = [
         },
     },
     {
-        "name": "file_open_for_writing",
-        "description": "Open a file for writing. Existing files will be overwritten. Parent directories will be created if they don't exist. Content of file will be asked in the next prompt.",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "filename": {
-                    "type": "string",
-                    "description": "The filename to write to",
-                },
-            },
-            "required": ["filename"],
-        },
-    },
-    {
-        "name": "replace_text",
-        "description": "Replace text in given file",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "find": {
-                    "type": "string",
-                    "description": "The text to look for",
-                },
-                "replace": {
-                    "type": "string",
-                    "description": "The text to replace the occurences with",
-                },
-                "filename": {
-                    "type": "string",
-                    "description": "The name of file to modify",
-                },
-                "count": {
-                    "type": "number",
-                    "description": "The number of occurences to replace (default = all occurences)",
-                },
-            },
-            "required": ["find", "replace", "filename"],
-        },
-    },
-    {
-        "name": "file_open_for_appending",
-        "description": "Open a file for appending content to the end of a file with given name (after the last line). The content to append will be given in the next prompt",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "filename": {
-                    "type": "string",
-                    "description": "The filename to append to",
-                },
-            },
-            "required": ["filename"],
-        },
-    },
-    {
         "name": "move_file",
         "description": "Move a file from one place to another. Parent directories will be created if they don't exist",
         "parameters": {
@@ -556,13 +690,16 @@ definitions = [
     },
     {
         "name": "create_dir",
-        "description": "Create a directory with given name",
+        "description": "Create a directory or directories with given name(s)",
         "parameters": {
             "type": "object",
             "properties": {
                 "directory": {
-                    "type": "string",
-                    "description": "Name of the directory to create",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Name of the directory to create or an array of directories to create",
                 },
             },
             "required": ["directory"],
@@ -600,7 +737,6 @@ definitions = [
             "required": ["filename"],
         },
     },
-    ask_clarification_func,
     {
         "name": "project_finished",
         "description": "Call this function when the whole project is finished",
@@ -641,7 +777,7 @@ definitions = [
                 },
                 "command": {
                     "type": "string",
-                    "description": "The command to run",
+                    "description": "The command to run. Disallowed: touch, mkdir, cd",
                 },
                 "reason": {
                     "type": "string",

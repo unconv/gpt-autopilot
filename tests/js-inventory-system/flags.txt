@@ -1,1 +1,1 @@
---do-checklist --step-by-step --max-tokens 90000 --max-price 0.5
+--no-checklist --max-tokens 90000 --max-price 0.5

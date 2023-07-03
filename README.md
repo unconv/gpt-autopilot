@@ -1,10 +1,24 @@
 # GPT-AutoPilot
 
-A ChatGPT API powered Python script that can create multi-file applications in any programming language (or any plaintext-based content for that matter). Just tell it what you want to build, and it will build it and ask you clarifying questions along the way.
+A ChatGPT API powered Python script that can build almost anything with the power of the [Function Calling](https://openai.com/blog/function-calling-and-other-api-updates). Just tell it what you want to build, and it will build it and ask you clarifying questions along the way.
 
-GPT-AutoPilot uses an iterative process, so after it has accomplished the task, it will ask you if you need some modifications. You can also run the script with an existing project in the `code` folder and it will make modifications to it based on your prompt. **Note that the AI has the ability to delete and modify files, so have a backup**
+GPT-AutoPilot uses an iterative process, so after it has accomplished the task, it will ask you if you need some modifications. You can also run the script with an existing project in the `code` folder or specify a custom working directory with the `--dir` flag and it will make modifications to it based on your prompt. **Note that the AI has the ability to delete and modify files, so have a backup**
 
 # Usage
+
+For simple tasks, you can run:
+
+```console
+$ ./gpt-autopilot.py --simple
+```
+
+For a more complex project, just run the script without any flags. It will ask you for details.
+
+```
+$ ./gpt-autopilot.py
+```
+
+# Installation
 
 GPT-AutoPilot works on both Linux and Windows (and probably macOS) and it has [standalone packages](https://github.com/unconv/gpt-autopilot/releases/tag/v0.3.0), that don't need the Python interpreter.
 
@@ -60,11 +74,11 @@ After you have downloaded and unzipped, or cloned the repository, go into the `g
 
 ## Where does the output go?
 
-The files will be written to the `code` directory, relative to the path you ran the program from. If you use the `--versions` flag, the files will be written to the `versions` directory.
+The files will be written to the `code` directory, relative to the path of the executable. If you use the `--dir` flag, files will be written to the directory you specify. If you use the `--versions` flag, the files will be written to the `versions` directory.
 
 ## Does it work with GPT-3.5?
 
-The default model is `gpt-4-0613` and it works best, but you can still use the `gpt-3.5-turbo-16k-0613` or `gpt-3.5-turbo-0613` model. Just note that they are not as capable as GPT-4. To change, add `"model": "gpt-3.5-turbo-16k-0613"` to the `config.json` file. Make sure to use the 0613 model since only that supports function calling.
+Yes. The default model is `gpt-3.5-turbo-16k-0613`. You can change it in the `config.json` file. Make sure to use the 0613 models since only they support function calling. GPT-4 (`gpt-4-0613`) will provide more capabilities for certain tasks, but will be a lot more expensive. It is recommended to try it with GPT-3.5 first.
 
 ## Multi-version branching
 
@@ -82,7 +96,7 @@ All versions and version iterations are stored in separate folders in the `versi
 
 ## System Message
 
-You can customize the system message by editing the `system_message` file. The system message will affect how the agent acts. For example, you can add a code style guide to it.
+You can customize the system message by editing the `prompts/default/system_message` file. The system message will affect how the agent acts. For example, you can add a code style guide to it. You can also create a new folder to the `prompts` folder and create a `system_message` file inside it. GPT-AutoPilot will detect automatically if a prompt requires that specific system message (based on the folder name).
 
 ## Demo: GPT-4
 

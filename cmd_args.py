@@ -7,7 +7,7 @@ args = {
     "program_name": sys.argv.pop(0)
 }
 
-VERSION = "0.3.0"
+VERSION = "0.4.0-dev"
 
 help_info = {
     "--prompt": {
@@ -21,6 +21,9 @@ help_info = {
     },
     "--create-dir": {
         "desc": "create the project directory automatically if it doesn't exist",
+    },
+    "--simple": {
+        "desc": "run in simple mode",
     },
     "--system": {
         "desc": "set system message slug to use",
@@ -45,6 +48,12 @@ help_info = {
     },
     "--use-system": {
         "desc": "use automatically detected system message without confirmation",
+    },
+    "--no-outline": {
+        "desc": "don't create an outline of the project in the beginning",
+    },
+    "--use-outline": {
+        "desc": "use automatically created outline",
     },
     "--better-versions": {
         "desc": "make a better prompt for every version",
@@ -197,6 +206,12 @@ def parse_arguments(argv):
                 print("ERROR: --versions must come after --better")
                 sys.exit(1)
             args["better"] = True # type: ignore
+        # don't create an outline in the beginning
+        elif arg_name == "--no-outline":
+            args["no-outline"] = True # type: ignore
+        # use automatically created outline
+        elif arg_name == "--use-outline":
+            args["use-outline"] = True # type: ignore
         # don't make prompt better with GPT
         elif arg_name == "--not-better":
             args["not-better"] = True # type: ignore
@@ -228,6 +243,14 @@ def parse_arguments(argv):
         # don't use checklist from custom system message
         elif arg_name == "--no-checklist":
             args["no-checklist"] = True # type: ignore
+        # run in simple mode
+        elif arg_name == "--simple":
+            args["use-system"] = True # type: ignore
+            args["no-checklist"] = True # type: ignore
+            args["no-questions"] = True # type: ignore
+            args["no-outline"] = True # type: ignore
+            args["no-tasklist"] = True # type: ignore
+            args["not-better"] = True # type: ignore
         # continue automatically if ChatGPT doesn't respond with a function call
         elif arg_name == "--continue":
             args["continue"] = True # type: ignore

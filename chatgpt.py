@@ -12,6 +12,8 @@ import checklist
 import cmd_args
 import paths
 
+create_outline = False
+
 def redact_always(messages):
     messages_redact = copy.deepcopy(messages)
     for msg in messages_redact:
@@ -36,13 +38,15 @@ def redact_messages(messages):
 def send_message(
     message,
     messages,
-    model = "gpt-4-0613",
+    model = "gpt-3.5-turbo-16k-0613",
     function_call = "auto",
     retries = 0,
     print_message = True,
     conv_id = None,
     temp = 1.0,
 ):
+    global create_outline
+
     # add user message to message list
     messages.append(message)
 
@@ -71,6 +75,10 @@ def send_message(
         # remove task_finished function if there is no task currently
         definitions = [definition for definition in definitions if definition["name"] != "task_finished"]
 
+    if gpt_functions.task_operation_performed == False:
+        # remove task_finished until an operation is performed
+        definitions = [definition for definition in definitions if definition["name"] != "task_finished"]
+
     # always ask clarifying questions first
     if "no-questions" not in cmd_args.args and gpt_functions.clarification_asked < gpt_functions.initial_question_count:
         definitions = [gpt_functions.ask_clarification_func]
@@ -78,10 +86,29 @@ def send_message(
             "name": "ask_clarification",
             "arguments": "questions"
         }
+    elif "no-outline" not in cmd_args.args and not gpt_functions.outline_created:
+        print("OUTLINE:  Creating an outline for the project")
+        create_outline = True
+        definitions = [gpt_functions.ask_clarification_func]
+        function_call = "none"
+        if not gpt_functions.modify_outline:
+            messages.append({
+                "role": "user",
+                "content": "Please tell me in full detail how you will implement this project. Write it in the first person as if you are the one who will be creating it. Start sentences with 'I will', 'Then I will' and 'Next I will'"
+            })
+        gpt_functions.outline_created = True
 
     # always ask for a task list first
     elif "no-tasklist" not in cmd_args.args and gpt_functions.tasklist_finished and gpt_functions.tasklist == []:
         print("TASKLIST: Creating a tasklist...")
+        messages.append({
+            "role": "user",
+            "content": """
+Please create a tasklist for the next steps involved in implementing the project. Don't add tasks that have already been done.
+Explain the task clearly and comprehensively so that there can be no misunderstandings.
+Don't include testing or other operations that require user interaction, unless specifically asked.
+For a trivial project, make just one task"""
+        })
         definitions = [gpt_functions.make_tasklist_func]
         function_call = {
             "name": "make_tasklist",
