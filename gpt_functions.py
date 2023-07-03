@@ -777,7 +777,7 @@ definitions = [
                 },
                 "command": {
                     "type": "string",
-                    "description": "The command to run",
+                    "description": "The command to run. Disallowed: touch, mkdir, cd",
                 },
                 "reason": {
                     "type": "string",
