@@ -85,7 +85,6 @@ def send_message(
     elif "no-outline" not in cmd_args.args and not gpt_functions.outline_created:
         print("OUTLINE:  Creating an outline for the project")
         create_outline = True
-        print_message = False
         definitions = [gpt_functions.ask_clarification_func]
         function_call = "none"
         messages.append({
