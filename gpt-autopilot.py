@@ -242,7 +242,7 @@ def fix_json_arguments(function_name, arguments_plain, message):
     )
 
 # MAIN FUNCTION
-def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None, recursive = True, temp = 1.0, extra_messages = []):
+def run_conversation(prompt, model = "gpt-3.5-turbo-16k-0613", messages = [], conv_id = None, recursive = True, temp = 1.0, extra_messages = []):
     if conv_id is None:
         conv_id = numberfile(paths.relative("history"))
 
@@ -785,8 +785,6 @@ def run_versions(prompt, args, version_messages, temp, prev_version = 1):
 def print_model_info():
     print("#######################################")
     print("# USING MODEL: " + CONFIG["model"].rjust(22, " ") + " #")
-    if "gpt-4" not in CONFIG["model"]:
-        print("# NOTICE:        GPT-4 is recommended #")
     print("#######################################")
     print()
 

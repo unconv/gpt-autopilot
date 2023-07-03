@@ -64,7 +64,7 @@ The files will be written to the `code` directory, relative to the path you ran 
 
 ## Does it work with GPT-3.5?
 
-The default model is `gpt-4-0613` and it works best, but you can still use the `gpt-3.5-turbo-16k-0613` or `gpt-3.5-turbo-0613` model. Just note that they are not as capable as GPT-4. To change, add `"model": "gpt-3.5-turbo-16k-0613"` to the `config.json` file. Make sure to use the 0613 model since only that supports function calling.
+Yes. The default model is `gpt-3.5-turbo-16k-0613`. You can change it in the `config.json` file. Make sure to use the 0613 models since only they support function calling.
 
 ## Multi-version branching
 

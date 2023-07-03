@@ -38,7 +38,7 @@ def redact_messages(messages):
 def send_message(
     message,
     messages,
-    model = "gpt-4-0613",
+    model = "gpt-3.5-turbo-16k-0613",
     function_call = "auto",
     retries = 0,
     print_message = True,
