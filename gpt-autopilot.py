@@ -482,7 +482,12 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
                         print()
                 else:
                     # if chatgpt doesn't ask a question, continue
-                    user_message = "Ok, continue."
+                    if gpt_functions.tasklist_finished:
+                        what_to_call = "project_finished"
+                    else:
+                        what_to_call = "task_finished"
+
+                    user_message = "OK. If there is anything left to do in the project, do it. Otherwise call " + what_to_call
 
             # send user message to chatgpt
             messages = chatgpt.send_message(
