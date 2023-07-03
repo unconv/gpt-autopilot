@@ -199,44 +199,6 @@ def fix_arguments(function_name, arguments):
         del arguments["question"]
     return arguments
 
-def fix_json_arguments(arguments_plain, function_name):
-    arguments_fixed = arguments_plain
-    function_response = "ERROR: Invalid function arguments"
-    arguments = None
-
-    try:
-        # gpt-3.5 sometimes uses backticks
-        # instead of double quotes in JSON value
-        print("ERROR:    Invalid JSON arguments. Fixing...")
-        arguments_fixed = arguments_fixed.replace("`", '"')
-        arguments = json.loads(arguments_fixed)
-    except:
-        try:
-            # gpt-3.5 sometimes omits single quotes
-            # from around keys
-            print("ERROR:    Invalid JSON arguments. Fixing again...")
-            arguments_fixed = re.sub(r'(\b\w+\b)(?=\s*:)', r'"\1"', arguments_fixed)
-            arguments = json.loads(arguments_fixed)
-        except:
-            try:
-                # gpt-3.5 sometimes uses single quotes
-                # around keys, instead of double quotes
-                print("ERROR:    Invalid JSON arguments. Fixing third time...")
-                arguments_fixed = re.sub(r"'(\b\w+\b)'(?=\s*:)", r'"\1"', arguments_fixed)
-                arguments = json.loads(arguments_fixed)
-            except:
-                print("ERROR:    Failed to fix function arguments")
-                #print("ERROR PARSING ARGUMENTS:\n---\n")
-                #print(arguments_plain)
-                #print("\n---\n")
-
-                if function_name == "replace_text":
-                    function_response = "ERROR! Please try to replace a shorter text or try another method"
-                else:
-                    function_response = "Error parsing arguments. Make sure to use properly formatted JSON, with double quotes. If this error persist, change tactics"
-
-    return (arguments, function_response)
-
 def function_list(model):
     func_list = ""
     for func in gpt_functions.get_definitions(model):
@@ -244,6 +206,40 @@ def function_list(model):
         func_list += ", ".join([key for key in func["parameters"]["properties"].keys()])
         func_list += ")\n"
     return func_list.strip()
+
+def parse_filename(arguments):
+    filename_pattern = r'"filename"\s*:\s*"([^"]*)"'
+    match = re.search(filename_pattern, arguments)
+    return match.group(1)
+
+def fix_json_arguments(function_name, arguments_plain, message):
+    if function_name == "write_file":
+        print("ERROR:    Switching to file_open_for_writing")
+        function_name = "file_open_for_writing"
+    elif function_name == "append_file":
+        print("ERROR:    Switching to file_open_for_appending")
+        function_name = "file_open_for_appending"
+    else:
+        print("ERROR:    Failed to parse arguments")
+        return (
+            function_name,
+            "ERROR: Failed to parse arguments",
+            message,
+            None,
+        )
+
+    arguments = {
+        "filename": parse_filename(arguments_plain)
+    }
+    message["function_call"]["name"] = function_name
+    message["function_call"]["arguments"] = json.dumps(arguments)
+
+    return (
+        function_name,
+        None,
+        message,
+        arguments,
+    )
 
 # MAIN FUNCTION
 def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None, recursive = True, temp = 1.0, extra_messages = []):
@@ -312,9 +308,17 @@ def run_conversation(prompt, model = "gpt-4-0613", messages = [], conv_id = None
                     # try to parse arguments
                     arguments = json.loads(arguments_plain)
 
-                # if parsing fails, try to fix format
+                # if parsing fails, switch file operation functions
                 except:
-                    arguments, function_response = fix_json_arguments(arguments_plain, function_name)
+                    try:
+                        function_name, function_response, message, arguments = fix_json_arguments(
+                            function_name,
+                            arguments_plain,
+                            message
+                        )
+                    except:
+                        print("ERROR:    Failed to fix arguments: " + str(e))
+                        function_response = "ERROR: Failed to parse arguments"
 
                 if arguments is not None:
                     # fix hallucinations
