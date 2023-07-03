@@ -458,6 +458,33 @@ def task_finished(finished=True):
 
 # Function definitions for ChatGPT
 
+replace_text_func = {
+    "name": "replace_text",
+    "description": "Replace text in given file",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "find": {
+                "type": "string",
+                "description": "The text to look for",
+            },
+            "replace": {
+                "type": "string",
+                "description": "The text to replace the occurences with",
+            },
+            "filename": {
+                "type": "string",
+                "description": "The name of file to modify",
+            },
+            "count": {
+                "type": "number",
+                "description": "The number of occurences to replace (default = all occurences)",
+            },
+        },
+        "required": ["find", "replace", "filename"],
+    },
+}
+
 make_tasklist_func = {
     "name": "make_tasklist",
     "description": """
@@ -573,8 +600,9 @@ real_append_file_func = file_open_for_appending_func
 definitions = [
     make_tasklist_func,
     real_write_file_func,
-    real_append_file_func,
+    #real_append_file_func,
     ask_clarification_func,
+    #replace_text_func,
     {
         "name": "list_files",
         "description": "List the files in the current project",
@@ -601,32 +629,6 @@ definitions = [
                 },
             },
             "required": ["filename"],
-        },
-    },
-    {
-        "name": "replace_text",
-        "description": "Replace text in given file",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "find": {
-                    "type": "string",
-                    "description": "The text to look for",
-                },
-                "replace": {
-                    "type": "string",
-                    "description": "The text to replace the occurences with",
-                },
-                "filename": {
-                    "type": "string",
-                    "description": "The name of file to modify",
-                },
-                "count": {
-                    "type": "number",
-                    "description": "The number of occurences to replace (default = all occurences)",
-                },
-            },
-            "required": ["find", "replace", "filename"],
         },
     },
     {
