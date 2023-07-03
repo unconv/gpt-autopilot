@@ -18,6 +18,7 @@ use_single_tasklist = False
 clarification_asked = 0
 initial_questions = []
 outline_created = False
+modify_outline = False
 
 if "questions" in cmd_args.args:
     initial_question_count = int(cmd_args.args["questions"])

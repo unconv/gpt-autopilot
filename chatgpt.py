@@ -87,10 +87,11 @@ def send_message(
         create_outline = True
         definitions = [gpt_functions.ask_clarification_func]
         function_call = "none"
-        messages.append({
-            "role": "user",
-            "content": "Please tell me in full detail how you will implement this project. Write it in the first person as if you are the one who will be creating it. Start sentences with 'I will', 'Then I will' and 'Next I will'"
-        })
+        if not gpt_functions.modify_outline:
+            messages.append({
+                "role": "user",
+                "content": "Please tell me in full detail how you will implement this project. Write it in the first person as if you are the one who will be creating it. Start sentences with 'I will', 'Then I will' and 'Next I will'"
+            })
         gpt_functions.outline_created = True
 
     # always ask for a task list first
