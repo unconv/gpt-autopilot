@@ -22,6 +22,9 @@ help_info = {
     "--create-dir": {
         "desc": "create the project directory automatically if it doesn't exist",
     },
+    "--simple": {
+        "desc": "run in simple mode",
+    },
     "--system": {
         "desc": "set system message slug to use",
     },
@@ -240,6 +243,14 @@ def parse_arguments(argv):
         # don't use checklist from custom system message
         elif arg_name == "--no-checklist":
             args["no-checklist"] = True # type: ignore
+        # run in simple mode
+        elif arg_name == "--simple":
+            args["use-system"] = True # type: ignore
+            args["no-checklist"] = True # type: ignore
+            args["no-questions"] = True # type: ignore
+            args["no-outline"] = True # type: ignore
+            args["no-tasklist"] = True # type: ignore
+            args["not-better"] = True # type: ignore
         # continue automatically if ChatGPT doesn't respond with a function call
         elif arg_name == "--continue":
             args["continue"] = True # type: ignore
