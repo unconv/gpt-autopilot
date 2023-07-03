@@ -26,6 +26,7 @@ for test in os.scandir(BASE_PATH):
         command += " --delete"
         command += " --not-better"
         command += " --use-system"
+        command += " --use-outline"
         command += " --no-questions"
         command += " --use-tasklist"
         command += " --one-task"

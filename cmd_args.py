@@ -49,6 +49,9 @@ help_info = {
     "--no-outline": {
         "desc": "don't create an outline of the project in the beginning",
     },
+    "--use-outline": {
+        "desc": "use automatically created outline",
+    },
     "--better-versions": {
         "desc": "make a better prompt for every version",
     },
@@ -203,6 +206,9 @@ def parse_arguments(argv):
         # don't create an outline in the beginning
         elif arg_name == "--no-outline":
             args["no-outline"] = True # type: ignore
+        # use automatically created outline
+        elif arg_name == "--use-outline":
+            args["use-outline"] = True # type: ignore
         # don't make prompt better with GPT
         elif arg_name == "--not-better":
             args["not-better"] = True # type: ignore
