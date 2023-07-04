@@ -227,7 +227,7 @@ def parse_arguments(argv):
                         args["zip-dir"] = os.path.dirname(maybe_zip_name)
                     args["zip-name"] = os.path.basename(maybe_zip_name)
                 else:
-                    args.insert(0, maybe_zip_name)
+                    argv.insert(0, maybe_zip_name)
         # don't allow terminal commands
         elif arg_name == "--no-cmd":
             args["no-cmd"] = True # type: ignore
