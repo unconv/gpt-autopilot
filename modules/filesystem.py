@@ -25,7 +25,7 @@ def read(filename):
     if "zip" in cmd_args.args:
         return virtual[filename]
     else:
-        with open(fullpath, "r") as f:
+        with open(filename, "r") as f:
             return f.read()
 
 def write(filename, content, mode="w"):
