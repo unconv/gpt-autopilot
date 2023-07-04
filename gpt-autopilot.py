@@ -19,6 +19,7 @@ from config import get_config, save_config
 import tokens
 import cmd_args
 import checklist
+import filesystem
 import prompt_selector
 import paths
 
@@ -116,13 +117,12 @@ def actually_write_file(filename, content):
 
     # Create parent directories if they don't exist
     parent_dir = os.path.dirname(fullpath)
-    os.makedirs(parent_dir, exist_ok=True)
+    filesystem.makedirs(parent_dir)
 
-    if os.path.isdir(fullpath):
+    if filesystem.isdir(fullpath):
         return "ERROR: There is already a directory with this name"
 
-    with open(fullpath, "w") as f:
-        f.write(content)
+    filesystem.write(fullpath, content)
 
     print(f"DONE:     Wrote to file {relative}")
     return f"File {relative} written successfully"
@@ -139,16 +139,14 @@ def actually_append_file(filename, content):
 
     # Create parent directories if they don't exist
     parent_dir = os.path.dirname(fullpath)
-    os.makedirs(parent_dir, exist_ok=True)
+    filesystem.makedirs(parent_dir, exist_ok=True)
 
-    if os.path.isdir(fullpath):
+    if filesystem.isdir(fullpath):
         return "ERROR: This is a directory, not a file"
 
-    with open(fullpath, "a") as f:
-        f.write(content)
+    filesystem.write(fullpath, content, "a")
 
-    with open(fullpath, "r") as f:
-        new_file_content = f.read()
+    new_file_content = filesystem.read(fullpath)
 
     return f"APPEND_OK: File {relative} appended successfully. IMPORTANT: If you appended code to a file, you might have appended it after the main function or an event listener or other code scope accidentally. Please check the code and rewrite the whole file if you made a mistake. The content of the file is now this:\n\n{new_file_content}"
 
@@ -243,6 +241,39 @@ def fix_json_arguments(function_name, arguments_plain, message):
         arguments,
     )
 
+def create_zip():
+    if "zip-dir" in cmd_args.args:
+        zip_folder = cmd_args.args["zip-dir"]
+        if not os.path.isdir(zip_folder):
+            print("ERROR: Specified zip folder doesn't exist")
+            return
+    else:
+        zip_folder = "projects"
+        os.makedirs(paths.relative(zip_folder), exist_ok=True)
+
+    if "zip-name" in cmd_args.args:
+        zip_filename = os.path.basename(cmd_args.args["zip-name"])
+    else:
+        zip_filename = "project.zip"
+
+    unique_filename = zip_filename
+
+    num = 0
+    zip_filepath = paths.relative(zip_folder, unique_filename)
+    while os.path.exists(zip_filepath):
+        num += 1
+        unique_filename = zip_filename.removesuffix(".zip") + "-" + str(num) + ".zip"
+        zip_filepath = paths.relative(zip_folder, unique_filename)
+        if num > 1000:
+            print("ERROR: Too many projects in " + zip_folder + " folder")
+            return
+
+    filesystem.create_zip(zip_filepath)
+    print("###################################################################")
+    print("# The project has been saved to: " + relpath(zip_filepath, os.path.dirname(__file__)).rjust(32, " ") + " #")
+    print("###################################################################")
+    print()
+
 # MAIN FUNCTION
 def run_conversation(prompt, model = "gpt-3.5-turbo-16k-0613", messages = [], conv_id = None, recursive = True, temp = 1.0, extra_messages = []):
     if conv_id is None:
@@ -301,7 +332,7 @@ def run_conversation(prompt, model = "gpt-3.5-turbo-16k-0613", messages = [], co
             function_name = fix_function_name(function_name)
             function_response = "ERROR: Invalid parameters"
 
-            if not hasattr(gpt_functions, function_name):
+            if not gpt_functions.function_available(function_name, model):
                 print(f"NOTICE:   GPT called function '{function_name}' that doesn't exist.")
                 function_response = f"Function '{function_name}' does not exist. You can call these functions:"
                 function_response += function_list(model)
@@ -417,6 +448,8 @@ def run_conversation(prompt, model = "gpt-3.5-turbo-16k-0613", messages = [], co
                         prompt = input("GPT: What do you want to ask?\nYou: ")
                         print()
                     else:
+                        if "zip" in cmd_args.args:
+                            create_zip()
                         print("Exiting")
                         sys.exit(0)
 
@@ -684,10 +717,10 @@ def run_versions(prompt, args, version_messages, temp, prev_version = 1):
     ver_orig_dir = os.path.join(version_dir, "orig")
 
     if versions > 1:
-        if not os.path.isdir(version_dir):
-            os.mkdir(version_dir)
+        if not filesystem.isdir(version_dir):
+            filesystem.makedirs(version_dir)
 
-        shutil.copytree(codedir(), ver_orig_dir)
+        filesystem.copytree(codedir(), ver_orig_dir)
         recursive = False
     else:
         recursive = True
@@ -776,7 +809,7 @@ def run_versions(prompt, args, version_messages, temp, prev_version = 1):
             temp = round( float(temp_orig) + random.uniform(-0.1, 0.1), 2 )
 
             # always start with original version
-            shutil.copytree(ver_orig_dir, codedir())
+            filesystem.copytree(ver_orig_dir, codedir())
 
         # RUN CONVERSATION
         messages = run_conversation(
@@ -790,8 +823,8 @@ def run_versions(prompt, args, version_messages, temp, prev_version = 1):
 
         if versions > 1:
             version_folder = os.path.join(version_dir, f"v{version}")
-            shutil.copytree(codedir(), version_folder)
-            shutil.rmtree(codedir())
+            filesystem.copytree(codedir(), version_folder)
+            filesystem.rmtree(codedir())
             version_folders.append(version_folder)
 
         # save message history of each version
@@ -814,7 +847,7 @@ def run_versions(prompt, args, version_messages, temp, prev_version = 1):
         next_version = int(next_up)
 
         # move selected version to code folder and start over
-        shutil.copytree(version_folders[next_version-1], codedir())
+        filesystem.copytree(version_folders[next_version-1], codedir())
 
         prompt = input("GPT: What would you like to do next?\nYou: ")
         print()
@@ -849,7 +882,8 @@ version_messages = {
 openai.api_key = get_api_key()
 
 # WARN IF THERE IS CODE ALREADY IN THE PROJECT
-warn_existing_code()
+if "zip" not in cmd_args.args:
+    warn_existing_code()
 
 # CREATE DATA DIRECTORIES
 create_directories()

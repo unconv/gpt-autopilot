@@ -2,12 +2,13 @@ import os
 import sys
 import copy
 import time
-import shutil
 import signal
 import subprocess
 
 from helpers import yesno, safepath, codedir, relpath
+import filesystem
 import cmd_args
+import paths
 
 tasklist = []
 active_tasklist = []
@@ -130,16 +131,15 @@ def write_file(filename, content):
 
     # Create parent directories if they don't exist
     parent_dir = os.path.dirname(fullpath)
-    os.makedirs(parent_dir, exist_ok=True)
+    filesystem.makedirs(parent_dir)
 
-    if os.path.isdir(fullpath):
+    if filesystem.isdir(fullpath):
         return "ERROR: There is already a directory with this name"
 
     # force newline in the end
     content = content.rstrip("\n") + "\n"
 
-    with open(fullpath, "w") as f:
-        f.write(content)
+    filesystem.write(fullpath, content)
 
     print(f"FUNCTION: Wrote to file {relative}")
     return f"File {relative} written successfully"
@@ -158,16 +158,14 @@ def replace_text(find, replace, filename, count = -1):
     else:
         print(f"FUNCTION: Replacing '{find}' with '{replace}' in {relative}...")
 
-    with open(fullpath, "r") as f:
-        file_content = f.read()
+    file_content = filesystem.read(fullpath)
 
     new_text = file_content.replace(find, replace, count)
     if new_text == file_content:
         print("ERROR:    Did not find text to replace")
         return "ERROR: Did not find text to replace"
 
-    with open(fullpath, "w") as f:
-        f.write(new_text)
+    filesystem.write(fullpath, new_text)
 
     return "Text replaced successfully"
 
@@ -177,16 +175,15 @@ def append_file(filename, content):
 
     # Create parent directories if they don't exist
     parent_dir = os.path.dirname(fullpath)
-    os.makedirs(parent_dir, exist_ok=True)
+    filesystem.makedirs(parent_dir)
 
-    if os.path.isdir(fullpath):
+    if filesystem.isdir(fullpath):
         return "ERROR: There is already a directory with this name"
 
     # force newline in the end
     content = content.rstrip("\n") + "\n"
 
-    with open(fullpath, "a") as f:
-        f.write(content)
+    filesystem.write(fullpath, content)
 
     print(f"FUNCTION: Wrote to file {relative}")
     return f"File {relative} appended successfully"
@@ -201,11 +198,13 @@ def read_file(filename):
     relative = relpath(fullpath)
 
     print(f"FUNCTION: Reading file {relative}...")
-    if not os.path.exists(fullpath):
+
+    if not filesystem.exists(fullpath):
         print(f"ERROR:    File {relative} does not exist")
         return f"File {relative} does not exist"
-    with open(fullpath, "r") as f:
-        content = f.read()
+
+    content = filesystem.read(fullpath)
+
     return f"The contents of '{relative}':\n{content}"
 
 def create_dir(directory):
@@ -219,12 +218,12 @@ def create_dir(directory):
     relative = relpath(fullpath)
 
     print(f"FUNCTION: Creating directory {relative}")
-    if os.path.isdir(fullpath):
+    if filesystem.isdir(fullpath):
         return "ERROR: Directory exists"
-    elif os.path.exists(fullpath):
+    elif filesystem.exists(fullpath):
         return "ERROR: A file with this name already exists"
     else:
-        os.makedirs(fullpath)
+        filesystem.makedirs(fullpath)
         return f"Directory {relative} created!"
 
 def move_file(source, destination):
@@ -238,12 +237,12 @@ def move_file(source, destination):
 
     # Create parent directories if they don't exist
     parent_dir = os.path.dirname(destination)
-    os.makedirs(parent_dir, exist_ok=True)
+    filesystem.makedirs(parent_dir, exist_ok=True)
 
     try:
-        shutil.move(source, destination)
+        filesystem.move(source, destination)
     except:
-        if os.path.isdir(source) and os.path.isdir(destination):
+        if filesystem.isdir(source) and filesystem.isdir(destination):
             return "ERROR: Destination folder already exists."
         return "Unable to move file."
 
@@ -260,12 +259,12 @@ def copy_file(source, destination):
 
     # Create parent directories if they don't exist
     parent_dir = os.path.dirname(destination)
-    os.makedirs(parent_dir, exist_ok=True)
+    filesystem.makedirs(parent_dir, exist_ok=True)
 
     try:
-        shutil.copy(source, destination)
+        filesystem.copy(source, destination)
     except:
-        if os.path.isdir(source) and os.path.isdir(destination):
+        if filesystem.isdir(source) and filesystem.isdir(destination):
             return "ERROR: Destination folder already exists."
         return "Unable to copy file."
 
@@ -277,48 +276,55 @@ def delete_file(filename):
 
     print(f"FUNCTION: Deleting file {relative}")
 
-    if not os.path.exists(fullpath):
+    if not filesystem.exists(fullpath):
         print(f"ERROR:    File {relative} does not exist")
         return f"ERROR: File {relative} does not exist"
 
     try:
-        if os.path.isdir(fullpath):
-            shutil.rmtree(fullpath)
-        else:
-            os.remove(fullpath)
+        filesystem.remove(fullpath)
     except:
         return "ERROR: Unable to remove file."
 
     return f"File {relative} successfully deleted"
 
 def list_files(list = "", print_output = True):
-    files_by_depth = {}
-    directory = codedir()
+    if "zip" in cmd_args.args:
+        files = filesystem.virtual.keys()
+    else:
+        files_by_depth = {}
+        directory = codedir()
 
-    for root, _, filenames in os.walk(directory):
-        depth = str(root[len(directory):].count(os.sep))
+        for root, dirs, filenames in os.walk(directory):
+            depth = str(root[len(directory):].count(os.sep))
 
-        for filename in filenames:
-            file_path = os.path.join(root, filename)
-            if depth not in files_by_depth:
-                files_by_depth[depth] = []
-            files_by_depth[depth].append(file_path)
+            dirs = [dir_path + os.sep for dir_path in dirs]
 
-    files = []
-    counter = 0
-    max_files = 20
-    for level in files_by_depth.values():
-        for filename in level:
-            counter += 1
-            if counter > max_files:
-                break
-            files.append(filename)
+            dirs_and_files = filenames + dirs
+            for filename in dirs_and_files:
+                file_path = os.path.join(root, filename)
+                if depth not in files_by_depth:
+                    files_by_depth[depth] = []
+                files_by_depth[depth].append(file_path)
 
-    # Remove code folder from the beginning of file paths
-    files = [relpath(file_path) for file_path in files]
+        files = []
+        counter = 0
+        max_files = 20
+        for level in files_by_depth.values():
+            for filename in level:
+                counter += 1
+                if counter > max_files:
+                    break
+                files.append(filename)
 
-    if print_output: print(f"FUNCTION: Listing files in project directory")
-    return f"The following files are currently in the project directory:\n{files}"
+    # use paths relative to code folder
+    file_list = ""
+    for file in files:
+        file_list += relpath(file) + "\n"
+
+    if print_output:
+        print(f"FUNCTION: Listing files in project directory")
+
+    return f"The following files are currently in the project directory:\n{file_list.strip()}"
 
 def ask_clarification(questions):
     global clarification_asked
@@ -815,4 +821,16 @@ def get_definitions(model):
     if "no-questions" in cmd_args.args:
         func_definitions = [definition for definition in func_definitions if definition["name"] != "ask_clarification"]
 
+    if "no-cmd" in cmd_args.args:
+        func_definitions = [definition for definition in func_definitions if definition["name"] != "run_cmd"]
+
     return func_definitions
+
+def function_available(function, model):
+    definitions = get_definitions(model)
+
+    for definition in definitions:
+        if definition["name"] == function:
+            return True
+
+    return False

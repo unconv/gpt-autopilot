@@ -14,8 +14,13 @@ def codedir(filename=""):
         code_base_path = paths.relative("code")
     return os.path.join(code_base_path, filename)
 
-def relpath(filepath):
-    return os.path.relpath(filepath, codedir())
+def relpath(filepath, base=None):
+    if base == None:
+        base = codedir()
+    path = os.path.relpath(filepath, base)
+    if os.path.isdir(filepath):
+        path += os.sep
+    return path
 
 def reset_code_folder():
     if os.path.isdir(codedir()):

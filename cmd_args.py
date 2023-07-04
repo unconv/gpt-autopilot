@@ -34,6 +34,15 @@ help_info = {
     "--delete": {
         "desc": "delete existing files in code folder before beginning",
     },
+    "--zip": {
+        "desc": "create a zip file instead of writing to files directly",
+    },
+    "--no-cmd": {
+        "desc": "don't allow terminal commands to be run",
+    },
+    "--allow-cmd": {
+        "desc": "allow these exact terminal commands to be run automatically",
+    },
     "--versions": {
         "desc": "make multiple versions of the same project from a single prompt",
     },
@@ -206,6 +215,22 @@ def parse_arguments(argv):
                 print("ERROR: --versions must come after --better")
                 sys.exit(1)
             args["better"] = True # type: ignore
+        # create a zip file instead of writing to files directly
+        elif arg_name == "--zip":
+            args["zip"] = True # type: ignore
+            args["no-cmd"] = True # type: ignore
+
+            if len(argv) > 0:
+                maybe_zip_name = argv.pop(0)
+                if maybe_zip_name[0] != "-":
+                    if os.sep in maybe_zip_name:
+                        args["zip-dir"] = os.path.dirname(maybe_zip_name)
+                    args["zip-name"] = os.path.basename(maybe_zip_name)
+                else:
+                    args.insert(0, maybe_zip_name)
+        # don't allow terminal commands
+        elif arg_name == "--no-cmd":
+            args["no-cmd"] = True # type: ignore
         # don't create an outline in the beginning
         elif arg_name == "--no-outline":
             args["no-outline"] = True # type: ignore
