@@ -4,8 +4,8 @@ import sys
 import os
 import re
 
-import cmd_args
-import paths
+from modules import cmd_args
+from modules import paths
 
 def codedir(filename=""):
     if "dir" in cmd_args.args:

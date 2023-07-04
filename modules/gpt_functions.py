@@ -1,14 +1,14 @@
-import os
-import sys
+import subprocess
+import signal
 import copy
 import time
-import signal
-import subprocess
+import sys
+import os
 
-from helpers import yesno, safepath, codedir, relpath
-import filesystem
-import cmd_args
-import paths
+from modules.helpers import yesno, safepath, codedir, relpath
+from modules import filesystem
+from modules import cmd_args
+from modules import paths
 
 tasklist = []
 active_tasklist = []

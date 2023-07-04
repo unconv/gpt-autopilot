@@ -1,13 +1,13 @@
 import openai
-import tokens
 import json
 import sys
 import os
 
-from helpers import yesno
-import checklist
-import cmd_args
-import paths
+from modules.helpers import yesno
+from modules import checklist
+from modules import cmd_args
+from modules import tokens
+from modules import paths
 
 def detect_slug(prompt, model, temp):
     slugs = []

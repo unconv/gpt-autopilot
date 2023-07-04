@@ -1,16 +1,16 @@
 import openai
+import copy
 import time
 import json
 import sys
 import os
-import copy
 
-from helpers import yesno
-import tokens
-import gpt_functions
-import checklist
-import cmd_args
-import paths
+from modules.helpers import yesno
+from modules import gpt_functions
+from modules import checklist
+from modules import cmd_args
+from modules import tokens
+from modules import paths
 
 create_outline = False
 

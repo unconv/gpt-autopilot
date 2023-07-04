@@ -1,27 +1,27 @@
 #!/usr/bin/env python3
 
-import openai
-import json
-import os
 import traceback
-import sys
+import openai
 import shutil
-import re
-import time
 import random
+import json
 import copy
+import time
+import sys
+import os
+import re
 
-import gpt_functions
-from helpers import yesno, safepath, codedir, numberfile, reset_code_folder, relpath
-import chatgpt
-import betterprompter
-from config import get_config, save_config
-import tokens
-import cmd_args
-import checklist
-import filesystem
-import prompt_selector
-import paths
+from modules.helpers import yesno, safepath, codedir, numberfile, reset_code_folder, relpath
+from modules.config import get_config, save_config
+from modules import prompt_selector
+from modules import gpt_functions
+from modules import betterprompter
+from modules import filesystem
+from modules import checklist
+from modules import cmd_args
+from modules import chatgpt
+from modules import tokens
+from modules import paths
 
 CONFIG = get_config()
 
