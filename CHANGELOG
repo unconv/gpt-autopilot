@@ -10,7 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - A system message for creating PowerPoint presentations using Marp
-- Creation of a project outline in the beginning of the project. Can be skipped with `--no-outline` or used automatically wih `--use-outline`
+- Creation of a project outline in the beginning of the project. Can be skipped with `--no-outline` or used automatically with `--use-outline`
+- `--git` flag to initialize a Git repository in the project automatically and commit every task. Commit message generation can be disabled with `--no-commit-msg` if you don't want to generate a commit message with GPT
 - `--simple` flag for running simple prompts quickly
 - `--no-cmd` flag to disable the `run_cmd` function from ChatGPT
 - `--zip` flag to create a zip file of the project instead of writing files directly (`--no-cmd` is added automatically). When this flag is used, files are created only in memory and saved to a zip file in the end. An optional filename or full path of a zip file can be provided.

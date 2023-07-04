@@ -22,6 +22,7 @@ from modules import cmd_args
 from modules import chatgpt
 from modules import tokens
 from modules import paths
+from modules import git
 
 CONFIG = get_config()
 
@@ -418,6 +419,9 @@ def run_conversation(prompt, model = "gpt-3.5-turbo-16k-0613", messages = [], co
 
             # if function returns PROJECT_FINISHED, exit
             elif function_response == "PROJECT_FINISHED":
+                if "git" in cmd_args.args:
+                    git.commit(copy.deepcopy(messages), model, temp)
+
                 if recursive == False:
                     checklist.activate_checklist()
                     print_task_finished(model)
@@ -901,5 +905,9 @@ if "prompt" in cmd_args.args:
 else:
     prompt = input("GPT: What would you like me to do?\nYou: ")
     print()
+
+# INITIALIZE GIT
+if "git" in cmd_args.args:
+    git.init()
 
 run_versions(prompt, cmd_args.args, version_messages, temp)

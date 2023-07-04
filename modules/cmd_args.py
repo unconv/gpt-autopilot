@@ -34,6 +34,12 @@ help_info = {
     "--delete": {
         "desc": "delete existing files in code folder before beginning",
     },
+    "--git": {
+        "desc": "initialize git in the project folder and commit every task",
+    },
+    "--no-commit-msg": {
+        "desc": "don't create a commit message with GPT",
+    },
     "--zip": {
         "desc": "create a zip file instead of writing to files directly",
     },
@@ -220,6 +226,10 @@ def parse_arguments(argv):
             args["zip"] = True # type: ignore
             args["no-cmd"] = True # type: ignore
 
+            if "git" in args:
+                print("ERROR: --git is not compatible with --zip")
+                sys.exit(1)
+
             if len(argv) > 0:
                 maybe_zip_name = argv.pop(0)
                 if maybe_zip_name[0] != "-":
@@ -234,6 +244,16 @@ def parse_arguments(argv):
         # don't create an outline in the beginning
         elif arg_name == "--no-outline":
             args["no-outline"] = True # type: ignore
+        # initialize git and commit every task
+        elif arg_name == "--git":
+            args["git"] = True # type: ignore
+
+            if "zip" in args:
+                print("ERROR: --git is not compatible with --zip")
+                sys.exit(1)
+        # don't create a commit message with GPT
+        elif arg_name == "--no-commit-msg":
+            args["no-commit-msg"] = True # type: ignore
         # use automatically created outline
         elif arg_name == "--use-outline":
             args["use-outline"] = True # type: ignore

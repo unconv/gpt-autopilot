@@ -319,7 +319,13 @@ def list_files(list = "", print_output = True):
     # use paths relative to code folder
     file_list = ""
     for file in files:
-        file_list += relpath(file) + "\n"
+        path = relpath(file)
+
+        # ignore .git
+        if path.startswith(".git" + os.sep) or path.endswith(os.sep + ".git") or (os.sep + ".git" + os.sep) in path:
+            continue
+
+        file_list += path + "\n"
 
     if print_output:
         print(f"FUNCTION: Listing files in project directory")
