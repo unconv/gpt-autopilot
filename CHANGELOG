@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changed default model to `gpt-3.5-turbo-16k-0613"
 - Updated system messages
 - Improved tasklist creation
+- Moved modules to `modules` directory
 
 ### Removed
 
