@@ -424,7 +424,8 @@ def run_conversation(prompt, model = "gpt-3.5-turbo-16k-0613", messages = [], co
             elif function_response == "PROJECT_FINISHED":
                 if "git" in cmd_args.args:
                     commit = git.commit(copy.deepcopy(messages), model, temp)
-                    messages.append(commit)
+                    if commit is not None:
+                        messages.append(commit)
 
                     # save message history
                     chatgpt.save_message_history(conv_id, messages)

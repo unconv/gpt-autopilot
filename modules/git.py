@@ -114,7 +114,17 @@ def commit(messages, model, temp):
     global commit_count
     commit_message = get_commit_message(messages, model, temp)
     print()
-    subprocess.run("cd " + shlex.quote(codedir()) + "; git add .; git commit -m " + shlex.quote(commit_message), shell=True)
+
+    try:
+        output = subprocess.check_output("cd " + shlex.quote(codedir()) + "; git add .; git commit -m " + shlex.quote(commit_message), shell=True).decode().strip()
+        print(output)
+    except subprocess.CalledProcessError:
+        print("GIT:      Nothing to commit.")
+        return None
+
+    if "nothing to commit" in output:
+        return None
+
     commit_count += 1
 
     return {
