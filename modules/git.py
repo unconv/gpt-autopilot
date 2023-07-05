@@ -9,7 +9,7 @@ from modules import cmd_args
 from modules import chatgpt
 from modules import tokens
 
-git_commit_count = 1
+commit_count = 1
 git_log = [
     {
         "role": "assistant",
@@ -23,9 +23,9 @@ git_log = [
 
 def get_commit_message(messages, model, temp):
     global git_log
-    global git_commit_count
+    global commit_count
 
-    commit_message = "commit " + str(git_commit_count)
+    commit_message = "commit " + str(commit_count)
 
     if "no-commit-msg" in cmd_args.args:
         return commit_message
@@ -101,17 +101,45 @@ def set_defaults():
 
 def init():
     print("GIT:      ", end="", flush=True)
-    subprocess.run(f"cd {shlex.quote(codedir())}; git init", shell=True)
+
+    if "default-branch" in cmd_args.args:
+        default_branch = cmd_args.args["default-branch"]
+    else:
+        default_branch = "master"
+
+    subprocess.run(f"cd {shlex.quote(codedir())}; git -c init.defaultBranch={shlex.quote(default_branch)} init", shell=True)
     set_defaults()
 
 def commit(messages, model, temp):
-    global git_commit_count
+    global commit_count
     commit_message = get_commit_message(messages, model, temp)
     print()
     subprocess.run("cd " + shlex.quote(codedir()) + "; git add .; git commit -m " + shlex.quote(commit_message), shell=True)
-    git_commit_count += 1
+    commit_count += 1
 
     return {
         "role": "git",
         "content": commit_message,
     }
+
+def revert(messages):
+    global commit_count
+    subprocess.run("cd " + shlex.quote(codedir()) + "; git reset HEAD~1 --hard", shell=True)
+    messages.pop() # pop last git message
+
+    # revert to previous git message
+    last_message = messages.pop()
+    while last_message["role"] not in ["git", "system"]:
+        last_message = messages.pop()
+    messages.append(last_message)
+
+    commit_count -= 1
+
+    return messages
+
+def revert_text():
+    global commit_count
+    if "git" in cmd_args.args and commit_count > 2:
+        return " (type 'revert' to revert previous commit)"
+    else:
+        return ""

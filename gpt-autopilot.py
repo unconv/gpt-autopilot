@@ -453,11 +453,29 @@ def run_conversation(prompt, model = "gpt-3.5-turbo-16k-0613", messages = [], co
                         sys.exit(0)
 
                     checklist.activate_checklist()
-                    next_message = yesno("GPT: Do you want to ask something else?\nYou:", ["y", "n"])
+                    next_message = yesno("GPT: Do you want to do something else?\nYou:", ["y", "n"])
                     print()
                     if next_message == "y":
-                        prompt = input("GPT: What do you want to ask?\nYou: ")
+                        revert_text = git.revert_text()
+
+                        prompt = input("GPT: What do you want to do?"+revert_text+"\nYou: ")
                         print()
+
+                        while "git" in cmd_args.args and prompt == "revert":
+                            if git.commit_count > 2:
+                                print("REVERT:   Reverted back to previous stage\n          ", end="", flush=True)
+                                messages = git.revert(messages)
+                                print()
+
+                                # save message history
+                                chatgpt.save_message_history(conv_id, messages)
+                            else:
+                                print("ERROR:    No commits to revert")
+                                print()
+
+                            revert_text = git.revert_text()
+                            prompt = input("GPT: What would you like to do next?"+revert_text+"\nYou: ")
+                            print()
                     else:
                         if "zip" in cmd_args.args:
                             create_zip()

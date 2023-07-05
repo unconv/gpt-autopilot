@@ -37,6 +37,9 @@ help_info = {
     "--git": {
         "desc": "initialize git in the project folder and commit every task",
     },
+    "--default-branch": {
+        "desc": "set the default git branch name to use",
+    },
     "--no-commit-msg": {
         "desc": "don't create a commit message with GPT",
     },
@@ -251,6 +254,12 @@ def parse_arguments(argv):
             if "zip" in args:
                 print("ERROR: --git is not compatible with --zip")
                 sys.exit(1)
+        # set default git branch name
+        elif arg_name == "--default-branch":
+            if argv == []:
+                print(f"ERROR: Missing argument for '{arg_name}'")
+                sys.exit(1)
+            args["default-branch"] = argv.pop(0) # type: ignore
         # don't create a commit message with GPT
         elif arg_name == "--no-commit-msg":
             args["no-commit-msg"] = True # type: ignore
