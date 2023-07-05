@@ -572,7 +572,6 @@ def run_conversation(prompt, model = "gpt-3.5-turbo-16k-0613", messages = [], co
                     user_message = "ERROR: Please use function calls"
                 # if chatgpt doesn't respond with a function call, ask user for input
                 elif "?" in message["content"] or \
-                   "Let me know" in message["content"] or \
                    "Please provide" in message["content"] or \
                    "Could you" in message["content"] or \
                    "Can you" in message["content"] or \
