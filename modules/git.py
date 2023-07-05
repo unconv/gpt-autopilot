@@ -47,7 +47,7 @@ def get_commit_message(messages, model, temp):
             model=model,
             messages=chatgpt.filter_messages(context),
             temperature=temp,
-            request_timeout=20,
+            request_timeout=10,
             function_call={
                 "name": "set_commit_message",
                 "arguments": "commit_message"
