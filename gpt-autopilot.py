@@ -461,14 +461,25 @@ def run_conversation(prompt, model = "gpt-3.5-turbo-16k-0613", messages = [], co
                         prompt = input("GPT: What do you want to do?"+revert_text+"\nYou: ")
                         print()
 
-                        while "git" in cmd_args.args and prompt == "revert":
-                            if git.commit_count > 2:
-                                print("REVERT:   Reverted back to previous stage\n          ", end="", flush=True)
-                                messages = git.revert(messages)
-                                print()
+                        while "git" in cmd_args.args and prompt in ["revert", "retry"]:
+                            if git.commit_count > 1:
+                                if git.commit_count > 2:
+                                    end = ""
+                                else:
+                                    end = "\n"
 
+                                print("REVERT:   Reverted back to previous stage\n          ", end=end, flush=True)
+                                last_prompt, messages = git.revert(messages)
+                                print()
                                 # save message history
                                 chatgpt.save_message_history(conv_id, messages)
+
+                                if prompt == "retry":
+                                    prompt = last_prompt
+                                    last_prompt_trimmed = prompt.split("\n")[0]
+                                    print("RETRY:    " + last_prompt_trimmed + "...")
+                                    print()
+                                    break
                             else:
                                 print("ERROR:    No commits to revert")
                                 print()

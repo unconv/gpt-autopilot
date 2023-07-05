@@ -4,7 +4,7 @@ import shlex
 import json
 import copy
 
-from modules.helpers import codedir
+from modules.helpers import codedir, reset_code_folder
 from modules import cmd_args
 from modules import chatgpt
 from modules import tokens
@@ -124,22 +124,31 @@ def commit(messages, model, temp):
 
 def revert(messages):
     global commit_count
-    subprocess.run("cd " + shlex.quote(codedir()) + "; git reset HEAD~1 --hard", shell=True)
-    messages.pop() # pop last git message
+
+    if commit_count > 2:
+        subprocess.run("cd " + shlex.quote(codedir()) + "; git reset HEAD~1 --hard", shell=True)
+    else:
+        reset_code_folder()
+        init()
+
+    # pop last git message
+    messages.pop()
 
     # revert to previous git message
     last_message = messages.pop()
     while last_message["role"] not in ["git", "system"]:
+        if last_message["role"] == "user":
+            last_prompt = last_message["content"]
         last_message = messages.pop()
     messages.append(last_message)
 
     commit_count -= 1
 
-    return messages
+    return (last_prompt, messages)
 
 def revert_text():
     global commit_count
-    if "git" in cmd_args.args and commit_count > 2:
-        return " (type 'revert' to revert previous commit)"
+    if "git" in cmd_args.args and commit_count > 1:
+        return " (type 'revert' or 'retry' to try again)"
     else:
         return ""
