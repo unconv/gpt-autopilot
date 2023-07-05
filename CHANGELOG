@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `--simple` flag for running simple prompts quickly
 - `--no-cmd` flag to disable the `run_cmd` function from ChatGPT
 - `--zip` flag to create a zip file of the project instead of writing files directly (`--no-cmd` is added automatically). When this flag is used, files are created only in memory and saved to a zip file in the end. An optional filename or full path of a zip file can be provided.
+- Token saver module that redacts redundant file read and write messages from the message history. The "savings rate" of the token saver can be changed by changing `--token-saver-level` (lower number saves more, default 3).
 
 ### Changed
 

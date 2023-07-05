@@ -5,6 +5,7 @@ import json
 import sys
 import os
 
+from modules.token_saver import save_tokens
 from modules.helpers import yesno
 from modules import gpt_functions
 from modules import checklist
@@ -133,7 +134,7 @@ For a trivial project, make just one task"""
         # send prompt to chatgpt
         response = openai.ChatCompletion.create(
             model=model,
-            messages=filter_messages(messages),
+            messages=save_tokens(filter_messages(messages)),
             functions=definitions,
             function_call=function_call,
             temperature=temp,

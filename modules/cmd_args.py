@@ -118,6 +118,9 @@ help_info = {
     "--continue": {
         "desc": "continue automatically if ChatGPT responds without a function call",
     },
+    "--token-saver-level": {
+        "desc": "set level for the token saver (lower number saves more, default 3)",
+    },
 }
 
 allowed_cmd = []
@@ -297,6 +300,16 @@ def parse_arguments(argv):
         # don't use checklist from custom system message
         elif arg_name == "--no-checklist":
             args["no-checklist"] = True # type: ignore
+        # initial prompt
+        elif arg_name == "--token-saver-level":
+            if argv == []:
+                print(f"ERROR: Missing argument for '{arg_name}'")
+                sys.exit(1)
+            args["token-saver-level"] = int(argv.pop(0)) # type: ignore
+
+            if args["token-saver-level"] < 1:
+                print("ERROR: Token saver level must be 1 on higher")
+                sys.exit(1)
         # run in simple mode
         elif arg_name == "--simple":
             args["use-system"] = True # type: ignore
