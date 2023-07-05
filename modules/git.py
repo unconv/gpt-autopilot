@@ -6,6 +6,7 @@ import copy
 
 from modules.helpers import codedir
 from modules import cmd_args
+from modules import chatgpt
 from modules import tokens
 
 git_commit_count = 1
@@ -44,7 +45,7 @@ def get_commit_message(messages, model, temp):
     try:
         response = openai.ChatCompletion.create(
             model=model,
-            messages=context,
+            messages=chatgpt.filter_messages(context),
             temperature=temp,
             request_timeout=20,
             function_call={
@@ -109,3 +110,8 @@ def commit(messages, model, temp):
     print()
     subprocess.run("cd " + shlex.quote(codedir()) + "; git add .; git commit -m " + shlex.quote(commit_message), shell=True)
     git_commit_count += 1
+
+    return {
+        "role": "git",
+        "content": commit_message,
+    }

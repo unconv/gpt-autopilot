@@ -294,6 +294,9 @@ def run_conversation(prompt, model = "gpt-3.5-turbo-16k-0613", messages = [], co
         # take user message from last extra message
         user_message = messages.pop()
 
+    # save message history
+    chatgpt.save_message_history(conv_id, messages)
+
     # add user prompt to chatgpt messages
     try:
         messages = chatgpt.send_message(
@@ -420,7 +423,11 @@ def run_conversation(prompt, model = "gpt-3.5-turbo-16k-0613", messages = [], co
             # if function returns PROJECT_FINISHED, exit
             elif function_response == "PROJECT_FINISHED":
                 if "git" in cmd_args.args:
-                    git.commit(copy.deepcopy(messages), model, temp)
+                    commit = git.commit(copy.deepcopy(messages), model, temp)
+                    messages.append(commit)
+
+                    # save message history
+                    chatgpt.save_message_history(conv_id, messages)
 
                 if recursive == False:
                     checklist.activate_checklist()
