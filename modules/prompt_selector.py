@@ -51,7 +51,7 @@ List of instruction slugs and their descriptions:\n
         model=model,
         messages=messages,
         temperature=temp,
-        request_timeout=60,
+        request_timeout=10,
         function_call={
             "name": "set_slug",
             "arguments": "slug"
