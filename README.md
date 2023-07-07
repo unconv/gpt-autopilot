@@ -26,11 +26,11 @@ $ ./gpt-autopilot.py --git
 
 # Installation
 
-GPT-AutoPilot works on both Linux and Windows (and probably macOS) and it has [standalone packages](https://github.com/unconv/gpt-autopilot/releases/tag/v0.3.0), that don't need the Python interpreter.
+GPT-AutoPilot works on both Linux and Windows (and probably macOS) and it has [standalone packages](https://github.com/unconv/gpt-autopilot/releases/tag/v0.4.0), that don't need the Python interpreter.
 
 ## Linux
 
-You can either clone the repository and run `gpt-autopilot.py` or you can [download](https://github.com/unconv/gpt-autopilot/releases/download/v0.3.0/gpt-autopilot-linux-ubuntu-0.3.0.zip) the standalone package.
+You can either clone the repository and run `gpt-autopilot.py` or you can [download](https://github.com/unconv/gpt-autopilot/releases/download/v0.4.0/gpt-autopilot-linux-ubuntu-0.4.0.zip) the standalone package.
 
 1\. Export your [OpenAI API key](https://platform.openai.com/account/api-keys) as `OPENAI_API_KEY` environment variable or put it in the `config.json` file (see `config.sample.json`). You can also run the program directly, and it will ask you for your API key.
 
@@ -53,7 +53,7 @@ $ ./gpt-autopilot.py
 
 ## Windows: Standalone Package
 
-On Windows, you can [download](https://github.com/unconv/gpt-autopilot/releases/download/v0.3.0/gpt-autopilot-windows-0.3.0.zip) the standalone package, unzip it and run `gpt-autopilot.exe`. It will ask you for your API key.
+On Windows, you can [download](https://github.com/unconv/gpt-autopilot/releases/download/v0.4.0/gpt-autopilot-windows-0.4.0.zip) the standalone package, unzip it and run `gpt-autopilot.exe`. It will ask you for your API key.
 
 ## Windows: with Python interpreter
 
