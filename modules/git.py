@@ -3,6 +3,7 @@ import openai
 import shlex
 import json
 import copy
+import time
 
 from modules.helpers import codedir, reset_code_folder
 from modules import cmd_args
@@ -114,6 +115,10 @@ def commit(messages, model, temp):
     global commit_count
     commit_message = get_commit_message(messages, model, temp)
     print()
+
+    # update .gpt-autopilot for empty commits
+    with open(codedir(".gpt-autopilot"), "w") as f:
+        f.write(str(time.time()))
 
     try:
         output = subprocess.check_output("cd " + shlex.quote(codedir()) + "; git add .; git commit -m " + shlex.quote(commit_message), shell=True).decode().strip()

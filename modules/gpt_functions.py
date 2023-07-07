@@ -287,7 +287,17 @@ def delete_file(filename):
 
     return f"File {relative} successfully deleted"
 
-def list_files(list = "", print_output = True, ignore_git = True):
+def should_ignore(path, ignore):
+    # always ignore files inside .git/
+    if path.startswith(".git" + os.sep) and path != ".git" + os.sep:
+        return True
+
+    for ignore_file in ignore:
+        if path.startswith(ignore_file + os.sep) or path.endswith(os.sep + ignore_file) or (os.sep + ignore_file + os.sep) in path:
+            return True
+    return False
+
+def list_files(list = "", print_output = True, ignore = [".git", "__pycache__", ".gpt-autopilot"]):
     if "zip" in cmd_args.args:
         files = filesystem.virtual.keys()
     else:
@@ -321,10 +331,9 @@ def list_files(list = "", print_output = True, ignore_git = True):
     for file in files:
         path = relpath(file)
 
-        # ignore .git
-        if path.startswith(".git" + os.sep) or path.endswith(os.sep + ".git") or (os.sep + ".git" + os.sep) in path:
-            if path != ".git/" or ignore_git:
-                continue
+        # ignore special files and directories
+        if should_ignore(path, ignore):
+            continue
 
         file_list += path + "\n"
 

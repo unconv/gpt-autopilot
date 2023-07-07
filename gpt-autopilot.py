@@ -719,7 +719,7 @@ def warn_existing_code():
             "# and and might modify or delete them.              #\n"+
             "#####################################################"+
             "\n\n"+
-            gpt_functions.list_files("", print_output=False, ignore_git=False)+
+            gpt_functions.list_files("", print_output=False, ignore=[])+
             "\n\n"+
             "Do you want to continue?", ["YES", "NO", "DELETE"])
         if answer == "DELETE":
