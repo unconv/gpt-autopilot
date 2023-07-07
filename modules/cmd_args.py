@@ -103,6 +103,12 @@ help_info = {
     "--max-price": {
         "desc": "end script after this amount of money is used",
     },
+    "--context-window": {
+        "desc": "end script after this amount of money is used",
+    },
+    "--token-buffer": {
+        "desc": "how much buffer to keep for new responses in context window (default 1500)",
+    },
     "--do-checklist": {
         "desc": "run through checklist items automatically",
     },
@@ -212,6 +218,18 @@ def parse_arguments(argv):
                 print(f"ERROR: Missing argument for '{arg_name}'")
                 sys.exit(1)
             args["max-price"] = float(argv.pop(0)) # type: ignore
+        # set a custom context window size, in tokens
+        elif arg_name == "--context-window":
+            if argv == []:
+                print(f"ERROR: Missing argument for '{arg_name}'")
+                sys.exit(1)
+            args["context-window"] = int(argv.pop(0)) # type: ignore
+        # how much buffer to keep for new responses in context window
+        elif arg_name == "--token-buffer":
+            if argv == []:
+                print(f"ERROR: Missing argument for '{arg_name}'")
+                sys.exit(1)
+            args["token-buffer"] = int(argv.pop(0)) # type: ignore
         # system message slug
         elif arg_name == "--system":
             if argv == []:

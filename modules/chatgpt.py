@@ -66,10 +66,26 @@ def send_message(
     # add user message to message list
     messages.append(message)
 
-    # redact old messages when encountering partial output
+    # warn when partial output is detected
     if "No END_OF_FILE_CONTENT" in message["content"]:
-        print("NOTICE:   Partial output detected, redacting messages...")
+        print("NOTICE:   Partial output detected")
         messages[-2]["content"] = "<file content redacted>"
+
+    # determine context window size
+    if "context-window" in cmd_args.args:
+        token_limit = int(cmd_args.args["context-window"])
+    else:
+        token_limit = tokens.get_token_limit(model)
+
+    # determine token buffer
+    if "token-buffer" in cmd_args.args:
+        token_buffer = int(cmd_args.args["token-buffer"])
+    else:
+        token_buffer = 1500
+
+    # redact messages when context limit is getting full
+    if token_limit and tokens.context_size > (token_limit - token_buffer):
+        print("NOTICE:   Context limit is near. Redacting messages")
         messages = redact_messages(messages)
 
     definitions = copy.deepcopy(gpt_functions.get_definitions(model))

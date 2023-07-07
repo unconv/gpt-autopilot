@@ -12,23 +12,26 @@ token_usage = {
     "total": 0.0,
 }
 
+# global context size
+context_size = 0
+
 # global prev token usage
 prev_tokens_total = 0
 prev_price_total = 0
 
 def get_token_price(model, direction):
-    if model == "gpt-4-0613":
-        token_price_input = 0.03 / 1000
-        token_price_output = 0.06 / 1000
-    elif model == "gpt-4-32k-0613":
+    if model.startswith("gpt-4-32k"):
         token_price_input = 0.06 / 1000
         token_price_output = 0.12 / 1000
-    elif model == "gpt-3.5-turbo-0613":
-        token_price_input = 0.0015 / 1000
-        token_price_output = 0.002 / 1000
-    elif model == "gpt-3.5-turbo-16k-0613":
+    elif model.startswith("gpt-4"):
+        token_price_input = 0.03 / 1000
+        token_price_output = 0.06 / 1000
+    elif model.startswith("gpt-3.5-turbo-16k"):
         token_price_input = 0.003 / 1000
         token_price_output = 0.004 / 1000
+    elif model.startswith("gpt-3.5-turbo"):
+        token_price_input = 0.0015 / 1000
+        token_price_output = 0.002 / 1000
     else:
         token_price_input = 0.0
         token_price_output = 0.0
@@ -38,8 +41,21 @@ def get_token_price(model, direction):
     else:
         return token_price_output
 
+def get_token_limit(model):
+    if model.startswith("gpt-4-32k"):
+        return 32 * 1000
+    elif model.startswith("gpt-4"):
+        return 8 * 1000
+    elif model.startswith("gpt-3.5-turbo-16k"):
+        return 16 * 1000
+    elif model.startswith("gpt-3.5-turbo"):
+        return 4 * 1000
+    else:
+        return None
+
 def add(response, model):
     global token_usage
+    global context_size
 
     # get token counts
     prompt_tokens = response["usage"]["prompt_tokens"]
@@ -73,6 +89,9 @@ def add(response, model):
     total_token_usage["output"] += completion_tokens
     total_token_usage["total"] += total_tokens
     total_token_usage["price"] += total_price
+
+    # update context size
+    context_size = total_tokens
 
     # save total token usage
     with open(token_usage_file, "w") as f:
