@@ -24,7 +24,7 @@ git_log = [
 ]
 
 def safecmd(text):
-    return re.sub(r'[^a-zA-Z0-9 ]', '', text)
+    return re.sub(r'[^a-zA-Z0-9\. ]', '', text)
 
 def get_commit_message(messages, model, temp):
     global git_log
@@ -120,7 +120,7 @@ def init():
 
     subprocess.run(join_cmd([
         f"cd {codedir()}",
-        f"git -c init.defaultBranch={safecmd(default_branch)} init",
+        f"git -c init.defaultBranch=\"{safecmd(default_branch)}\" init",
     ]), shell=True)
     set_defaults()
 
