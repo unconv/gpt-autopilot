@@ -301,7 +301,7 @@ def should_ignore(path, ignore):
         return True
 
     for ignore_file in ignore:
-        if path.startswith(ignore_file + os.sep) or path.endswith(os.sep + ignore_file) or (os.sep + ignore_file + os.sep) in path:
+        if path.startswith(ignore_file + os.sep) or path.endswith(os.sep + ignore_file) or (os.sep + ignore_file + os.sep) in path or path == ignore_file:
             return True
     return False
 
