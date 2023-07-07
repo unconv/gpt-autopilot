@@ -1,34 +1,47 @@
 import openai
-import tokens
 import json
 import sys
 import os
 
-from helpers import yesno
-import checklist
-import cmd_args
-import paths
+from modules.helpers import yesno
+from modules import checklist
+from modules import cmd_args
+from modules import tokens
+from modules import paths
 
 def detect_slug(prompt, model, temp):
-    slugs = []
+    slugs = {}
 
     for filename in os.scandir(paths.relative("prompts")):
         if os.path.isdir(filename):
-            slugs.append(os.path.basename(filename))
+            description_file = os.path.join(filename, "description")
+            if os.path.isfile(description_file):
+                with open(description_file) as f:
+                    description = f.read()
+            else:
+                description = ""
+
+            slugs[os.path.basename(filename)] = description
+
+    slugs["ambiguous"] = "For projects whose type can not be accurately detected based on the given prompt"
 
     messages = [
         {
-            "role": "user",
+            "role": "system",
             "content": f"""
-Categorize the following description onto the below categories. If uncertain, return 'default'
-```
-{prompt}
-```
-Note that the same technology might have different applications, such as command line tool or web application.
+You are an AI bot that can autonomously create projects from the users's description.
+You have available to you some instructions for different kinds of projects.
+You will search through the instructions and respond with the slug of an
+instruction that fits the users's description. If the proper instruction
+can not be determined accurately from the user's prompt, return "default"
 
-List of category slugs:\n
-{slugs}
+List of instruction slugs and their descriptions:\n
+{json.dumps(slugs, indent=4)}
 """
+        },
+        {
+            "role": "user",
+            "content": prompt
         }
     ]
 
@@ -38,7 +51,7 @@ List of category slugs:\n
         model=model,
         messages=messages,
         temperature=temp,
-        request_timeout=60,
+        request_timeout=10,
         function_call={
             "name": "set_slug",
             "arguments": "slug"
@@ -54,8 +67,12 @@ List of category slugs:\n
                             "type": "string",
                             "description": "The category slug",
                         },
+                        "certainty": {
+                            "type": "number",
+                            "description": "The certainty (0-100) that this prompt belongs to this category"
+                        }
                     },
-                    "required": ["slug"],
+                    "required": ["slug", "certainty"],
                 }
             }
         ]
@@ -64,7 +81,14 @@ List of category slugs:\n
     tokens.add(response, model)
 
     slug = json.loads(response["choices"][0]["message"]["function_call"]["arguments"]) # type: ignore
+    certainty = slug["certainty"]
     slug = slug["slug"]
+
+    if certainty < 90:
+        slug = "default"
+
+    if slug == "ambiguous":
+        slug = "default"
 
     if slug not in slugs:
         print(f"ERROR:    GPT detected system message '{slug}' that doesn't exist")

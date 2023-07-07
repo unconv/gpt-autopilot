@@ -1,13 +1,14 @@
-import os
-import sys
+import subprocess
+import signal
 import copy
 import time
-import shutil
-import signal
-import subprocess
+import sys
+import os
 
-from helpers import yesno, safepath, codedir, relpath
-import cmd_args
+from modules.helpers import yesno, safepath, codedir, relpath
+from modules import filesystem
+from modules import cmd_args
+from modules import paths
 
 tasklist = []
 active_tasklist = []
@@ -28,6 +29,14 @@ if "questions" in cmd_args.args:
     initial_question_count = int(cmd_args.args["questions"])
 else:
     initial_question_count = 5
+
+# detect platform
+if sys.platform.startswith("win"):
+    what_command = "Windows command line"
+elif sys.platform.startswith("darwin"):
+    what_command = "macOS terminal"
+else:
+    what_command = "terminal"
 
 # Implementation of the functions given to ChatGPT
 
@@ -130,16 +139,15 @@ def write_file(filename, content):
 
     # Create parent directories if they don't exist
     parent_dir = os.path.dirname(fullpath)
-    os.makedirs(parent_dir, exist_ok=True)
+    filesystem.makedirs(parent_dir)
 
-    if os.path.isdir(fullpath):
+    if filesystem.isdir(fullpath):
         return "ERROR: There is already a directory with this name"
 
     # force newline in the end
     content = content.rstrip("\n") + "\n"
 
-    with open(fullpath, "w") as f:
-        f.write(content)
+    filesystem.write(fullpath, content)
 
     print(f"FUNCTION: Wrote to file {relative}")
     return f"File {relative} written successfully"
@@ -158,16 +166,14 @@ def replace_text(find, replace, filename, count = -1):
     else:
         print(f"FUNCTION: Replacing '{find}' with '{replace}' in {relative}...")
 
-    with open(fullpath, "r") as f:
-        file_content = f.read()
+    file_content = filesystem.read(fullpath)
 
     new_text = file_content.replace(find, replace, count)
     if new_text == file_content:
         print("ERROR:    Did not find text to replace")
         return "ERROR: Did not find text to replace"
 
-    with open(fullpath, "w") as f:
-        f.write(new_text)
+    filesystem.write(fullpath, new_text)
 
     return "Text replaced successfully"
 
@@ -177,16 +183,15 @@ def append_file(filename, content):
 
     # Create parent directories if they don't exist
     parent_dir = os.path.dirname(fullpath)
-    os.makedirs(parent_dir, exist_ok=True)
+    filesystem.makedirs(parent_dir)
 
-    if os.path.isdir(fullpath):
+    if filesystem.isdir(fullpath):
         return "ERROR: There is already a directory with this name"
 
     # force newline in the end
     content = content.rstrip("\n") + "\n"
 
-    with open(fullpath, "a") as f:
-        f.write(content)
+    filesystem.write(fullpath, content)
 
     print(f"FUNCTION: Wrote to file {relative}")
     return f"File {relative} appended successfully"
@@ -201,11 +206,13 @@ def read_file(filename):
     relative = relpath(fullpath)
 
     print(f"FUNCTION: Reading file {relative}...")
-    if not os.path.exists(fullpath):
+
+    if not filesystem.exists(fullpath):
         print(f"ERROR:    File {relative} does not exist")
         return f"File {relative} does not exist"
-    with open(fullpath, "r") as f:
-        content = f.read()
+
+    content = filesystem.read(fullpath)
+
     return f"The contents of '{relative}':\n{content}"
 
 def create_dir(directory):
@@ -219,12 +226,12 @@ def create_dir(directory):
     relative = relpath(fullpath)
 
     print(f"FUNCTION: Creating directory {relative}")
-    if os.path.isdir(fullpath):
+    if filesystem.isdir(fullpath):
         return "ERROR: Directory exists"
-    elif os.path.exists(fullpath):
+    elif filesystem.exists(fullpath):
         return "ERROR: A file with this name already exists"
     else:
-        os.makedirs(fullpath)
+        filesystem.makedirs(fullpath)
         return f"Directory {relative} created!"
 
 def move_file(source, destination):
@@ -238,12 +245,12 @@ def move_file(source, destination):
 
     # Create parent directories if they don't exist
     parent_dir = os.path.dirname(destination)
-    os.makedirs(parent_dir, exist_ok=True)
+    filesystem.makedirs(parent_dir, exist_ok=True)
 
     try:
-        shutil.move(source, destination)
+        filesystem.move(source, destination)
     except:
-        if os.path.isdir(source) and os.path.isdir(destination):
+        if filesystem.isdir(source) and filesystem.isdir(destination):
             return "ERROR: Destination folder already exists."
         return "Unable to move file."
 
@@ -260,12 +267,12 @@ def copy_file(source, destination):
 
     # Create parent directories if they don't exist
     parent_dir = os.path.dirname(destination)
-    os.makedirs(parent_dir, exist_ok=True)
+    filesystem.makedirs(parent_dir, exist_ok=True)
 
     try:
-        shutil.copy(source, destination)
+        filesystem.copy(source, destination)
     except:
-        if os.path.isdir(source) and os.path.isdir(destination):
+        if filesystem.isdir(source) and filesystem.isdir(destination):
             return "ERROR: Destination folder already exists."
         return "Unable to copy file."
 
@@ -277,48 +284,74 @@ def delete_file(filename):
 
     print(f"FUNCTION: Deleting file {relative}")
 
-    if not os.path.exists(fullpath):
+    if not filesystem.exists(fullpath):
         print(f"ERROR:    File {relative} does not exist")
         return f"ERROR: File {relative} does not exist"
 
     try:
-        if os.path.isdir(fullpath):
-            shutil.rmtree(fullpath)
-        else:
-            os.remove(fullpath)
+        filesystem.remove(fullpath)
     except:
         return "ERROR: Unable to remove file."
 
     return f"File {relative} successfully deleted"
 
-def list_files(list = "", print_output = True):
-    files_by_depth = {}
-    directory = codedir()
+def should_ignore(path, ignore):
+    # always ignore files inside .git/
+    if path.startswith(".git" + os.sep) and path != ".git" + os.sep:
+        return True
 
-    for root, _, filenames in os.walk(directory):
-        depth = str(root[len(directory):].count(os.sep))
+    for ignore_file in ignore:
+        if path.startswith(ignore_file + os.sep) or path.endswith(os.sep + ignore_file) or (os.sep + ignore_file + os.sep) in path:
+            return True
+    return False
 
-        for filename in filenames:
-            file_path = os.path.join(root, filename)
-            if depth not in files_by_depth:
-                files_by_depth[depth] = []
-            files_by_depth[depth].append(file_path)
+def list_files(list = "", print_output = True, ignore = [".git", "__pycache__", ".gpt-autopilot"]):
+    if "zip" in cmd_args.args:
+        files = filesystem.virtual.keys()
+    else:
+        files_by_depth = {}
+        directory = codedir()
 
-    files = []
-    counter = 0
-    max_files = 20
-    for level in files_by_depth.values():
-        for filename in level:
-            counter += 1
-            if counter > max_files:
-                break
-            files.append(filename)
+        for root, dirs, filenames in os.walk(directory):
+            depth = str(root[len(directory):].count(os.sep))
 
-    # Remove code folder from the beginning of file paths
-    files = [relpath(file_path) for file_path in files]
+            dirs = [dir_path + os.sep for dir_path in dirs]
 
-    if print_output: print(f"FUNCTION: Listing files in project directory")
-    return f"The following files are currently in the project directory:\n{files}"
+            dirs_and_files = filenames + dirs
+            for filename in dirs_and_files:
+                file_path = os.path.join(root, filename)
+                if depth not in files_by_depth:
+                    files_by_depth[depth] = []
+                files_by_depth[depth].append(file_path)
+
+        files = []
+        counter = 0
+        max_files = 20
+        for level in files_by_depth.values():
+            for filename in level:
+                counter += 1
+                if counter > max_files:
+                    break
+                files.append(filename)
+
+    # use paths relative to code folder
+    file_list = ""
+    for file in files:
+        path = relpath(file)
+
+        # ignore special files and directories
+        if should_ignore(path, ignore):
+            continue
+
+        file_list += path + "\n"
+
+    if print_output:
+        print(f"FUNCTION: Listing files in project directory")
+
+    if file_list == "":
+        return "The project directory is currently empty."
+
+    return f"The following files are currently in the project directory:\n{file_list.strip()}"
 
 def ask_clarification(questions):
     global clarification_asked
@@ -380,6 +413,7 @@ def run_cmd(base_dir, command, reason, asynch=False):
         asynchly = ""
 
     print()
+    print("#########################################################")
     print(f"GPT: I want to run the following command{asynchly}:")
 
     print("------------------------------")
@@ -388,6 +422,7 @@ def run_cmd(base_dir, command, reason, asynch=False):
     print(reason)
     print("------------------------------")
     print("Base: " + base_dir)
+    print("#########################################################")
     print()
 
     # add cd command
@@ -403,10 +438,17 @@ def run_cmd(base_dir, command, reason, asynch=False):
         print()
 
     if command.strip() not in cmd_args.allowed_cmd:
-        answer = yesno(
-            "Do you want to run this command?",
-            ["YES", "NO", "ASYNC", "SYNC"]
-        )
+        print("COMMANDS AVAILABE:")
+        print("- YES     Run the command")
+        print("- NO      Don't run the command")
+        print("- ASYNC   Run the command asynchronously")
+        print("- SYNC    Run the command synchronously")
+        print("- MSG     Send a message to ChatGPT\n")
+
+        answer = input("GPT: Do you want to run this command?\nYou: ")
+        while answer not in ["YES", "NO", "ASYNC", "SYNC", "MSG"]:
+            print("\nERROR: Please pick an available command\n")
+            answer = input("GPT: Do you want to run this command?\nYou: ")
         print()
     else:
         answer = "SYNC"
@@ -419,7 +461,12 @@ def run_cmd(base_dir, command, reason, asynch=False):
         asynch = False
         answer = "YES"
 
-    if answer == "YES":
+    elif answer == "MSG":
+        answer = input("GPT: What do you want to do?\nYou: ")
+        print()
+        return answer
+
+    elif answer == "YES":
         process = subprocess.Popen(
             full_command + " > gpt-autopilot-cmd-output.txt 2>&1",
             shell=True,
@@ -767,7 +814,7 @@ definitions = [
     },
     {
         "name": "run_cmd",
-        "description": "Run a terminal command. Returns the output. Folder navigation commands are disallowed. Do it with base_dir",
+        "description": "Run a "+what_command+" command. Returns the output. Folder navigation commands are disallowed. Do it with base_dir",
         "parameters": {
             "type": "object",
             "properties": {
@@ -815,4 +862,16 @@ def get_definitions(model):
     if "no-questions" in cmd_args.args:
         func_definitions = [definition for definition in func_definitions if definition["name"] != "ask_clarification"]
 
+    if "no-cmd" in cmd_args.args:
+        func_definitions = [definition for definition in func_definitions if definition["name"] != "run_cmd"]
+
     return func_definitions
+
+def function_available(function, model):
+    definitions = get_definitions(model)
+
+    for definition in definitions:
+        if definition["name"] == function:
+            return True
+
+    return False

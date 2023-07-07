@@ -5,19 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.4.0] 2023-07-07
 
 ### Added
 
 - A system message for creating PowerPoint presentations using Marp
-- Creation of a project outline in the beginning of the project. Can be skipped with `--no-outline` or used automatically wih `--use-outline`
+- Ability to refuse commands ChatGPT wants to run with a message to ChatGPT
+- Improved cross-platform support
+- Creation of a project outline in the beginning of the project. Can be skipped with `--no-outline` or used automatically with `--use-outline`
+- `--git` flag to initialize a Git repository in the project automatically and commit every task. Commit message generation can be disabled with `--no-commit-msg` if you don't want to generate a commit message with GPT
 - `--simple` flag for running simple prompts quickly
+- `--no-cmd` flag to disable the `run_cmd` function from ChatGPT
+- `--zip` flag to create a zip file of the project instead of writing files directly (`--no-cmd` is added automatically). When this flag is used, files are created only in memory and saved to a zip file in the end. An optional filename or full path of a zip file can be provided.
+- Token saver module that redacts redundant file read and write messages from the message history. The "savings rate" of the token saver can be changed by changing `--token-saver-level` (lower number saves more, default 3).
 
 ### Changed
 
 - Changed default model to `gpt-3.5-turbo-16k-0613"
 - Updated system messages
 - Improved tasklist creation
+- Moved modules to `modules` directory
 
 ### Removed
 

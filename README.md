@@ -18,6 +18,12 @@ For a more complex project, just run the script without any flags. It will ask y
 $ ./gpt-autopilot.py
 ```
 
+You can enable Git with `--git` and it will commit every change to git automatically and you can revert back or retry any step.
+
+```
+$ ./gpt-autopilot.py --git
+```
+
 # Installation
 
 GPT-AutoPilot works on both Linux and Windows (and probably macOS) and it has [standalone packages](https://github.com/unconv/gpt-autopilot/releases/tag/v0.3.0), that don't need the Python interpreter.

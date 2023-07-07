@@ -1,16 +1,17 @@
 import openai
+import copy
 import time
 import json
 import sys
 import os
-import copy
 
-from helpers import yesno
-import tokens
-import gpt_functions
-import checklist
-import cmd_args
-import paths
+from modules.token_saver import save_tokens
+from modules.helpers import yesno
+from modules import gpt_functions
+from modules import checklist
+from modules import cmd_args
+from modules import tokens
+from modules import paths
 
 create_outline = False
 
@@ -32,6 +33,21 @@ def redact_messages(messages):
             msg["content"] = "<file contents redacted>"
             break
     return messages_redact
+
+def filter_messages(messages):
+    filtered = []
+
+    for message in messages:
+        if message["role"] not in ["git"]:
+            filtered.append(message)
+
+    return filtered
+
+def save_message_history(conv_id, messages):
+    if conv_id is not None:
+        history_file = paths.relative("history", f"{conv_id}.json")
+        with open(history_file, "w") as f:
+            f.write(json.dumps(messages, indent=4))
 
 # ChatGPT API Function
 
@@ -55,12 +71,6 @@ def send_message(
         print("NOTICE:   Partial output detected, redacting messages...")
         messages[-2]["content"] = "<file content redacted>"
         messages = redact_messages(messages)
-
-    # save message history
-    if conv_id is not None:
-        history_file = paths.relative("history", f"{conv_id}.json")
-        with open(history_file, "w") as f:
-            f.write(json.dumps(messages, indent=4))
 
     definitions = copy.deepcopy(gpt_functions.get_definitions(model))
 
@@ -117,11 +127,14 @@ For a trivial project, make just one task"""
 
     print("GPT-API:  Waiting... ", end="", flush=True)
 
+    # save message history
+    save_message_history(conv_id, messages)
+
     try:
         # send prompt to chatgpt
         response = openai.ChatCompletion.create(
             model=model,
-            messages=messages,
+            messages=save_tokens(filter_messages(messages)),
             functions=definitions,
             function_call=function_call,
             temperature=temp,
@@ -184,6 +197,9 @@ For a trivial project, make just one task"""
         # remove last message
         messages.pop()
 
+        # save message history
+        save_message_history(conv_id, messages)
+
         return send_message(
             message=message,
             messages=messages,
@@ -200,6 +216,9 @@ For a trivial project, make just one task"""
 
     # add response to message list
     messages.append(response["choices"][0]["message"]) # type: ignore
+
+    # save message history
+    save_message_history(conv_id, messages)
 
     # get message content
     response_message = response["choices"][0]["message"]["content"] # type: ignore

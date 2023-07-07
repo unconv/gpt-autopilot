@@ -1,13 +1,13 @@
 import sys
 import os
 
-import config
+from modules import config
 
 args = {
     "program_name": sys.argv.pop(0)
 }
 
-VERSION = "0.4.0-dev"
+VERSION = "0.4.0"
 
 help_info = {
     "--prompt": {
@@ -33,6 +33,24 @@ help_info = {
     },
     "--delete": {
         "desc": "delete existing files in code folder before beginning",
+    },
+    "--git": {
+        "desc": "initialize git in the project folder and commit every task",
+    },
+    "--default-branch": {
+        "desc": "set the default git branch name to use",
+    },
+    "--no-commit-msg": {
+        "desc": "don't create a commit message with GPT",
+    },
+    "--zip": {
+        "desc": "create a zip file instead of writing to files directly",
+    },
+    "--no-cmd": {
+        "desc": "don't allow terminal commands to be run",
+    },
+    "--allow-cmd": {
+        "desc": "allow these exact terminal commands to be run automatically",
     },
     "--versions": {
         "desc": "make multiple versions of the same project from a single prompt",
@@ -99,6 +117,9 @@ help_info = {
     },
     "--continue": {
         "desc": "continue automatically if ChatGPT responds without a function call",
+    },
+    "--token-saver-level": {
+        "desc": "set level for the token saver (lower number saves more, default 3)",
     },
 }
 
@@ -206,9 +227,45 @@ def parse_arguments(argv):
                 print("ERROR: --versions must come after --better")
                 sys.exit(1)
             args["better"] = True # type: ignore
+        # create a zip file instead of writing to files directly
+        elif arg_name == "--zip":
+            args["zip"] = True # type: ignore
+            args["no-cmd"] = True # type: ignore
+
+            if "git" in args:
+                print("ERROR: --git is not compatible with --zip")
+                sys.exit(1)
+
+            if len(argv) > 0:
+                maybe_zip_name = argv.pop(0)
+                if maybe_zip_name[0] != "-":
+                    if os.sep in maybe_zip_name:
+                        args["zip-dir"] = os.path.dirname(maybe_zip_name)
+                    args["zip-name"] = os.path.basename(maybe_zip_name)
+                else:
+                    argv.insert(0, maybe_zip_name)
+        # don't allow terminal commands
+        elif arg_name == "--no-cmd":
+            args["no-cmd"] = True # type: ignore
         # don't create an outline in the beginning
         elif arg_name == "--no-outline":
             args["no-outline"] = True # type: ignore
+        # initialize git and commit every task
+        elif arg_name == "--git":
+            args["git"] = True # type: ignore
+
+            if "zip" in args:
+                print("ERROR: --git is not compatible with --zip")
+                sys.exit(1)
+        # set default git branch name
+        elif arg_name == "--default-branch":
+            if argv == []:
+                print(f"ERROR: Missing argument for '{arg_name}'")
+                sys.exit(1)
+            args["default-branch"] = argv.pop(0) # type: ignore
+        # don't create a commit message with GPT
+        elif arg_name == "--no-commit-msg":
+            args["no-commit-msg"] = True # type: ignore
         # use automatically created outline
         elif arg_name == "--use-outline":
             args["use-outline"] = True # type: ignore
@@ -243,6 +300,16 @@ def parse_arguments(argv):
         # don't use checklist from custom system message
         elif arg_name == "--no-checklist":
             args["no-checklist"] = True # type: ignore
+        # initial prompt
+        elif arg_name == "--token-saver-level":
+            if argv == []:
+                print(f"ERROR: Missing argument for '{arg_name}'")
+                sys.exit(1)
+            args["token-saver-level"] = int(argv.pop(0)) # type: ignore
+
+            if args["token-saver-level"] < 1:
+                print("ERROR: Token saver level must be 1 on higher")
+                sys.exit(1)
         # run in simple mode
         elif arg_name == "--simple":
             args["use-system"] = True # type: ignore
