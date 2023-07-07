@@ -162,7 +162,8 @@ def revert(messages):
     return (last_prompt, messages)
 
 def own_commit():
-    diff = output = subprocess.check_output("cd " + shlex.quote(codedir()) + "; git diff", shell=True).decode().strip()
+    diff = subprocess.check_output("cd " + shlex.quote(codedir()) + "; git add .; git diff --staged", shell=True).decode().strip()
+    subprocess.run("cd " + shlex.quote(codedir()) + "; git restore --staged .", shell=True)
 
     if diff == "":
         return False
