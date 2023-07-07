@@ -457,9 +457,9 @@ def run_conversation(prompt, model = "gpt-3.5-turbo-16k-0613", messages = [], co
                     next_message = yesno("GPT: Do you want to do something else?\nYou:", ["y", "n"])
                     print()
                     if next_message == "y":
-                        revert_text = git.revert_text()
+                        git.print_help()
 
-                        prompt = input("GPT: What do you want to do?"+revert_text+"\nYou: ")
+                        prompt = input("GPT: What do you want to do?\nYou: ")
                         print()
 
                         while "git" in cmd_args.args and prompt in ["revert", "retry"]:
@@ -485,9 +485,18 @@ def run_conversation(prompt, model = "gpt-3.5-turbo-16k-0613", messages = [], co
                                 print("ERROR:    No commits to revert")
                                 print()
 
-                            revert_text = git.revert_text()
-                            prompt = input("GPT: What would you like to do next?"+revert_text+"\nYou: ")
+                            git.print_help()
+                            prompt = input("GPT: What would you like to do next?\nYou: ")
                             print()
+
+                        while "git" in cmd_args.args and prompt == "commit":
+                            prompt = git.own_commit()
+
+                            if prompt == False:
+                                print("ERROR: No changes have been made.\n")
+                                git.print_help()
+                                prompt = input("GPT: What would you like to do next?\nYou: ")
+                                print()
                     else:
                         if "zip" in cmd_args.args:
                             create_zip()

@@ -156,9 +156,20 @@ def revert(messages):
 
     return (last_prompt, messages)
 
-def revert_text():
+def own_commit():
+    diff = output = subprocess.check_output("cd " + shlex.quote(codedir()) + "; git diff", shell=True).decode().strip()
+
+    if diff == "":
+        return False
+
+    return "I have made the following changes to the code myself:\n\n```diff\n" + diff + "\n```\nPlease keep these changes in mind for future edits. Please summarize the changes I have made."
+
+def print_help():
     global commit_count
     if "git" in cmd_args.args and commit_count > 1:
-        return " (type 'revert' or 'retry' to try again)"
-    else:
-        return ""
+        helptext  = "GIT COMMANDS AVAILABLE:\n"
+        helptext += "- revert   revert previous commit\n"
+        helptext += "- retry    revert commit and try same prompt again\n"
+        helptext += "- commit   commit your own changes and tell ChatGPT\n"
+
+        print(helptext)
