@@ -1,11 +1,12 @@
 import subprocess
 import openai
-import shlex
 import json
 import copy
 import time
+import re
 
 from modules.helpers import codedir, reset_code_folder
+from modules.platform import join_cmd
 from modules import cmd_args
 from modules import chatgpt
 from modules import tokens
@@ -21,6 +22,9 @@ git_log = [
         }
     }
 ]
+
+def safecmd(text):
+    return re.sub(r'[^a-zA-Z0-9 ]', '', text)
 
 def get_commit_message(messages, model, temp):
     global git_log
@@ -90,11 +94,17 @@ def get_commit_message(messages, model, temp):
     return commit_message
 
 def set_default_x(x, default):
-    result = subprocess.run(f"cd {codedir()}; git config user.{x}", shell=True, capture_output=True, text=True)
+    result = subprocess.run(join_cmd([
+        f"cd {codedir()}",
+        f"git config user.{x}",
+    ]), shell=True, capture_output=True, text=True)
     current = result.stdout.strip()
 
     if not current:
-        subprocess.run(f'cd {codedir()}; git config user.{x} {shlex.quote(default)}', shell=True)
+        subprocess.run(join_cmd([
+            f"cd {codedir()}",
+            f"git config user.{x} \"{safecmd(default)}\"",
+        ]), shell=True)
 
 def set_defaults():
     set_default_x("email", "gpt@gpt-autopilot.com")
@@ -108,7 +118,10 @@ def init():
     else:
         default_branch = "master"
 
-    subprocess.run(f"cd {codedir()}; git -c init.defaultBranch={shlex.quote(default_branch)} init", shell=True)
+    subprocess.run(join_cmd([
+        f"cd {codedir()}",
+        f"git -c init.defaultBranch={safecmd(default_branch)} init",
+    ]), shell=True)
     set_defaults()
 
 def commit(messages, model, temp):
@@ -121,7 +134,11 @@ def commit(messages, model, temp):
         f.write(str(time.time()))
 
     try:
-        output = subprocess.check_output("cd " + codedir() + "; git add .; git commit -m " + shlex.quote(commit_message), shell=True).decode().strip()
+        output = subprocess.check_output(join_cmd([
+            "cd " + codedir(),
+            "git add .",
+            "git commit -m \"" + safecmd(commit_message) + "\"",
+        ]), shell=True).decode().strip()
         print(output)
     except subprocess.CalledProcessError:
         print("GIT:      Nothing to commit.")
@@ -141,7 +158,10 @@ def revert(messages):
     global commit_count
 
     if commit_count > 2:
-        subprocess.run("cd " + codedir() + "; git reset HEAD~1 --hard", shell=True)
+        subprocess.run(join_cmd([
+            "cd " + codedir(),
+            "git reset HEAD~1 --hard",
+        ]), shell=True)
     else:
         reset_code_folder()
         init()
@@ -162,8 +182,16 @@ def revert(messages):
     return (last_prompt, messages)
 
 def own_commit():
-    diff = subprocess.check_output("cd " + codedir() + "; git add .; git diff --staged", shell=True).decode().strip()
-    subprocess.run("cd " + codedir() + "; git restore --staged .", shell=True)
+    diff = subprocess.check_output(join_cmd([
+        "cd " + codedir(),
+        "git add .",
+        "git diff --staged",
+    ]), shell=True).decode().strip()
+
+    subprocess.run(join_cmd([
+        "cd " + codedir(),
+        "git restore --staged .",
+    ]), shell=True)
 
     if diff == "":
         return False

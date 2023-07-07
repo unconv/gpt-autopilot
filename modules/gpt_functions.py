@@ -30,6 +30,14 @@ if "questions" in cmd_args.args:
 else:
     initial_question_count = 5
 
+# detect platform
+if sys.platform.startswith("win"):
+    what_command = "Windows command line"
+elif sys.platform.startswith("darwin"):
+    what_command = "macOS terminal"
+else:
+    what_command = "terminal"
+
 # Implementation of the functions given to ChatGPT
 
 def make_tasklist(tasks):
@@ -806,7 +814,7 @@ definitions = [
     },
     {
         "name": "run_cmd",
-        "description": "Run a terminal command. Returns the output. Folder navigation commands are disallowed. Do it with base_dir",
+        "description": "Run a "+what_command+" command. Returns the output. Folder navigation commands are disallowed. Do it with base_dir",
         "parameters": {
             "type": "object",
             "properties": {
