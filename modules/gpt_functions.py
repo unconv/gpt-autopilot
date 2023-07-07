@@ -305,7 +305,7 @@ def should_ignore(path, ignore):
             return True
     return False
 
-def list_files(list = "", print_output = True, ignore = [".git", "__pycache__", ".gpt-autopilot"]):
+def list_files(list = "", print_output = True, ignore = [".git", "__pycache__", ".gpt-autopilot", "node_modules", "vendor"]):
     if "zip" in cmd_args.args:
         files = filesystem.virtual.keys()
     else:
