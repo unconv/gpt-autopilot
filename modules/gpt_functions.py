@@ -405,6 +405,7 @@ def run_cmd(base_dir, command, reason, asynch=False):
         asynchly = ""
 
     print()
+    print("#########################################################")
     print(f"GPT: I want to run the following command{asynchly}:")
 
     print("------------------------------")
@@ -413,6 +414,7 @@ def run_cmd(base_dir, command, reason, asynch=False):
     print(reason)
     print("------------------------------")
     print("Base: " + base_dir)
+    print("#########################################################")
     print()
 
     # add cd command
@@ -428,10 +430,17 @@ def run_cmd(base_dir, command, reason, asynch=False):
         print()
 
     if command.strip() not in cmd_args.allowed_cmd:
-        answer = yesno(
-            "Do you want to run this command?",
-            ["YES", "NO", "ASYNC", "SYNC"]
-        )
+        print("COMMANDS AVAILABE:")
+        print("- YES     Run the command")
+        print("- NO      Don't run the command")
+        print("- ASYNC   Run the command asynchronously")
+        print("- SYNC    Run the command synchronously")
+        print("- MSG     Send a message to ChatGPT\n")
+
+        answer = input("GPT: Do you want to run this command?\nYou: ")
+        while answer not in ["YES", "NO", "ASYNC", "SYNC", "MSG"]:
+            print("\nERROR: Please pick an available command\n")
+            answer = input("GPT: Do you want to run this command?\nYou: ")
         print()
     else:
         answer = "SYNC"
@@ -444,7 +453,12 @@ def run_cmd(base_dir, command, reason, asynch=False):
         asynch = False
         answer = "YES"
 
-    if answer == "YES":
+    elif answer == "MSG":
+        answer = input("GPT: What do you want to do?\nYou: ")
+        print()
+        return answer
+
+    elif answer == "YES":
         process = subprocess.Popen(
             full_command + " > gpt-autopilot-cmd-output.txt 2>&1",
             shell=True,
