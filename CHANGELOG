@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Better context window handling. Old messages are now redacted based on the context window usage and token buffer. These can be changed with `--context-window [TOKENS]` and `--token-buffer [TOKENS]`. For example, GPT-4 can be run with a 4K context window to save money: `--model 4 --context-window 4000`
 - Support for when OpenAI drops `-0613` from model names
 
+### Fixed
+
+- Forcing command to be run synchronously or asynchronously
+
 ## [0.4.0] 2023-07-07
 
 ### Added

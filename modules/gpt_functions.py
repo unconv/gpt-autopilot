@@ -472,7 +472,7 @@ def run_cmd(base_dir, command, reason, asynch=False):
         print()
         return answer
 
-    elif answer == "YES":
+    if answer == "YES":
         process = subprocess.Popen(
             full_command + " > gpt-autopilot-cmd-output.txt 2>&1",
             shell=True,
