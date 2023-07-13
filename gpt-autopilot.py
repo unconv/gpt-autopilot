@@ -388,6 +388,17 @@ def run_conversation(prompt, model = "gpt-3.5-turbo-16k-0613", messages = [], co
 
             gpt_functions.tasklist_skipped = False
 
+            # make git commit after finishing task and running a command
+            if "git" in cmd_args.args and function_response == "PROJECT_FINISHED" or (
+                function_name == "run_cmd" and function_response != "I don't want to run that command"
+            ):
+                commit = git.commit(copy.deepcopy(messages), model, temp)
+                if commit is not None:
+                    messages.append(commit)
+
+                # save message history
+                chatgpt.save_message_history(conv_id, messages)
+
             # if we got answers to clarifying questions
             if "clarifications" in function_response:
                 # remove ask_clarifications function call from history
@@ -420,14 +431,6 @@ def run_conversation(prompt, model = "gpt-3.5-turbo-16k-0613", messages = [], co
 
             # if function returns PROJECT_FINISHED, exit
             elif function_response == "PROJECT_FINISHED":
-                if "git" in cmd_args.args:
-                    commit = git.commit(copy.deepcopy(messages), model, temp)
-                    if commit is not None:
-                        messages.append(commit)
-
-                    # save message history
-                    chatgpt.save_message_history(conv_id, messages)
-
                 if recursive == False:
                     checklist.activate_checklist()
                     print_task_finished(model)
