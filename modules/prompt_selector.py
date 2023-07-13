@@ -3,7 +3,7 @@ import json
 import sys
 import os
 
-from modules.helpers import yesno
+from modules.helpers import yesno, ask_input
 from modules import checklist
 from modules import cmd_args
 from modules import tokens
@@ -95,7 +95,7 @@ List of instruction slugs and their descriptions:\n
         slug = "default"
     elif "use-system" not in cmd_args.args:
         if yesno(f"\nDetected project type '{slug}'.\nDo you want to use this system message?\nYou") == "n":
-            slug = input("\nGPT: Which system message do you want to use?\nYou [default]: ") or "default"
+            slug = ask_input("\nGPT: Which system message do you want to use?\nYou [default]: ") or "default"
         print()
 
     return slug

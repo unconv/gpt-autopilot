@@ -5,7 +5,7 @@ import time
 import sys
 import os
 
-from modules.helpers import yesno, safepath, codedir, relpath
+from modules.helpers import yesno, safepath, codedir, relpath, ask_input
 from modules import filesystem
 from modules import cmd_args
 from modules import paths
@@ -86,7 +86,7 @@ def make_tasklist(tasks):
     print(all_tasks, end="")
 
     if "use-tasklist" not in cmd_args.args and yesno("\nGPT: Do you want to continue with this task list?\nYou") != "y":
-        modifications = input("\nGPT: What would you like to change? (type 'skip' to skip)\nYou: ")
+        modifications = ask_input("\nGPT: What would you like to change? (type 'skip' to skip)\nYou: ")
         print()
 
         if modifications == "skip":
@@ -388,9 +388,9 @@ def ask_clarification(questions):
 
         # get answer to question
         if "\n" in question:
-            answer = input(f"\nGPT:\n{question}\n\nYou: \n")
+            answer = ask_input(f"\nGPT:\n{question}\n\nYou: \n")
         else:
-            answer = input(f"\nGPT: {question}\nYou: ")
+            answer = ask_input(f"\nGPT: {question}\nYou: ")
 
         # skip unanswered questions
         if answer == "":
@@ -461,10 +461,10 @@ def run_cmd(base_dir, command, reason, asynch=False):
         print("- SYNC    Run the command synchronously")
         print("- MSG     Send a message to ChatGPT\n")
 
-        answer = input("GPT: Do you want to run this command?\nYou: ")
+        answer = ask_input("GPT: Do you want to run this command?\nYou: ")
         while answer not in ["YES", "NO", "ASYNC", "SYNC", "MSG"]:
             print("\nERROR: Please pick an available command\n")
-            answer = input("GPT: Do you want to run this command?\nYou: ")
+            answer = ask_input("GPT: Do you want to run this command?\nYou: ")
         print()
     else:
         answer = "SYNC"
@@ -478,7 +478,7 @@ def run_cmd(base_dir, command, reason, asynch=False):
         answer = "YES"
 
     elif answer == "MSG":
-        answer = input("GPT: What do you want to do?\nYou: ")
+        answer = ask_input("GPT: What do you want to do?\nYou: ")
         print()
         return answer
 

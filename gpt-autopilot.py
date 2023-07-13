@@ -11,7 +11,7 @@ import sys
 import os
 import re
 
-from modules.helpers import yesno, safepath, codedir, numberfile, reset_code_folder, relpath
+from modules.helpers import yesno, safepath, codedir, numberfile, reset_code_folder, relpath, ask_input
 from modules.config import get_config, save_config
 from modules import prompt_selector
 from modules import gpt_functions
@@ -380,11 +380,9 @@ def run_conversation(prompt, model = "gpt-3.5-turbo-16k-0613", messages = [], co
                             function_call = "none"
                             print_message = False
 
-                    except TypeError:
+                    except (TypeError, KeyError):
                         function_response = "ERROR: Invalid function parameters"
-
-                    except KeyError:
-                        function_response = "ERROR: Invalid function parameters"
+                        print("ERROR:    Invalid function parameters")
 
             messages = remove_hallucinations(messages)
 
@@ -459,7 +457,7 @@ def run_conversation(prompt, model = "gpt-3.5-turbo-16k-0613", messages = [], co
                     if next_message == "y":
                         git.print_help()
 
-                        prompt = input("GPT: What do you want to do?\nYou: ")
+                        prompt = ask_input("GPT: What do you want to do?\nYou: ")
                         print()
 
                         while "git" in cmd_args.args and prompt in ["revert", "retry"]:
@@ -486,7 +484,7 @@ def run_conversation(prompt, model = "gpt-3.5-turbo-16k-0613", messages = [], co
                                 print()
 
                             git.print_help()
-                            prompt = input("GPT: What would you like to do next?\nYou: ")
+                            prompt = ask_input("GPT: What would you like to do next?\nYou: ")
                             print()
 
                         while "git" in cmd_args.args and prompt == "commit":
@@ -495,7 +493,7 @@ def run_conversation(prompt, model = "gpt-3.5-turbo-16k-0613", messages = [], co
                             if prompt == False:
                                 print("ERROR: No changes have been made.\n")
                                 git.print_help()
-                                prompt = input("GPT: What would you like to do next?\nYou: ")
+                                prompt = ask_input("GPT: What would you like to do next?\nYou: ")
                                 print()
                     else:
                         if "zip" in cmd_args.args:
@@ -552,7 +550,7 @@ def run_conversation(prompt, model = "gpt-3.5-turbo-16k-0613", messages = [], co
                         "content": user_message
                     })
                 else:
-                    changes = input("\nGPT: What would you like to modify? (type 'skip' to skip outline)\nYou: ")
+                    changes = ask_input("\nGPT: What would you like to modify? (type 'skip' to skip outline)\nYou: ")
                     user_message = "Thank you for the project outline. Please make the following changes to it and respond only with the new project outline in the first person: " + changes
                     gpt_functions.modify_outline = True
                     gpt_functions.outline_created = False
@@ -593,7 +591,7 @@ def run_conversation(prompt, model = "gpt-3.5-turbo-16k-0613", messages = [], co
                     if "continue" in cmd_args.args:
                         user_message = "Please continue with using the given functions."
                     else:
-                        user_message = input("You:\n")
+                        user_message = ask_input("You:\n")
                         print()
                 else:
                     # if chatgpt doesn't ask a question, continue
@@ -656,7 +654,7 @@ def make_prompt_better(prompt, orig_prompt=None, ask=True, temp = 1.0, messages 
             print("\nUsing better prompt...")
             prompt = better_prompt
         else:
-            answer = input("\nGPT: What do you want to modify in the prompt? (type 'orig' to use original)\nYou: ")
+            answer = ask_input("\nGPT: What do you want to modify in the prompt? (type 'orig' to use original)\nYou: ")
             if answer == "orig":
                 print("\nUsing original prompt...")
                 return orig_prompt
@@ -693,7 +691,7 @@ def get_api_key():
             api_key = CONFIG["api_key"]
         else:
             print("Put your OpenAI API key into the config.json file or OPENAI_API_KEY environment variable to skip this prompt.\n")
-            api_key = input("Input OpenAI API key: ").strip()
+            api_key = ask_input("Input OpenAI API key: ").strip()
 
             if api_key == "":
                 sys.exit(1)
@@ -887,7 +885,7 @@ def run_versions(prompt, args, version_messages, temp, prev_version = 1):
 
         next_up = 0
         while int(next_up) not in range(1, versions+1):
-            next_up = input(f"\nIf you want to continue, please input version number to continue from (1-{versions}) (or 'exit' to quit): ")
+            next_up = ask_input(f"\nIf you want to continue, please input version number to continue from (1-{versions}) (or 'exit' to quit): ")
 
             if str(next_up) in ["exit", "quit", "e", "q"]:
                 sys.exit(0)
@@ -898,7 +896,7 @@ def run_versions(prompt, args, version_messages, temp, prev_version = 1):
         # move selected version to code folder and start over
         filesystem.copytree(version_folders[next_version-1], codedir())
 
-        prompt = input("GPT: What would you like to do next?\nYou: ")
+        prompt = ask_input("GPT: What would you like to do next?\nYou: ")
         print()
         run_versions(prompt, args, version_messages, temp, next_version)
 
@@ -948,7 +946,7 @@ print_model_info()
 if "prompt" in cmd_args.args:
     prompt = cmd_args.args["prompt"]
 else:
-    prompt = input("GPT: What would you like me to do?\nYou: ")
+    prompt = ask_input("GPT: What would you like me to do?\nYou: ")
     print()
 
 # INITIALIZE GIT

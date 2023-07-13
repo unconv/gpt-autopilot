@@ -6,7 +6,7 @@ import sys
 import os
 
 from modules.token_saver import save_tokens
-from modules.helpers import yesno
+from modules.helpers import yesno, ask_input, autonomous_message_count
 from modules import gpt_functions
 from modules import checklist
 from modules import cmd_args
@@ -62,6 +62,19 @@ def send_message(
     temp = 1.0,
 ):
     global create_outline
+    global autonomous_message_count
+
+    # prevent function loop of death
+    autonomous_message_count += 1
+    if autonomous_message_count >= 10:
+        autonomous_message_count = 0
+        if yesno("\nWARNING: ChatGPT ran 10 calls back to back.\nContinue?", ["YES", "NO"]) == "NO":
+            prompt = ask_input("\nGPT: What would you like to do next?\nYou: ")
+            print()
+            message = {
+                "role": "user",
+                "content": prompt,
+            }
 
     # add user message to message list
     messages.append(message)
