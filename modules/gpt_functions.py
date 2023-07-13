@@ -302,6 +302,7 @@ def should_ignore(path, ignore):
         "__pycache__",
         "node_modules",
         "vendor",
+        ".angular",
     ]
 
     for aig in always_ignore:
