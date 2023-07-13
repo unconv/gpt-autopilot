@@ -171,6 +171,7 @@ def revert(messages):
 
     # revert to previous git message
     last_message = messages.pop()
+    last_prompt = ""
     while last_message["role"] not in ["git", "system"]:
         if last_message["role"] == "user":
             last_prompt = last_message["content"]
