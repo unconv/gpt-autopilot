@@ -607,7 +607,7 @@ ask_clarification_func = {
     "parameters": {
         "type": "object",
         "properties": {
-            "question": {
+            "questions": {
                 "type": "array",
                 "items": {
                     "type": "string"
