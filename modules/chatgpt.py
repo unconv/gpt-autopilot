@@ -64,17 +64,22 @@ def send_message(
     global create_outline
     global autonomous_message_count
 
+    if "loop-limit" in cmd_args.args:
+        autonomous_message_limit = int(cmd_args.args["loop-limit"])
+    else:
+        autonomous_message_limit = 10
+
     # prevent function loop of death
     autonomous_message_count += 1
-    if autonomous_message_count >= 10:
-        autonomous_message_count = 0
-        if yesno("\nWARNING: ChatGPT ran 10 calls back to back.\nContinue?", ["YES", "NO"]) == "NO":
+    if autonomous_message_count >= autonomous_message_limit:
+        if yesno(f"\nWARNING: ChatGPT ran {autonomous_message_count} calls back to back.\nContinue?", ["YES", "NO"]) == "NO":
             prompt = ask_input("\nGPT: What would you like to do next?\nYou: ")
             print()
             message = {
                 "role": "user",
                 "content": prompt,
             }
+        autonomous_message_count = 0
 
     # add user message to message list
     messages.append(message)

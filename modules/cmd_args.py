@@ -103,6 +103,9 @@ help_info = {
     "--max-price": {
         "desc": "end script after this amount of money is used",
     },
+    "--loop-limit": {
+        "desc": "ask for confirmation after this many autonomous function calls (default 10)",
+    },
     "--context-window": {
         "desc": "end script after this amount of money is used",
     },
@@ -218,6 +221,12 @@ def parse_arguments(argv):
                 print(f"ERROR: Missing argument for '{arg_name}'")
                 sys.exit(1)
             args["max-price"] = float(argv.pop(0)) # type: ignore
+        # ask for confirmation after this many autonomous function calls
+        elif arg_name == "--loop-limit":
+            if argv == []:
+                print(f"ERROR: Missing argument for '{arg_name}'")
+                sys.exit(1)
+            args["loop-limit"] = int(argv.pop(0)) # type: ignore
         # set a custom context window size, in tokens
         elif arg_name == "--context-window":
             if argv == []:
