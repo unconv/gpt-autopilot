@@ -296,7 +296,9 @@ def delete_file(filename):
     return f"File {relative} successfully deleted"
 
 def should_ignore(path, ignore):
-    # always ignore files these
+    path = relpath(path)
+
+    # always ignore files inside these folders
     always_ignore = [
         ".git",
         "__pycache__",
@@ -306,7 +308,7 @@ def should_ignore(path, ignore):
     ]
 
     for aig in always_ignore:
-        if (path.startswith(aig + os.sep) or (os.sep + aig + os.sep) in path) and path != aig + os.sep:
+        if (path.startswith(aig + os.sep) or (os.sep + aig + os.sep) in path) and path != aig + os.sep and path != aig:
             return True
 
     for ignore_file in ignore:
@@ -314,7 +316,14 @@ def should_ignore(path, ignore):
             return True
     return False
 
-def list_files(list = "", print_output = True, ignore = [".gpt-autopilot"]):
+def list_files(list = "", print_output = True, ignore = [
+    ".gpt-autopilot",
+    ".git",
+    "__pycache__",
+    "node_modules",
+    "vendor",
+    ".angular",
+]):
     if "zip" in cmd_args.args:
         files = filesystem.virtual.keys()
     else:
