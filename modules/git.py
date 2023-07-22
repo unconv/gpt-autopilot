@@ -122,6 +122,7 @@ def init():
         f"cd {codedir()}",
         f"git -c init.defaultBranch=\"{safecmd(default_branch)}\" init",
     ]), shell=True)
+    print()
     set_defaults()
 
 def commit(messages, model, temp):
