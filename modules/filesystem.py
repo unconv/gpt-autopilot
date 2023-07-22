@@ -70,21 +70,13 @@ def move(source, destination):
     else:
         shutil.move(source, destination)
 
-def copy(source, destination):
+def copy_file(source, destination):
     global virtual
 
     if "zip" in cmd_args.args:
         virtual[destination] = copy.deepcopy(source)
     else:
         shutil.copy(source, destination)
-
-def move(source, destination):
-    global virtual
-
-    if "zip" in cmd_args.args:
-        virtual[destination] = copy.deepcopy(source)
-    else:
-        shutil.move(source, destination)
 
 def rmtree(directory):
     global virtual

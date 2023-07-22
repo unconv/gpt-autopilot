@@ -69,7 +69,7 @@ def make_tasklist(tasks):
 
     # add remaining task
     if task_string != "":
-        if "NO_FILE" not in prev_file:
+        if prev_file != None and "NO_FILE" not in prev_file:
             task_string = "In " + prev_file + ": " + task_string
         combined_tasklist.append(task_string)
 
@@ -245,7 +245,7 @@ def move_file(source, destination):
 
     # Create parent directories if they don't exist
     parent_dir = os.path.dirname(destination)
-    filesystem.makedirs(parent_dir, exist_ok=True)
+    filesystem.makedirs(parent_dir)
 
     try:
         filesystem.move(source, destination)
@@ -267,10 +267,10 @@ def copy_file(source, destination):
 
     # Create parent directories if they don't exist
     parent_dir = os.path.dirname(destination)
-    filesystem.makedirs(parent_dir, exist_ok=True)
+    filesystem.makedirs(parent_dir)
 
     try:
-        filesystem.copy(source, destination)
+        filesystem.copy_file(source, destination)
     except:
         if filesystem.isdir(source) and filesystem.isdir(destination):
             return "ERROR: Destination folder already exists."

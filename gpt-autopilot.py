@@ -140,7 +140,7 @@ def actually_append_file(filename, content):
 
     # Create parent directories if they don't exist
     parent_dir = os.path.dirname(fullpath)
-    filesystem.makedirs(parent_dir, exist_ok=True)
+    filesystem.makedirs(parent_dir)
 
     if filesystem.isdir(fullpath):
         return "ERROR: This is a directory, not a file"
@@ -211,6 +211,8 @@ def function_list(model, exclude=[]):
 def parse_filename(arguments):
     filename_pattern = r'"filename"\s*:\s*"([^"]*)"'
     match = re.search(filename_pattern, arguments)
+    if match is None:
+        raise Exception("Invalid filename argument")
     return match.group(1)
 
 def fix_json_arguments(function_name, arguments_plain, message):
@@ -353,7 +355,7 @@ def run_conversation(prompt, model = "gpt-3.5-turbo-16k-0613", messages = [], co
                             arguments_plain,
                             message
                         )
-                    except:
+                    except Exception as e:
                         print("ERROR:    Failed to fix arguments: " + str(e))
                         function_response = "ERROR: Failed to parse arguments"
 
@@ -400,7 +402,7 @@ def run_conversation(prompt, model = "gpt-3.5-turbo-16k-0613", messages = [], co
                 chatgpt.save_message_history(conv_id, messages)
 
             # if we got answers to clarifying questions
-            if "clarifications" in function_response:
+            if isinstance(function_response, dict) and "clarifications" in function_response:
                 # remove ask_clarifications function call from history
                 messages.pop()
 
@@ -409,7 +411,7 @@ def run_conversation(prompt, model = "gpt-3.5-turbo-16k-0613", messages = [], co
                 function_message = messages.pop()
 
             # remove task list modification requests from history
-            elif "TASK_LIST_RECEIVED" in function_response:
+            elif isinstance(function_response, dict) and "TASK_LIST_RECEIVED" in function_response:
                 # remove tasklist functions from history
                 prev_message = messages.pop(-2)
                 while '"name": "make_tasklist"' in json.dumps(prev_message):

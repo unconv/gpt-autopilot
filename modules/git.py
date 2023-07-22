@@ -77,7 +77,7 @@ def get_commit_message(messages, model, temp):
 
         tokens.add(response, model)
 
-        message = response["choices"][0]["message"]
+        message = response["choices"][0]["message"] # type: ignore
         git_log.append(message)
 
         answer = json.loads(message["function_call"]["arguments"]) # type: ignore
