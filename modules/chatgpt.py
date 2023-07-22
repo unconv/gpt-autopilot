@@ -5,11 +5,12 @@ import json
 import sys
 import os
 
+from modules.helpers import yesno, ask_input
 from modules.token_saver import save_tokens
-from modules.helpers import yesno
 from modules import gpt_functions
 from modules import checklist
 from modules import cmd_args
+from modules import helpers
 from modules import tokens
 from modules import paths
 
@@ -63,13 +64,46 @@ def send_message(
 ):
     global create_outline
 
+    if "loop-limit" in cmd_args.args:
+        autonomous_message_limit = int(cmd_args.args["loop-limit"])
+    else:
+        autonomous_message_limit = 10
+
+    # prevent function loop of death
+    helpers.autonomous_message_count += 1
+    if helpers.autonomous_message_count >= autonomous_message_limit:
+        if yesno(f"\nWARNING: ChatGPT ran {helpers.autonomous_message_count} calls back to back.\nContinue?", ["YES", "NO"]) == "NO":
+            prompt = ask_input("\nGPT: What would you like to do next?\nYou: ")
+            print()
+            message = {
+                "role": "user",
+                "content": prompt,
+            }
+        helpers.autonomous_message_count = 0
+
     # add user message to message list
     messages.append(message)
 
-    # redact old messages when encountering partial output
+    # warn when partial output is detected
     if "No END_OF_FILE_CONTENT" in message["content"]:
-        print("NOTICE:   Partial output detected, redacting messages...")
+        print("NOTICE:   Partial output detected")
         messages[-2]["content"] = "<file content redacted>"
+
+    # determine context window size
+    if "context-window" in cmd_args.args:
+        token_limit = int(cmd_args.args["context-window"])
+    else:
+        token_limit = tokens.get_token_limit(model)
+
+    # determine token buffer
+    if "token-buffer" in cmd_args.args:
+        token_buffer = int(cmd_args.args["token-buffer"])
+    else:
+        token_buffer = 1500
+
+    # redact messages when context limit is getting full
+    if token_limit and tokens.context_size > (token_limit - token_buffer):
+        print("NOTICE:   Context limit is near. Redacting messages")
         messages = redact_messages(messages)
 
     definitions = copy.deepcopy(gpt_functions.get_definitions(model))

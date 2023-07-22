@@ -5,7 +5,7 @@ import time
 import sys
 import os
 
-from modules.helpers import yesno, safepath, codedir, relpath
+from modules.helpers import yesno, safepath, codedir, relpath, ask_input
 from modules import filesystem
 from modules import cmd_args
 from modules import paths
@@ -69,7 +69,7 @@ def make_tasklist(tasks):
 
     # add remaining task
     if task_string != "":
-        if "NO_FILE" not in prev_file:
+        if prev_file != None and "NO_FILE" not in prev_file:
             task_string = "In " + prev_file + ": " + task_string
         combined_tasklist.append(task_string)
 
@@ -86,7 +86,7 @@ def make_tasklist(tasks):
     print(all_tasks, end="")
 
     if "use-tasklist" not in cmd_args.args and yesno("\nGPT: Do you want to continue with this task list?\nYou") != "y":
-        modifications = input("\nGPT: What would you like to change? (type 'skip' to skip)\nYou: ")
+        modifications = ask_input("\nGPT: What would you like to change? (type 'skip' to skip)\nYou: ")
         print()
 
         if modifications == "skip":
@@ -245,7 +245,7 @@ def move_file(source, destination):
 
     # Create parent directories if they don't exist
     parent_dir = os.path.dirname(destination)
-    filesystem.makedirs(parent_dir, exist_ok=True)
+    filesystem.makedirs(parent_dir)
 
     try:
         filesystem.move(source, destination)
@@ -267,10 +267,10 @@ def copy_file(source, destination):
 
     # Create parent directories if they don't exist
     parent_dir = os.path.dirname(destination)
-    filesystem.makedirs(parent_dir, exist_ok=True)
+    filesystem.makedirs(parent_dir)
 
     try:
-        filesystem.copy(source, destination)
+        filesystem.copy_file(source, destination)
     except:
         if filesystem.isdir(source) and filesystem.isdir(destination):
             return "ERROR: Destination folder already exists."
@@ -296,16 +296,34 @@ def delete_file(filename):
     return f"File {relative} successfully deleted"
 
 def should_ignore(path, ignore):
-    # always ignore files inside .git/
-    if path.startswith(".git" + os.sep) and path != ".git" + os.sep:
-        return True
+    path = relpath(path)
+
+    # always ignore files inside these folders
+    always_ignore = [
+        ".git",
+        "__pycache__",
+        "node_modules",
+        "vendor",
+        ".angular",
+    ]
+
+    for aig in always_ignore:
+        if (path.startswith(aig + os.sep) or (os.sep + aig + os.sep) in path) and path != aig + os.sep and path != aig:
+            return True
 
     for ignore_file in ignore:
-        if path.startswith(ignore_file + os.sep) or path.endswith(os.sep + ignore_file) or (os.sep + ignore_file + os.sep) in path:
+        if path.startswith(ignore_file + os.sep) or path.endswith(os.sep + ignore_file) or (os.sep + ignore_file + os.sep) in path or path == ignore_file:
             return True
     return False
 
-def list_files(list = "", print_output = True, ignore = [".git", "__pycache__", ".gpt-autopilot"]):
+def list_files(list = "", print_output = True, ignore = [
+    ".gpt-autopilot",
+    ".git",
+    "__pycache__",
+    "node_modules",
+    "vendor",
+    ".angular",
+]):
     if "zip" in cmd_args.args:
         files = filesystem.virtual.keys()
     else:
@@ -326,9 +344,12 @@ def list_files(list = "", print_output = True, ignore = [".git", "__pycache__", 
 
         files = []
         counter = 0
-        max_files = 20
+        max_files = 100
         for level in files_by_depth.values():
             for filename in level:
+                # ignore special files and directories
+                if should_ignore(filename, ignore):
+                    continue
                 counter += 1
                 if counter > max_files:
                     break
@@ -338,11 +359,6 @@ def list_files(list = "", print_output = True, ignore = [".git", "__pycache__", 
     file_list = ""
     for file in files:
         path = relpath(file)
-
-        # ignore special files and directories
-        if should_ignore(path, ignore):
-            continue
-
         file_list += path + "\n"
 
     if print_output:
@@ -372,9 +388,9 @@ def ask_clarification(questions):
 
         # get answer to question
         if "\n" in question:
-            answer = input(f"\nGPT:\n{question}\n\nYou: \n")
+            answer = ask_input(f"\nGPT:\n{question}\n\nYou: \n")
         else:
-            answer = input(f"\nGPT: {question}\nYou: ")
+            answer = ask_input(f"\nGPT: {question}\nYou: ")
 
         # skip unanswered questions
         if answer == "":
@@ -445,10 +461,10 @@ def run_cmd(base_dir, command, reason, asynch=False):
         print("- SYNC    Run the command synchronously")
         print("- MSG     Send a message to ChatGPT\n")
 
-        answer = input("GPT: Do you want to run this command?\nYou: ")
+        answer = ask_input("GPT: Do you want to run this command?\nYou: ")
         while answer not in ["YES", "NO", "ASYNC", "SYNC", "MSG"]:
             print("\nERROR: Please pick an available command\n")
-            answer = input("GPT: Do you want to run this command?\nYou: ")
+            answer = ask_input("GPT: Do you want to run this command?\nYou: ")
         print()
     else:
         answer = "SYNC"
@@ -462,11 +478,11 @@ def run_cmd(base_dir, command, reason, asynch=False):
         answer = "YES"
 
     elif answer == "MSG":
-        answer = input("GPT: What do you want to do?\nYou: ")
+        answer = ask_input("GPT: What do you want to do?\nYou: ")
         print()
         return answer
 
-    elif answer == "YES":
+    if answer == "YES":
         process = subprocess.Popen(
             full_command + " > gpt-autopilot-cmd-output.txt 2>&1",
             shell=True,
@@ -600,7 +616,7 @@ ask_clarification_func = {
     "parameters": {
         "type": "object",
         "properties": {
-            "question": {
+            "questions": {
                 "type": "array",
                 "items": {
                     "type": "string"

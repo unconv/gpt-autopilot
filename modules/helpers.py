@@ -7,6 +7,8 @@ import re
 from modules import cmd_args
 from modules import paths
 
+autonomous_message_count = 0
+
 def codedir(filename=""):
     if "dir" in cmd_args.args:
         code_base_path = str(cmd_args.args["dir"])
@@ -33,11 +35,20 @@ def reset_code_folder():
     else:
         os.mkdir(codedir())
 
+def ask_input(message):
+    global autonomous_message_count
+    autonomous_message_count = 0
+    try:
+        return input(message)
+    except KeyboardInterrupt:
+        print("\n\nExiting")
+        sys.exit(0)
+
 def yesno(prompt, answers = ["y", "n"]):
     answer = ""
     while answer not in answers:
         slash_list = '/'.join(answers)
-        answer = input(f"{prompt} ({slash_list}): ")
+        answer = ask_input(f"{prompt} ({slash_list}): ")
         if answer not in answers:
             or_list = "' or '".join(answers)
             print(f"\nERROR:    Please type '{or_list}'\n")

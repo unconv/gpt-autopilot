@@ -24,7 +24,7 @@ git_log = [
 ]
 
 def safecmd(text):
-    return re.sub(r'[^a-zA-Z0-9 ]', '', text)
+    return re.sub(r'[^a-zA-Z0-9\. ]', '', text)
 
 def get_commit_message(messages, model, temp):
     global git_log
@@ -77,7 +77,7 @@ def get_commit_message(messages, model, temp):
 
         tokens.add(response, model)
 
-        message = response["choices"][0]["message"]
+        message = response["choices"][0]["message"] # type: ignore
         git_log.append(message)
 
         answer = json.loads(message["function_call"]["arguments"]) # type: ignore
@@ -120,8 +120,9 @@ def init():
 
     subprocess.run(join_cmd([
         f"cd {codedir()}",
-        f"git -c init.defaultBranch={safecmd(default_branch)} init",
+        f"git -c init.defaultBranch=\"{safecmd(default_branch)}\" init",
     ]), shell=True)
+    print()
     set_defaults()
 
 def commit(messages, model, temp):
@@ -171,6 +172,7 @@ def revert(messages):
 
     # revert to previous git message
     last_message = messages.pop()
+    last_prompt = ""
     while last_message["role"] not in ["git", "system"]:
         if last_message["role"] == "user":
             last_prompt = last_message["content"]

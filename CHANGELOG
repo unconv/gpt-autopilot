@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] 2023-07-22
+
+### Added
+
+- Better context window handling. Old messages are now redacted based on the context window usage and token buffer. These can be changed with `--context-window [TOKENS]` and `--token-buffer [TOKENS]`. For example, GPT-4 can be run with a 4K context window to save money: `--model 4 --context-window 4000`
+- Support for when OpenAI drops `-0613` from model names
+- Limit autonomous function calls to 10 in order to prevent infinite function loop. Limit can be changed with `--loop-limit [NUMBER]`
+
+### Fixed
+
+- Forcing command to be run synchronously or asynchronously
+
+### Changed
+
+- Git commit is now made after every run command as well when using the `--git` flag
+
 ## [0.4.0] 2023-07-07
 
 ### Added

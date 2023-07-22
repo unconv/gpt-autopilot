@@ -7,7 +7,7 @@ args = {
     "program_name": sys.argv.pop(0)
 }
 
-VERSION = "0.4.0"
+VERSION = "0.4.1"
 
 help_info = {
     "--prompt": {
@@ -102,6 +102,15 @@ help_info = {
     },
     "--max-price": {
         "desc": "end script after this amount of money is used",
+    },
+    "--loop-limit": {
+        "desc": "ask for confirmation after this many autonomous function calls (default 10)",
+    },
+    "--context-window": {
+        "desc": "end script after this amount of money is used",
+    },
+    "--token-buffer": {
+        "desc": "how much buffer to keep for new responses in context window (default 1500)",
     },
     "--do-checklist": {
         "desc": "run through checklist items automatically",
@@ -212,6 +221,24 @@ def parse_arguments(argv):
                 print(f"ERROR: Missing argument for '{arg_name}'")
                 sys.exit(1)
             args["max-price"] = float(argv.pop(0)) # type: ignore
+        # ask for confirmation after this many autonomous function calls
+        elif arg_name == "--loop-limit":
+            if argv == []:
+                print(f"ERROR: Missing argument for '{arg_name}'")
+                sys.exit(1)
+            args["loop-limit"] = int(argv.pop(0)) # type: ignore
+        # set a custom context window size, in tokens
+        elif arg_name == "--context-window":
+            if argv == []:
+                print(f"ERROR: Missing argument for '{arg_name}'")
+                sys.exit(1)
+            args["context-window"] = int(argv.pop(0)) # type: ignore
+        # how much buffer to keep for new responses in context window
+        elif arg_name == "--token-buffer":
+            if argv == []:
+                print(f"ERROR: Missing argument for '{arg_name}'")
+                sys.exit(1)
+            args["token-buffer"] = int(argv.pop(0)) # type: ignore
         # system message slug
         elif arg_name == "--system":
             if argv == []:
