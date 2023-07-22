@@ -391,9 +391,9 @@ def run_conversation(prompt, model = "gpt-3.5-turbo-16k-0613", messages = [], co
             gpt_functions.tasklist_skipped = False
 
             # make git commit after finishing task and running a command
-            if "git" in cmd_args.args and function_response == "PROJECT_FINISHED" or (
+            if "git" in cmd_args.args and (function_response == "PROJECT_FINISHED" or (
                 function_name == "run_cmd" and function_response != "I don't want to run that command"
-            ):
+            )):
                 commit = git.commit(copy.deepcopy(messages), model, temp)
                 if commit is not None:
                     messages.append(commit)
