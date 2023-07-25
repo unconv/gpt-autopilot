@@ -52,6 +52,12 @@ help_info = {
     "--allow-cmd": {
         "desc": "allow these exact terminal commands to be run automatically",
     },
+    "--browsing": {
+        "desc": "allow GPT-AutoPilot to browse the internet with Puppeteer-GPT",
+    },
+    "--headless": {
+        "desc": "whether to run Puppeteer headless or not (default true)",
+    },
     "--versions": {
         "desc": "make multiple versions of the same project from a single prompt",
     },
@@ -178,6 +184,15 @@ def parse_arguments(argv):
                 print(f"ERROR: Missing argument for '{arg_name}'")
                 sys.exit(1)
             allowed_cmd.append(argv.pop(0))
+        # allow browsing the internet
+        elif arg_name == "--browsing":
+            args["browsing"] = True # type: ignore
+        # whether to run puppeteer headless or not
+        elif arg_name == "--headless":
+            if argv == []:
+                args["headless"] = True
+            else:
+                args["headless"] = argv.pop(0).lower() != "false"
         # set the project directory
         elif arg_name == "--dir":
             if argv == []:

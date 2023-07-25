@@ -8,6 +8,8 @@ import os
 from modules.helpers import yesno, safepath, codedir, relpath, ask_input
 from modules import filesystem
 from modules import cmd_args
+from modules import browser
+from modules import tokens
 from modules import paths
 
 tasklist = []
@@ -39,6 +41,12 @@ else:
     what_command = "terminal"
 
 # Implementation of the functions given to ChatGPT
+
+def browse_internet(objective):
+    print("\nGPT: Initializing browser...")
+    browse_result = browser.browse_internet(objective)
+    print("GPT: Browsing finished!\n")
+    return browse_result
 
 def make_tasklist(tasks):
     global tasklist
@@ -696,6 +704,21 @@ file_open_for_appending_func = {
     },
 }
 
+browse_internet_func = {
+    "name": "browse_internet",
+    "description": "Use an AI agent to browse the internet to perform a specific task such as finding out information or filling out forms or anything else that you can do with a browser.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "objective": {
+                "type": "string",
+                "description": "A detailed description of what should be done with a browser. For example: 'find out who are the current us presidential candidates' or 'go to URL X and fill out form Y'",
+            },
+        },
+        "required": ["objective"],
+    },
+}
+
 real_write_file_func = file_open_for_writing_func
 real_append_file_func = file_open_for_appending_func
 
@@ -880,6 +903,9 @@ def get_definitions(model):
 
     if "no-cmd" in cmd_args.args:
         func_definitions = [definition for definition in func_definitions if definition["name"] != "run_cmd"]
+
+    if "browsing" in cmd_args.args:
+        func_definitions.append(browse_internet_func)
 
     return func_definitions
 

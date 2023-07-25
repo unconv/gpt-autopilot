@@ -19,6 +19,7 @@ from modules import betterprompter
 from modules import filesystem
 from modules import checklist
 from modules import cmd_args
+from modules import browser
 from modules import chatgpt
 from modules import tokens
 from modules import paths
@@ -924,6 +925,9 @@ def override_model(model):
 
 # OVERRIDE MODEL
 CONFIG["model"] = str(override_model(CONFIG["model"]))
+
+# PASS MODEL TO BROWSER
+browser.model = CONFIG["model"]
 
 # LOAD MESSAGE HISTORY
 version_messages = {

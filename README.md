@@ -86,6 +86,18 @@ The files will be written to the `code` directory, relative to the path of the e
 
 Yes. The default model is `gpt-3.5-turbo-16k-0613`. You can change it in the `config.json` file. Make sure to use the 0613 models since only they support function calling. GPT-4 (`gpt-4-0613`) will provide more capabilities for certain tasks, but will be a lot more expensive. It is recommended to try it with GPT-3.5 first.
 
+## Internet Browsing
+
+To enable internet browsing, you need to install [Puppeteer-GPT](https://github.com/unconv/puppeteer-gpt) and use the `--browsing` flag when running GPT-AutoPilot.
+
+Run this in the `gpt-autopilot` directory:
+
+```console
+$ git clone https://github.com/unconv/puppeteer-gpt
+$ cd puppeteer-gpt
+$ npm install
+```
+
 ## Multi-version branching
 
 With the new `--versions` flag you can create multiple versions of a project at the same time. This is recommended, as sometimes retrying a prompt will produce a better outcome.
