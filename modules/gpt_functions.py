@@ -456,9 +456,6 @@ def run_cmd(base_dir, command, reason, asynch=False):
     print("#########################################################")
     print()
 
-    # add cd command
-    full_command = "cd " + base_dir + "; " + command
-
     if asynch == True:
         print("#################################################")
         print("# WARNING: This command will run asynchronously #")
@@ -499,10 +496,11 @@ def run_cmd(base_dir, command, reason, asynch=False):
 
     if answer == "YES":
         process = subprocess.Popen(
-            full_command + " > gpt-autopilot-cmd-output.txt 2>&1",
+            command + " > gpt-autopilot-cmd-output.txt 2>&1",
             shell=True,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
+            stderr=subprocess.PIPE,
+            cwd=base_dir,
         )
 
         # Run command asynchronously in the background
