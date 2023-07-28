@@ -2,6 +2,7 @@ import subprocess
 import atexit
 import select
 
+from modules.helpers import codedir
 from modules import cmd_args
 from modules import tokens
 from modules import paths
@@ -40,6 +41,7 @@ def browse_internet(objective):
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
+            cwd=codedir()
         )
 
         atexit.register(close_browser)
