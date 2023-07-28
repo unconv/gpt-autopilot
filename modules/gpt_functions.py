@@ -1,5 +1,6 @@
 import subprocess
 import signal
+import json
 import copy
 import time
 import sys
@@ -42,11 +43,17 @@ else:
 
 # Implementation of the functions given to ChatGPT
 
-def browse_internet(objective):
+def browse_internet(objective, return_value):
     print("\nGPT: Initializing browser...")
-    browse_result = browser.browse_internet(objective)
+
+    prompt = objective + "\n\nGive your final answer as follows:\n" + return_value
+
+    browse_result = browser.browse_internet(prompt)
     print("GPT: Browsing finished!\n")
-    return browse_result
+    return json.dumps({
+        "status": "OK - Browsing complete",
+        "response": browse_result
+    })
 
 def make_tasklist(tasks):
     global tasklist
@@ -712,10 +719,14 @@ browse_internet_func = {
         "properties": {
             "objective": {
                 "type": "string",
-                "description": "A detailed description of what should be done with a browser. For example: 'find out who are the current us presidential candidates' or 'go to URL X and fill out form Y'",
+                "description": "A detailed description of what should be done with a browser.",
             },
+            "return_value": {
+                "type": "string",
+                "description": "Explain what format the browsing agent should use in its final response. Describe what information you need."
+            }
         },
-        "required": ["objective"],
+        "required": ["objective", "return_value"],
     },
 }
 
