@@ -792,6 +792,9 @@ def run_versions(prompt, args, version_messages, temp, prev_version = 1):
     if orig_messages == []:
         system_message = prompt_selector.select_system_message(prompt, CONFIG["model"], temp)
 
+        if "browsing" in cmd_args.args:
+            system_message += "\n\nYou have available to you an AI assistant that can browse the internet. If you need to perform a task on the internet, use the browse_internet function to tell the AI agent what to do. The agent will remember the previous messages you sent to it, but it does not know your message history, so you will have to tell it all the relevant information in the objective. Always tell the agent what you want it to return."
+
         # add system message
         orig_messages.append({
             "role": "system",
