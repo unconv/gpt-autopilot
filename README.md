@@ -38,9 +38,11 @@ You can either clone the repository and run `gpt-autopilot.py` or you can [downl
 $ export OPENAI_API_KEY=YOUR_API_KEY
 ```
 
-2\. Install the **latest** version of the `openai` python package
+2\. Set up the virtual environment (optional) and install the dependencies
 ```console
-$ pip install --upgrade openai
+$ python3 -m venv venv
+$ source venv/bin/activate
+$ pip install -r requirements.txt
 ```
 
 3\. Run the script. It will ask you for a prompt.
@@ -67,9 +69,11 @@ After you have downloaded and unzipped, or cloned the repository, go into the `g
 > set OPENAI_API_KEY=YOUR_API_KEY
 ```
 
-2\. Install the **latest** version of the `openai` python package
+2\. Set up the virtual environment (optional) and install the dependencies
 ```console
-> pip install --upgrade openai
+> python -m venv venv
+> venv\Scripts\activate
+> pip install -r requirements.txt
 ```
 
 3\. Run the script. It will ask you for a prompt.
